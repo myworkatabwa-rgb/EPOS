@@ -27,8 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
      
-      '04d7f7c088ae.ngrok-free.app'
+      '*'
 ]
+CSRF_TRUSTED_ORIGINS = [
+
+    'https://*.railway.app'
+    ]
 
 
 # Application definition
@@ -51,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'Z_pos.urls'
