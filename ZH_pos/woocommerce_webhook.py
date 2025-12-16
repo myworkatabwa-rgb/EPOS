@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 import json
 import logging
 from urllib.parse import parse_qs
-from .models import Order, Customer, Product
+from .models import Order, Customer, Product, OrderItem
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,8 @@ def woocommerce_webhook(request):
             defaults={'name': f"{first_name} {last_name}".strip(), 'phone': phone}
         )
 
-        Order.objects.update_or_create(
+        # Create or update order
+        order_obj, _ = Order.objects.update_or_create(
             order_id=str(order_id),
             defaults={
                 'customer': customer,
@@ -67,8 +68,46 @@ def woocommerce_webhook(request):
             }
         )
 
+        # Handle line items (products)
+        line_items = data.get('line_items', [])
+        # Remove old items to avoid duplicates
+        order_obj.items.all().delete()
+
+        for item in line_items:
+            product_name = item.get('name', '')
+            product_id = item.get('product_id')
+            quantity = int(item.get('quantity', 1))
+            try:
+                price = Decimal(item.get('price', '0.00'))
+            except (InvalidOperation, TypeError):
+                price = Decimal('0.00')
+            try:
+                total_item = Decimal(item.get('total', '0.00'))
+            except (InvalidOperation, TypeError):
+                total_item = price * quantity
+
+            # Try to link with existing Product if woo_id matches
+            product_obj = None
+            if product_id:
+                product_obj = Product.objects.filter(woo_id=product_id).first()
+                if product_obj:
+                    # Optionally, update product price from WooCommerce
+                    product_obj.price = price
+                    product_obj.save()
+
+            OrderItem.objects.create(
+                order=order_obj,
+                product=product_obj,
+                product_name=product_name,
+                product_id=product_id,
+                quantity=quantity,
+                price=price,
+                total=total_item
+            )
+
         return JsonResponse({'success': True})
 
     except Exception as e:
         logger.exception("Error processing WooCommerce webhook")
+        # Always return 200 to WooCommerce to prevent retries
         return JsonResponse({'success': False, 'error': str(e)})
