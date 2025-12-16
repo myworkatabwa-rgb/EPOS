@@ -68,14 +68,14 @@ def woocommerce_webhook(request):
             }
         )
 
-        # Handle line items (products)
+        # Handle line items
         line_items = data.get('line_items', [])
         # Remove old items to avoid duplicates
         order_obj.items.all().delete()
 
         for item in line_items:
             product_name = item.get('name', '')
-            product_id = item.get('product_id')
+            woo_product_id = item.get('product_id')
             quantity = int(item.get('quantity', 1))
             try:
                 price = Decimal(item.get('price', '0.00'))
@@ -86,12 +86,12 @@ def woocommerce_webhook(request):
             except (InvalidOperation, TypeError):
                 total_item = price * quantity
 
-            # Try to link with existing Product if woo_id matches
+            # Link to Product if exists
             product_obj = None
-            if product_id:
-                product_obj = Product.objects.filter(woo_id=product_id).first()
+            if woo_product_id:
+                product_obj = Product.objects.filter(woo_id=woo_product_id).first()
                 if product_obj:
-                    # Optionally, update product price from WooCommerce
+                    # Optionally update price
                     product_obj.price = price
                     product_obj.save()
 
@@ -99,7 +99,7 @@ def woocommerce_webhook(request):
                 order=order_obj,
                 product=product_obj,
                 product_name=product_name,
-                product_id=product_id,
+                woo_product_id=woo_product_id,
                 quantity=quantity,
                 price=price,
                 total=total_item
@@ -109,5 +109,5 @@ def woocommerce_webhook(request):
 
     except Exception as e:
         logger.exception("Error processing WooCommerce webhook")
-        # Always return 200 to WooCommerce to prevent retries
+        # Always return 200 to WooCommerce
         return JsonResponse({'success': False, 'error': str(e)})
