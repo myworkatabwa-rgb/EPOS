@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Product, Customer, Order, OrderItem
 
 # Product Admin
@@ -15,8 +16,16 @@ class CustomerAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ('product_name', 'quantity', 'price', 'total')
+    readonly_fields = ('product_link', 'product_name', 'quantity', 'price', 'total')
     can_delete = False
+
+    # Display clickable link to Product if exists
+    def product_link(self, obj):
+        if obj.product:
+            url = f"/admin/{obj.product._meta.app_label}/{obj.product._meta.model_name}/{obj.product.id}/change/"
+            return format_html('<a href="{}">{}</a>', url, obj.product.name)
+        return obj.product_name
+    product_link.short_description = 'Product'
 
 # Order Admin with Inline
 @admin.register(Order)
