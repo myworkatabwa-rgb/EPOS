@@ -16,25 +16,36 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # =====================================================
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost','epos-production-c366.up.railway.app').split(',')
-CSRF_TRUSTED_ORIGINS = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', 'https://*.railway.app').split(',')
+if not SECRET_KEY:
+    raise ValueError("DJANGO_SECRET_KEY is not set")
+
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost,epos-production-c366.up.railway.app"
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://*.railway.app"
+).split(",")
 
 # =====================================================
 # APPLICATIONS
 # =====================================================
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 
-    'ZH_pos',
+    "ZH_pos",
 ]
 
 # =====================================================
@@ -42,80 +53,84 @@ INSTALLED_APPS = [
 # =====================================================
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 # =====================================================
 # URL / TEMPLATES
 # =====================================================
 
-ROOT_URLCONF = 'Z_pos.urls'
+ROOT_URLCONF = "Z_pos.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'Z_pos.wsgi.application'
+WSGI_APPLICATION = "Z_pos.wsgi.application"
 
 # =====================================================
-# DATABASE (POSTGRESQL ONLY)
+# DATABASE (POSTGRESQL)
 # =====================================================
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'railway'),
-        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'kSwGiUYBWdVZBSrwSlXYvCyDHQzdbUmo'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'switchyard.proxy.rlwy.net'),
-        'PORT': os.environ.get('POSTGRES_PORT', '55623'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB"),
+        "USER": os.environ.get("POSTGRES_USER"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+        "HOST": os.environ.get("POSTGRES_HOST"),
+        "PORT": os.environ.get("POSTGRES_PORT"),
     }
 }
-#postgresql://postgres:kSwGiUYBWdVZBSrwSlXYvCyDHQzdbUmo@switchyard.proxy.rlwy.net:55623/railway
+
 # =====================================================
 # CELERY
 # =====================================================
 
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_BROKER_URL = os.environ.get(
+    "CELERY_BROKER_URL", "redis://redis:6379/0"
+)
+CELERY_RESULT_BACKEND = os.environ.get(
+    "CELERY_RESULT_BACKEND", "redis://redis:6379/0"
+)
 
 # =====================================================
 # PASSWORD VALIDATION
 # =====================================================
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 # =====================================================
 # INTERNATIONALIZATION
 # =====================================================
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
@@ -123,16 +138,20 @@ USE_TZ = True
 # STATIC & MEDIA FILES
 # =====================================================
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
-MEDIA_URL = '/media/'
+STATICFILES_STORAGE = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
+WHITENOISE_USE_FINDERS = True
+
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # =====================================================
 # DEFAULT PRIMARY KEY
 # =====================================================
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
