@@ -47,8 +47,8 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    product_name = models.CharField(max_length=255)  # Store product name in case Product deleted
-    product_id = models.IntegerField(null=True, blank=True)  # WooCommerce product ID
+    product_name = models.CharField(max_length=255)
+    woo_product_id = models.IntegerField(null=True, blank=True)  # renamed
     quantity = models.IntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -56,7 +56,6 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
 
-    # Optional: auto-calculate total if not set
     def save(self, *args, **kwargs):
         if not self.total:
             self.total = self.price * Decimal(self.quantity)
