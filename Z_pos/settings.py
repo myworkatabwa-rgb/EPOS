@@ -21,6 +21,9 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'epos-production-c366.up.railway.app'
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://epos-production-c366.up.railway.app"
+]
 
 # =====================================================
 # APPLICATIONS
