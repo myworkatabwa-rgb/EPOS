@@ -19,7 +19,9 @@ services:
 
   web:
     build: .
-    command: gunicorn Z_pos.wsgi:application --bind 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn Z_pos.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:

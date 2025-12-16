@@ -12,24 +12,15 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # =====================================================
 # SECURITY
 # =====================================================
 
-SECRET_KEY = 'django-insecure-dlyx0gx!h@x%lux-pznk2@-wk0ij@0%&azu67hhs)!epahh_aq'
-DEBUG = True
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    'zhepos-production.up.railway.app',
-    '127.0.0.1',
-    'localhost',
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.railway.app',
-]
-
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+CSRF_TRUSTED_ORIGINS = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', 'https://*.railway.app').split(',')
 
 # =====================================================
 # APPLICATIONS
@@ -46,7 +37,6 @@ INSTALLED_APPS = [
     'ZH_pos',
 ]
 
-
 # =====================================================
 # MIDDLEWARE
 # =====================================================
@@ -62,7 +52,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 
 # =====================================================
 # URL / TEMPLATES
@@ -88,49 +77,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Z_pos.wsgi.application'
 
-
 # =====================================================
-# DATABASE (AUTO SWITCH)
+# DATABASE (POSTGRESQL ONLY)
 # =====================================================
-# Uses SQLite locally
-# Uses PostgreSQL on Railway
-# Uses YOUR EXISTING connection details
 
-if os.environ.get("RAILWAY_ENVIRONMENT"):
-    # Railway (PostgreSQL)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('PGDATABASE', 'railway'),
-            'USER': os.environ.get('PGUSER', 'postgres'),
-            'PASSWORD': os.environ.get(
-                'PGPASSWORD',
-                'tYgfIrkUGInSbSWfpYIexsuZULNexBtM'
-            ),
-            'HOST': os.environ.get(
-                'PGHOST',
-                'postgres.railway.internal'
-            ),
-            'PORT': os.environ.get('PGPORT', '5432'),
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'railway'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'kSwGiUYBWdVZBSrwSlXYvCyDHQzdbUmo'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'switchyard.proxy.rlwy.net'),
+        'PORT': os.environ.get('POSTGRES_PORT', '55623'),
     }
-else:
-    # Local machine (SQLite)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
-
+}
+#postgresql://postgres:kSwGiUYBWdVZBSrwSlXYvCyDHQzdbUmo@switchyard.proxy.rlwy.net:55623/railway
 # =====================================================
 # CELERY
 # =====================================================
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
 
 # =====================================================
 # PASSWORD VALIDATION
@@ -143,7 +110,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 # =====================================================
 # INTERNATIONALIZATION
 # =====================================================
@@ -153,7 +119,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
 # =====================================================
 # STATIC & MEDIA FILES
 # =====================================================
@@ -161,10 +126,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
-
 
 # =====================================================
 # DEFAULT PRIMARY KEY
