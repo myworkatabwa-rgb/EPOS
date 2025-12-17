@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Product, Order, Customer
+from .models import Product, Order, OrderItem, Customer
 import json
 import uuid
 
@@ -21,7 +21,8 @@ def dashboard(request):
 @csrf_exempt
 def pos_checkout(request):
     """
-    Receives cart JSON from frontend and creates Order + Customer
+    POS checkout endpoint
+    Receives cart JSON and creates Order + OrderItems
     """
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request"}, status=400)
@@ -32,23 +33,38 @@ def pos_checkout(request):
         if not cart:
             return JsonResponse({"error": "Cart is empty"}, status=400)
 
-        total = 0
-        for item in cart.values():
-            total += float(item["price"]) * int(item["qty"])
-
-        # Create walk-in customer
+        # Walk-in customer
         customer, _ = Customer.objects.get_or_create(
             name="Walk-in Customer",
             email=None
         )
 
+        total = 0
+
         order = Order.objects.create(
             order_id=str(uuid.uuid4())[:8],
             customer=customer,
-            total=total,
+            total=0,
             status="completed",
             source="pos"
         )
+
+        for pid, item in cart.items():
+            product = Product.objects.get(id=pid)
+            qty = int(item["qty"])
+            price = float(product.price)
+
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=qty,
+                price=price
+            )
+
+            total += price * qty
+
+        order.total = total
+        order.save()
 
         return JsonResponse({
             "success": True,
@@ -56,5 +72,9 @@ def pos_checkout(request):
             "total": total
         })
 
+    except Product.DoesNotExist:
+        return JsonResponse({"error": "Product not found"}, status=404)
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
