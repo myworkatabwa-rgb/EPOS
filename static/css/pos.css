@@ -1,18 +1,50 @@
-.product-btn {
-    height: 100px;
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-weight: 600;
+body {
+    background: #f5f7fa;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-.product-btn:hover {
-    background: #0d6efd;
-    color: white;
-}
-
-.cart-item {
+/* Sidebar */
+.sidebar {
+    width: 70px;
+    height: 100vh;
+    background: #0f9d58;
+    color: #fff;
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
+    flex-direction: column;
+}
+
+.sidebar .logo {
+    font-size: 18px;
+}
+
+.sidebar .nav-link {
+    color: #ffffffcc;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 20px;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+/* Topbar */
+.topbar {
+    height: 60px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* Content */
+.content {
+    min-height: calc(100vh - 60px);
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
