@@ -1,83 +1,76 @@
-# ZH_pos/webhooks.py
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal, InvalidOperation
 import json
 import logging
-from .models import Order, Customer, Product, OrderItem
+from urllib.parse import parse_qs
+from .models import Order, Customer, Product
 
 logger = logging.getLogger(__name__)
 
+
 @csrf_exempt
 def woocommerce_webhook(request):
-    if request.method != "POST":
-        return JsonResponse({"ok": True})
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
 
     try:
-        data = json.loads(request.body.decode("utf-8"))
-        logger.info(f"Received Woo order: {data.get('id')}")
+        # Handle JSON or form-encoded payload
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error: {str(e)} | Body: {request.body}")
+                return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-        # --- Extract order_id ---
-        order_id = str(data.get("id"))
-        if not order_id:
-            logger.warning("No order id in webhook payload")
-            return JsonResponse({"ok": True})
+        elif request.content_type == 'application/x-www-form-urlencoded':
+            body_str = request.body.decode('utf-8')
+            parsed = parse_qs(body_str)
+            data = {k: v[0] for k, v in parsed.items()}
 
-        # --- Customer ---
-        billing = data.get("billing", {})
-        email = billing.get("email") or f"guest_{order_id}@example.com"
+        else:
+            return JsonResponse({'error': 'Unsupported content type'}, status=400)
+
+        logger.info(f"WooCommerce webhook payload: {data}")
+
+        # Extract order info
+        order_id = data.get('id') or data.get('webhook_id')
+        total_raw = data.get('total', '0')
+        status = data.get('status', 'pending')
+        billing = data.get('billing', {})
+
+        # Convert total to Decimal
+        try:
+            total = Decimal(total_raw)
+        except (InvalidOperation, TypeError):
+            total = Decimal('0.00')
+
+        # Customer info
+        email = billing.get('email', '').strip() if isinstance(billing, dict) else ''
+        first_name = billing.get('first_name', '').strip() if isinstance(billing, dict) else ''
+        last_name = billing.get('last_name', '').strip() if isinstance(billing, dict) else ''
+        phone = billing.get('phone', '').strip() if isinstance(billing, dict) else ''
+
+        if not email:
+            email = f"guest_{order_id}@example.com"
+
         customer, _ = Customer.objects.get_or_create(
             email=email,
+            defaults={'name': f"{first_name} {last_name}".strip(), 'phone': phone}
+        )
+
+        Order.objects.update_or_create(
+            order_id=str(order_id),
             defaults={
-                "name": f"{billing.get('first_name','')} {billing.get('last_name','')}".strip(),
-                "phone": billing.get("phone","")
+                'customer': customer,
+                'total': total,
+                'status': status,
+                'source': 'woocommerce'
             }
         )
 
-        # --- Order ---
-        total = Decimal(data.get("total","0") or "0")
-        order, _ = Order.objects.update_or_create(
-            order_id=order_id,
-            defaults={
-                "customer": customer,
-                "status": data.get("status","pending"),
-                "total": total,
-                "source": "woocommerce"
-            }
-        )
-
-        # --- Line Items ---
-        order.items.all().delete()
-        for item in data.get("line_items", []):
-            quantity = int(item.get("quantity",1))
-            price = Decimal(item.get("price","0") or "0")
-            try:
-                total_item = Decimal(item.get("total","0") or str(price * quantity))
-            except InvalidOperation:
-                total_item = price * quantity
-
-            # --- Match product ---
-            product = None
-            woo_product_id = item.get("product_id")
-            sku = item.get("sku")
-            if woo_product_id:
-                product = Product.objects.filter(woo_id=woo_product_id).first()
-            if not product and sku:
-                product = Product.objects.filter(sku=sku).first()
-
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                product_name=item.get("name",""),
-                woo_product_id=woo_product_id,
-                quantity=quantity,
-                price=price,
-                total=total_item
-            )
-
-        logger.info(f"Order {order_id} saved with {len(data.get('line_items',[]))} items")
-        return JsonResponse({"success": True})
+        return JsonResponse({'success': True})
 
     except Exception as e:
-        logger.exception("Woo webhook error")
-        return JsonResponse({"success": True})
+        logger.exception("Error processing WooCommerce webhook")
+        return JsonResponse({'success': False, 'error': str(e)})
