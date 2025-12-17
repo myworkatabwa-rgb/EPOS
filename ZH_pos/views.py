@@ -17,7 +17,9 @@ def dashboard(request):
         'customers': customers,
     })
 
-
+def pos_view(request):
+    products = Product.objects.all()
+    return render(request, "pos.html", {"products": products})
 @csrf_exempt
 def pos_checkout(request):
     """
