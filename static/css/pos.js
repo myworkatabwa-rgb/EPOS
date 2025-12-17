@@ -1,85 +1,78 @@
 let cart = {};
-let total = 0;
 
+// Add product
 function addToCart(id, name, price) {
-    if (cart[id]) {
-        cart[id].qty += 1;
-    } else {
+    if (!cart[id]) {
         cart[id] = { name, price, qty: 1 };
+    } else {
+        cart[id].qty += 1;
     }
     renderCart();
 }
 
+// Render cart
 function renderCart() {
     const cartDiv = document.getElementById("cart-items");
+    const totalSpan = document.getElementById("total");
+
     cartDiv.innerHTML = "";
-    total = 0;
+    let total = 0;
 
     for (let id in cart) {
         let item = cart[id];
-        let itemTotal = item.qty * item.price;
-        total += itemTotal;
+        let subtotal = item.price * item.qty;
+        total += subtotal;
 
         cartDiv.innerHTML += `
-            <div class="cart-item">
+            <div class="d-flex justify-content-between mb-2">
                 <span>${item.name} x ${item.qty}</span>
-                <span>Rs ${itemTotal}</span>
+                <span>Rs ${subtotal}</span>
             </div>
         `;
     }
 
-    document.getElementById("total").innerText = total;
-}
-let cart = {};
-let total = 0;
-
-function addToCart(id, name, price) {
-    if (cart[id]) {
-        cart[id].qty += 1;
-    } else {
-        cart[id] = { name, price, qty: 1 };
-    }
-    renderCart();
+    totalSpan.innerText = total;
 }
 
-function removeFromCart(id) {
-    delete cart[id];
-    renderCart();
-}
-
-function changeQty(id, delta) {
-    if (cart[id]) {
-        cart[id].qty += delta;
-        if (cart[id].qty <= 0) removeFromCart(id);
-    }
-    renderCart();
-}
-
-function renderCart() {
-    const cartDiv = document.getElementById("cart-items");
-    cartDiv.innerHTML = "";
-    total = 0;
-
-    for (let id in cart) {
-        let item = cart[id];
-        let itemTotal = item.qty * item.price;
-        total += itemTotal;
-
-        cartDiv.innerHTML += `
-            <div class="cart-item d-flex justify-content-between align-items-center">
-                <div>
-                    ${item.name} x 
-                    <button onclick="changeQty('${id}', -1)">-</button>
-                    ${item.qty}
-                    <button onclick="changeQty('${id}', 1)">+</button>
-                </div>
-                <div>
-                    Rs ${itemTotal} 
-                    <button onclick="removeFromCart('${id}')">🗑️</button>
-                </div>
-            </div>
-        `;
+// Checkout
+function checkout() {
+    if (Object.keys(cart).length === 0) {
+        alert("Cart is empty!");
+        return;
     }
 
-    document.getElementById("total").innerText = total;
+    fetch("/pos/checkout/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify(cart)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Order ${data.order_id} placed successfully!`);
+            cart = {};
+            renderCart();
+        } else {
+            alert("Error: " + data.error);
+        }
+    });
+}
+
+// CSRF helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
