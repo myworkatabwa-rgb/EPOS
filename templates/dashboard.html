@@ -1,41 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid vh-100">
-    <div class="row h-100">
+<div class="row g-4">
 
-        <!-- PRODUCTS -->
-        <div class="col-8 p-3">
-            <h5>Products</h5>
-            <div class="row g-3">
-                {% for product in products %}
-                <div class="col-3">
-                    <button 
-                        class="product-btn w-100"
-                        onclick="addToCart('{{ product.id }}', '{{ product.name }}', {{ product.price }})"
-                    >
-                        {{ product.name }}<br>
-                        Rs {{ product.price }}
-                    </button>
-                </div>
-                {% endfor %}
-            </div>
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <h6>Today's Sales</h6>
+            <h4 class="text-success">PKR 0</h4>
         </div>
-
-        <!-- CART -->
-        <div class="col-4 bg-white p-3 border-start">
-            <h5>Cart</h5>
-
-            <div id="cart-items"></div>
-
-            <hr>
-            <h4>Total: Rs <span id="total">0</span></h4>
-
-            <button class="btn btn-success w-100 mt-3" onclick="checkout()">
-                PAY
-            </button>
-        </div>
-
     </div>
+
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <h6>Total Orders</h6>
+            <h4>0</h4>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <h6>Cash Sales</h6>
+            <h4>PKR 0</h4>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3 text-center">
+            <h6>Card Sales</h6>
+            <h4>PKR 0</h4>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
