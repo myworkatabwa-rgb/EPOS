@@ -19,7 +19,6 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ('product_link', 'product_name', 'quantity', 'price', 'total')
     can_delete = False
 
-    # Display clickable link to Product if exists
     def product_link(self, obj):
         if obj.product:
             url = f"/admin/{obj.product._meta.app_label}/{obj.product._meta.model_name}/{obj.product.id}/change/"
@@ -27,8 +26,7 @@ class OrderItemInline(admin.TabularInline):
         return obj.product_name
     product_link.short_description = 'Product'
 
-# Order Admin with Inline
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_id', 'customer', 'total', 'status', 'source', 'created_at')
+    list_display = ('order_id','customer','total','status','source','created_at')
     inlines = [OrderItemInline]
