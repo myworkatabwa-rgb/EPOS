@@ -1,24 +1,85 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>EPOS</title>
+    <meta charset="UTF-8">
+    <title>CISEPOS</title>
 
     <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- POS CSS -->
-    <link rel="stylesheet" href="{% static 'css/pos.css' %}">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/epos.css' %}">
 </head>
 <body>
 
-{% block content %}{% endblock %}
+<div class="d-flex">
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo text-center py-3">
+            <span class="fw-bold text-success">CISE</span>POS
+        </div>
 
-<!-- POS JS -->
-<script src="{% static 'js/pos.js' %}"></script>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="/" class="nav-link active">
+                    <i class="bi bi-speedometer2"></i>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/pos/" class="nav-link">
+                    <i class="bi bi-cart"></i>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="bi bi-receipt"></i>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="bi bi-people"></i>
+                </a>
+            </li>
+            <li class="nav-item mt-auto">
+                <a href="#" class="nav-link">
+                    <i class="bi bi-gear"></i>
+                </a>
+            </li>
+        </ul>
+    </aside>
 
+    <!-- MAIN CONTENT -->
+    <div class="main flex-grow-1">
+
+        <!-- TOP BAR -->
+        <header class="topbar d-flex justify-content-between align-items-center px-4">
+            <div>
+                <strong>Orh WEAR PRIVATE LTD</strong>
+                <span class="badge bg-success ms-2">Main Branch</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-bell"></i>
+                <div class="user">
+                    Abdullah
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="content p-4">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
