@@ -1,7 +1,6 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from django.urls import path
 from .models import Product, Customer, Order
+from .models import OrderItem  # Uncomment or define OrderItem if you have it
 
 
 @admin.register(Product)
@@ -14,9 +13,9 @@ class CustomerAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'phone')
 
 
-# Assuming OrderItem model exists for inline
+# Inline for order items (ensure OrderItem is defined or imported)
 class OrderItemInline(admin.TabularInline):
-    model = OrderItem
+    model = OrderItem  # Replace with your actual OrderItem model
     extra = 0
 
 
