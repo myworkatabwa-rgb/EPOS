@@ -120,6 +120,12 @@ class OrderItem(models.Model):
         decimal_places=2,
         default=0
     )
+class Return(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 
     def save(self, *args, **kwargs):
         self.total = Decimal(self.quantity) * self.price
