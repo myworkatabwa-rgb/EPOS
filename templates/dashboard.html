@@ -1,44 +1,105 @@
 {% extends "base.html" %}
-{% load static %}
-
 {% block content %}
-<div class="container-fluid vh-100">
-  <div class="row h-100">
 
-    <!-- PRODUCTS -->
-    <div class="col-8 p-3">
-      <h5 class="text-success">Products</h5>
-      <div class="row g-3">
-        {% for product in products %}
-        <div class="col-3">
-          <button class="btn btn-outline-success w-100"
-            onclick="addToCart('{{ product.id }}','{{ product.name }}',{{ product.price }})">
-            {{ product.name }}<br>
-            Rs {{ product.price }}
-          </button>
-        </div>
-        {% endfor %}
+<div class="container-fluid">
+
+<!-- ================= TOP STATS ================= -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body text-success">
+        <h6>Today's Total Sale</h6>
+        <h3>PKR {{ today_total }}</h3>
       </div>
     </div>
+  </div>
 
-    <!-- CART -->
-    <div class="col-4 bg-white p-3 border-start">
-      <h5 class="text-success">Cart</h5>
-      <div id="cart-items"></div>
-
-      <hr>
-      <input type="number" class="form-control mb-2" placeholder="Discount"
-             oninput="discount=this.value;renderCart()">
-
-      <h4>Total: Rs <span id="total">0</span></h4>
-
-      <button class="btn btn-success w-100 mt-2" onclick="checkout('cash')">Cash</button>
-      <button class="btn btn-outline-success w-100 mt-2" onclick="checkout('card')">Card</button>
-      <button class="btn btn-warning w-100 mt-2" onclick="checkout('split')">Split</button>
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body text-success">
+        <h6>Total Sales Today</h6>
+        <h3>{{ today_count }}</h3>
+      </div>
     </div>
+  </div>
 
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Cash Sale</h6>
+        <h4>PKR {{ cash_sale }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Card Sale</h6>
+        <h4>PKR {{ card_sale }}</h4>
+      </div>
+    </div>
   </div>
 </div>
 
-<script src="{% static 'js/pos.js' %}"></script>
+<!-- ================= MID SECTION ================= -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="text-success">Today's Payment Breakdown</h5>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">Cash Sale: PKR {{ cash_sale }}</li>
+          <li class="list-group-item">Card Sale: PKR {{ card_sale }}</li>
+          <li class="list-group-item">Split Sale: PKR {{ split_sale }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="text-success">Yesterday Summary</h5>
+        <p>Total Sale: PKR {{ yesterday_total }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ITEM WISE ================= -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h5 class="text-success">Item Wise Sales (Last 30 Days)</h5>
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in item_sales %}
+        <tr>
+          <td>{{ item.product__name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>PKR {{ item.amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= GRAPH PLACEHOLDER ================= -->
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h5 class="text-success">Sales Graph</h5>
+    <canvas id="salesChart"></canvas>
+  </div>
+</div>
+
+</div>
+
 {% endblock %}
