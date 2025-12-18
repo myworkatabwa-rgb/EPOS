@@ -92,3 +92,16 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+function showReceipt(data) {
+    let html = "";
+    data.items.forEach(i => {
+        html += `<div>${i.name} x ${i.qty} - PKR ${i.total}</div>`;
+    });
+
+    document.getElementById("receipt-items").innerHTML = html;
+    document.getElementById("receipt-total").innerText = data.total;
+    document.getElementById("receipt-payment").innerText = data.payment_method;
+
+    new bootstrap.Modal(document.getElementById("receiptModal")).show();
+}
+
