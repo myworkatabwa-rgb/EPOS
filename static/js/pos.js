@@ -1,38 +1,51 @@
+// =======================
+// Simple POS Cart Script
+// =======================
 
 let cart = {};
 
-// Add product
+// Add product to cart
 function addToCart(id, name, price) {
+    price = Number(price);
+
     if (!cart[id]) {
-        cart[id] = { name, price, qty: 1 };
+        cart[id] = {
+            id: id,
+            name: name,
+            price: price,
+            qty: 1
+        };
     } else {
         cart[id].qty += 1;
     }
+
     renderCart();
 }
 
-// Render cart
+// Render cart items
 function renderCart() {
     const cartDiv = document.getElementById("cart-items");
     const totalSpan = document.getElementById("total");
 
+    if (!cartDiv || !totalSpan) return;
+
     cartDiv.innerHTML = "";
     let total = 0;
 
-    for (let id in cart) {
-        let item = cart[id];
-        let subtotal = item.price * item.qty;
+    Object.values(cart).forEach(item => {
+        const subtotal = item.price * item.qty;
         total += subtotal;
 
-        cartDiv.innerHTML += `
-            <div class="d-flex justify-content-between mb-2">
-                <span>${item.name} x ${item.qty}</span>
-                <span>Rs ${subtotal}</span>
-            </div>
+        const row = document.createElement("div");
+        row.className = "d-flex justify-content-between mb-2";
+        row.innerHTML = `
+            <span>${item.name} x ${item.qty}</span>
+            <span>Rs ${subtotal.toFixed(2)}</span>
         `;
-    }
+        cartDiv.appendChild(row);
+    });
 
-    totalSpan.innerText = total;
+    totalSpan.innerText = total.toFixed(2);
 }
 
 // Checkout
@@ -50,130 +63,32 @@ function checkout() {
         },
         body: JSON.stringify(cart)
     })
-    .then(res => res.json())
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             alert(`Order ${data.order_id} placed successfully!`);
             cart = {};
             renderCart();
         } else {
-            alert("Error: " + data.error);
+            alert(data.error || "Checkout failed");
         }
+    })
+    .catch(() => {
+        alert("Server error!");
     });
 }
 
-// CSRF helper
+// Django CSRF helper
 function getCookie(name) {
     let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        let cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+
+    if (document.cookie && document.cookie !== "") {
+        document.cookie.split(";").forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
             }
-        }
+        });
     }
     return cookieValue;
-}
-let cart = {};
-
-function addToCart(id, name, price) {
-    if (!cart[id]) {
-        cart[id] = { name, price, qty: 1 };
-    } else {
-        cart[id].qty += 1;
-    }
-    renderCart();
-}
-
-function renderCart() {
-    const cartDiv = document.getElementById("cart-items");
-    const totalSpan = document.getElementById("total");
-
-    cartDiv.innerHTML = "";
-    let total = 0;
-
-    Object.values(cart).forEach(item => {
-        total += item.price * item.qty;
-
-        cartDiv.innerHTML += `
-            <div class="cart-row">
-                <span>${item.name} x ${item.qty}</span>
-                <span>PKR ${item.price * item.qty}</span>
-            </div>
-        `;
-    });
-
-    totalSpan.innerText = total;
-}
-
-function checkout() {
-    if (Object.keys(cart).length === 0) {
-        alert("Cart is empty");
-        return;
-    }
-
-    fetch("/pos/checkout/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken")
-        },
-        body: JSON.stringify(cart)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert("Order placed successfully");
-            cart = {};
-            renderCart();
-        } else {
-            alert(data.error);
-        }
-    });
-}
-
-// CSRF Helper
-function getCookie(name) {
-    let cookieValue = null;
-    document.cookie.split(";").forEach(cookie => {
-        cookie = cookie.trim();
-        if (cookie.startsWith(name + "=")) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        }
-    });
-    return cookieValue;
-}
-function checkout() {
-    if (Object.keys(cart).length === 0) {
-        alert("Cart is empty");
-        return;
-    }
-
-    const payload = {
-        cart: cart,
-        payment_method: "cash",   // later make dynamic
-        discount: 0               // later from UI
-    };
-
-    fetch("/pos/checkout/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken")
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Order ${data.order_id} placed`);
-            cart = {};
-            renderCart();
-        } else {
-            alert(data.error);
-        }
-    });
 }
