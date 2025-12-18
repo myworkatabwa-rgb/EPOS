@@ -48,6 +48,24 @@
     </div>
 
 </div>
+<div class="modal fade" id="receiptModal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-body" id="receiptContent">
+        <h5 class="text-center">EPOS RECEIPT</h5>
+        <hr>
+        <div id="receipt-items"></div>
+        <hr>
+        <strong>Total: PKR <span id="receipt-total"></span></strong>
+        <p>Payment: <span id="receipt-payment"></span></p>
+        <button onclick="window.print()" class="btn btn-success w-100 mt-2">
+          Print
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script src="{% static 'js/pos.js' %}"></script>
 {% endblock %}
