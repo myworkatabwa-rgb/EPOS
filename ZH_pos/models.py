@@ -1,5 +1,7 @@
 from django.db import models
 from decimal import Decimal
+from django.contrib.auth.models import User
+
 
 
 # =========================
@@ -133,3 +135,11 @@ class Return(models.Model):
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
+
+class Cashier(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    is_manager = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
+
