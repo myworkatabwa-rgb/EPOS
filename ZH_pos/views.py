@@ -6,16 +6,54 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Product, Order, OrderItem, Customer
 
 
-def dashboard(request):
-    orders = Order.objects.all().order_by('-created_at')[:5]
-    products = Product.objects.all()
-    customers = Customer.objects.all()[:5]
+#def dashboard(request):
+ #   orders = Order.objects.all().order_by('-created_at')[:5]
+  #  products = Product.objects.all()
+   # customers = Customer.objects.all()[:5]
 
-    return render(request, 'dashboard.html', {
-        'orders': orders,
-        'products': products,
-        'customers': customers,
-    })
+    #return render(request, 'dashboard.html', {
+     #   'orders': orders,
+      #  'products': products,
+       # 'customers': customers,
+    #})
+def dashboard(request):
+    today = now().date()
+    yesterday = today - timedelta(days=1)
+
+    # ---- TODAY ----
+    today_orders = Order.objects.filter(created_at__date=today)
+    today_total = today_orders.aggregate(total=Sum("total"))["total"] or 0
+    today_count = today_orders.count()
+
+    # Payment split
+    cash_sale = today_orders.filter(payment_method="cash").aggregate(Sum("total"))["total__sum"] or 0
+    card_sale = today_orders.filter(payment_method="card").aggregate(Sum("total"))["total__sum"] or 0
+    split_sale = today_orders.filter(payment_method="split").aggregate(Sum("total"))["total__sum"] or 0
+
+    # ---- YESTERDAY ----
+    yesterday_orders = Order.objects.filter(created_at__date=yesterday)
+    yesterday_total = yesterday_orders.aggregate(Sum("total"))["total__sum"] or 0
+
+    # ---- ITEM WISE (30 DAYS) ----
+    last_30 = now() - timedelta(days=30)
+    item_sales = (
+        OrderItem.objects
+        .filter(order__created_at__gte=last_30)
+        .values("product__name")
+        .annotate(quantity=Sum("quantity"), amount=Sum("total"))
+    )
+
+    context = {
+        "today_total": today_total,
+        "today_count": today_count,
+        "cash_sale": cash_sale,
+        "card_sale": card_sale,
+        "split_sale": split_sale,
+        "yesterday_total": yesterday_total,
+        "item_sales": item_sales,
+    }
+
+    return render(request, "dashboard.html", context)
 
 
 def pos_view(request):
