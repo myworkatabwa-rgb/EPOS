@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from django.db.models.functions import TruncDate
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -51,6 +52,15 @@ def dashboard(request):
         )
     )
 
+    # ---- SALES CHART (DATE WISE) ----
+    sales_chart = (
+        Order.objects
+        .annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(total=Sum("total"))
+        .order_by("day")
+    )
+
     context = {
         "today_total": today_total,
         "today_count": today_count,
@@ -59,6 +69,7 @@ def dashboard(request):
         "split_sale": split_sale,
         "yesterday_total": yesterday_total,
         "item_sales": item_sales,
+        "sales_chart": sales_chart,   # ✅ now usable in template
     }
 
     return render(request, "dashboard.html", context)
