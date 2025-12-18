@@ -9,11 +9,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now, timedelta
+from django.contrib.auth.decorators import login_required
+
 
 from .models import Product, Order, OrderItem, Customer, Return
-@login_required
+@login_required(login_url="/")
 def pos_view(request):
-    return render(request, "pos.html")
+    products = Product.objects.all()
+    return render(request, "pos.html", {"products": products})
 
 
 def dashboard(request):
