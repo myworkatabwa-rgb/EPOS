@@ -61,8 +61,8 @@ MIDDLEWARE = [
 # =====================================================
 
 ROOT_URLCONF = "Z_pos.urls"
-LOGIN_REDIRECT_URL = "/pos/"
-LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/login/"
 
 
 TEMPLATES = [
