@@ -7,9 +7,13 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum
+from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now, timedelta
 
 from .models import Product, Order, OrderItem, Customer, Return
+@login_required
+def pos_view(request):
+    return render(request, "pos.html")
 
 
 def dashboard(request):
