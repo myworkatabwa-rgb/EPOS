@@ -146,3 +146,34 @@ function getCookie(name) {
     });
     return cookieValue;
 }
+function checkout() {
+    if (Object.keys(cart).length === 0) {
+        alert("Cart is empty");
+        return;
+    }
+
+    const payload = {
+        cart: cart,
+        payment_method: "cash",   // later make dynamic
+        discount: 0               // later from UI
+    };
+
+    fetch("/pos/checkout/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Order ${data.order_id} placed`);
+            cart = {};
+            renderCart();
+        } else {
+            alert(data.error);
+        }
+    });
+}
