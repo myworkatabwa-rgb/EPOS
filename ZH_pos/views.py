@@ -54,7 +54,7 @@ def dashboard(request):
     )
 
     # ---- SALES CHART ----
-    sales_chart = (
+    sales_chart = list (
         Order.objects
         .annotate(day=TruncDate("created_at"))
         .values("day")
