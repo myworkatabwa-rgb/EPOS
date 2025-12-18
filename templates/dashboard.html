@@ -92,13 +92,50 @@
   </div>
 </div>
 
-<!-- ================= GRAPH PLACEHOLDER ================= -->
+<!-- ================= GRAPH ================= -->
 <div class="card shadow-sm">
   <div class="card-body">
     <h5 class="text-success">Sales Graph</h5>
     <canvas id="salesChart"></canvas>
   </div>
 </div>
+
+<!-- SAFE JSON DATA -->
+{{ sales_chart|json_script:"sales-chart-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const salesData = JSON.parse(
+  document.getElementById("sales-chart-data").textContent
+);
+
+const labels = salesData.map(d => d.day);
+const totals = salesData.map(d => d.total);
+
+new Chart(document.getElementById("salesChart"), {
+  type: "line",
+  data: {
+    labels: labels,
+    datasets: [{
+      label: "Daily Sales",
+      data: totals,
+      borderColor: "green",
+      backgroundColor: "rgba(0,128,0,0.1)",
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  }
+});
+</script>
 
 </div>
 
