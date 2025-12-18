@@ -3,6 +3,7 @@ import uuid
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum, Count
 from django.utils.timezone import now, timedelta
 from .models import Product, Order, OrderItem, Customer
 
