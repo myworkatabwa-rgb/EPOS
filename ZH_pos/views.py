@@ -1,9 +1,9 @@
+import json
+import uuid
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Product, Order, OrderItem, Customer
-import json
-import uuid
 
 
 def dashboard(request):
@@ -17,54 +17,68 @@ def dashboard(request):
         'customers': customers,
     })
 
+
 def pos_view(request):
     products = Product.objects.all()
     return render(request, "pos.html", {"products": products})
+
+
 @csrf_exempt
 def pos_checkout(request):
     """
-    POS checkout endpoint
-    Receives cart JSON and creates Order + OrderItems
+    COMMERCIAL POS CHECKOUT
+    Handles cart, stock, discount, and payment method
     """
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request"}, status=400)
 
     try:
-        cart = json.loads(request.body)
+        data = json.loads(request.body)
+
+        cart = data.get("cart", {})
+        payment_method = data.get("payment_method", "cash")
+        discount = float(data.get("discount", 0))
 
         if not cart:
             return JsonResponse({"error": "Cart is empty"}, status=400)
 
         # Walk-in customer
-        customer, _ = Customer.objects.get_or_create(
-            name="Walk-in Customer",
-            email=None
-        )
-
-        total = 0
+        customer, _ = Customer.objects.get_or_create(name="Walk-in Customer")
 
         order = Order.objects.create(
             order_id=str(uuid.uuid4())[:8],
             customer=customer,
             total=0,
+            discount=discount,
+            payment_method=payment_method,
             status="completed",
             source="pos"
         )
 
+        total = 0
+
         for pid, item in cart.items():
             product = Product.objects.get(id=pid)
             qty = int(item["qty"])
-            price = float(product.price)
+
+            if product.stock < qty:
+                return JsonResponse({
+                    "error": f"Insufficient stock for {product.name}"
+                }, status=400)
 
             OrderItem.objects.create(
                 order=order,
                 product=product,
                 quantity=qty,
-                price=price
+                price=product.price
             )
 
-            total += price * qty
+            product.stock -= qty
+            product.save()
 
+            total += product.price * qty
+
+        total -= discount
         order.total = total
         order.save()
 
@@ -79,4 +93,3 @@ def pos_checkout(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
