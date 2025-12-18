@@ -1,23 +1,15 @@
 import json
 import uuid
+
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Sum, Count
+from django.db.models import Sum
 from django.utils.timezone import now, timedelta
+
 from .models import Product, Order, OrderItem, Customer
 
 
-#def dashboard(request):
- #   orders = Order.objects.all().order_by('-created_at')[:5]
-  #  products = Product.objects.all()
-   # customers = Customer.objects.all()[:5]
-
-    #return render(request, 'dashboard.html', {
-     #   'orders': orders,
-      #  'products': products,
-       # 'customers': customers,
-    #})
 def dashboard(request):
     today = now().date()
     yesterday = today - timedelta(days=1)
@@ -28,21 +20,35 @@ def dashboard(request):
     today_count = today_orders.count()
 
     # Payment split
-    cash_sale = today_orders.filter(payment_method="cash").aggregate(Sum("total"))["total__sum"] or 0
-    card_sale = today_orders.filter(payment_method="card").aggregate(Sum("total"))["total__sum"] or 0
-    split_sale = today_orders.filter(payment_method="split").aggregate(Sum("total"))["total__sum"] or 0
+    cash_sale = (
+        today_orders.filter(payment_method="cash")
+        .aggregate(total=Sum("total"))["total"] or 0
+    )
+    card_sale = (
+        today_orders.filter(payment_method="card")
+        .aggregate(total=Sum("total"))["total"] or 0
+    )
+    split_sale = (
+        today_orders.filter(payment_method="split")
+        .aggregate(total=Sum("total"))["total"] or 0
+    )
 
     # ---- YESTERDAY ----
     yesterday_orders = Order.objects.filter(created_at__date=yesterday)
-    yesterday_total = yesterday_orders.aggregate(Sum("total"))["total__sum"] or 0
+    yesterday_total = (
+        yesterday_orders.aggregate(total=Sum("total"))["total"] or 0
+    )
 
-    # ---- ITEM WISE (30 DAYS) ----
+    # ---- ITEM WISE (LAST 30 DAYS) ----
     last_30 = now() - timedelta(days=30)
     item_sales = (
         OrderItem.objects
         .filter(order__created_at__gte=last_30)
         .values("product__name")
-        .annotate(quantity=Sum("quantity"), amount=Sum("total"))
+        .annotate(
+            quantity=Sum("quantity"),
+            amount=Sum("total")
+        )
     )
 
     context = {
@@ -83,7 +89,9 @@ def pos_checkout(request):
             return JsonResponse({"error": "Cart is empty"}, status=400)
 
         # Walk-in customer
-        customer, _ = Customer.objects.get_or_create(name="Walk-in Customer")
+        customer, _ = Customer.objects.get_or_create(
+            name="Walk-in Customer"
+        )
 
         order = Order.objects.create(
             order_id=str(uuid.uuid4())[:8],
@@ -102,13 +110,16 @@ def pos_checkout(request):
             qty = int(item["qty"])
 
             if product.stock < qty:
-                return JsonResponse({
-                    "error": f"Insufficient stock for {product.name}"
-                }, status=400)
+                return JsonResponse(
+                    {"error": f"Insufficient stock for {product.name}"},
+                    status=400
+                )
 
             OrderItem.objects.create(
                 order=order,
                 product=product,
+                product_name=product.name,
+                woo_product_id=product.woo_id,
                 quantity=qty,
                 price=product.price
             )
@@ -125,11 +136,27 @@ def pos_checkout(request):
         return JsonResponse({
             "success": True,
             "order_id": order.order_id,
-            "total": total
+            "total": float(order.total),
+            "payment_method": payment_method,
+            "items": [
+                {
+                    "name": item.product.name if item.product else item.product_name,
+                    "qty": item.quantity,
+                    "price": float(item.price),
+                    "total": float(item.total)
+                }
+                for item in order.items.all()
+            ]
         })
 
     except Product.DoesNotExist:
-        return JsonResponse({"error": "Product not found"}, status=404)
+        return JsonResponse(
+            {"error": "Product not found"},
+            status=404
+        )
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse(
+            {"error": str(e)},
+            status=500
+        )
