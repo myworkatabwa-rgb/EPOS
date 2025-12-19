@@ -1,9 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from django.db.models import Sum
-from django.utils.timezone import now
+from django.db.models import Sum, Q
 
-from ..models import Order, Return, Customer
+from ..models import Order, Customer
 
 
 @login_required
@@ -11,49 +10,34 @@ def financial_dashboard(request):
     # =========================
     # INCOME & EXPENSE
     # =========================
-    total_income = (
+    total_income = Order.objects.filter(status="completed").aggregate(total=Sum("total"))["total"] or 0
+    total_expense = 0  # Placeholder for expense vouchers later
+
+    # =========================
+    # ACCOUNTS RECEIVABLE (from pending orders)
+    # =========================
+    accounts_receivable = (
         Order.objects
-        .filter(status="completed")
+        .filter(status="pending")
         .aggregate(total=Sum("total"))["total"] or 0
     )
 
-    total_expense = 0  # will come from expense vouchers later
-
-    # =========================
-    # ACCOUNTS RECEIVABLE
-    # =========================
-    accounts_receivable = (
-        Customer.objects
-        .filter(balance__gt=0)
-        .aggregate(total=Sum("balance"))["total"] or 0
-    )
-
-    accounts_payable = 0  # suppliers later
+    accounts_payable = 0  # Placeholder for supplier payments
 
     # =========================
     # PURCHASE
     # =========================
-    total_purchase = 0  # purchase orders later
+    total_purchase = 0  # Placeholder for purchase orders
 
     # =========================
     # CASH & BANK
     # =========================
-    cash_sale = (
-        Order.objects
-        .filter(payment_method="cash")
-        .aggregate(total=Sum("total"))["total"] or 0
-    )
-
-    bank_sale = (
-        Order.objects
-        .filter(payment_method__in=["card", "bank"])
-        .aggregate(total=Sum("total"))["total"] or 0
-    )
-
+    cash_sale = Order.objects.filter(payment_method="cash", status="completed").aggregate(total=Sum("total"))["total"] or 0
+    bank_sale = Order.objects.filter(payment_method__in=["card", "bank"], status="completed").aggregate(total=Sum("total"))["total"] or 0
     cash_bank_balance = cash_sale + bank_sale
 
     # =========================
-    # ACCOUNT SUMMARY (STATIC FOR NOW, LIVE LATER)
+    # ACCOUNT SUMMARY
     # =========================
     assets = [
         {"name": "Cash In Hand", "amount": cash_sale},
