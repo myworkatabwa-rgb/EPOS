@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 
 from ZH_pos.woocommerce_webhook import woocommerce_webhook
 from ZH_pos.views import pos_view
+from .views.financial_dashboard import financial_dashboard
 
 urlpatterns = [
     path("admin/", admin.site.urls),
