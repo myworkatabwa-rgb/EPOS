@@ -6,10 +6,13 @@ from .views.items import list_items, add_item
 from .views.inventory import inventory
 from .views.accounts import vouchers
 from .views.settings import settings_home, users
+from .views.financial_dashboard import financial_dashboard
+
 
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("finance/", financial_dashboard, name="financial_dashboard"),
     path("pos/", views.pos_view, name="pos"),
     path("pos/checkout/", views.pos_checkout, name="pos_checkout"),
     path("returns/<str:order_id>/", views.process_return, name="process_return"),
