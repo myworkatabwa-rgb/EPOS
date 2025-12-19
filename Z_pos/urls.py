@@ -20,6 +20,7 @@ urlpatterns = [
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("finance/", financial_dashboard, name="financial_dashboard"),
 
     # POS
     path("pos/", pos_view, name="pos"),
