@@ -6,7 +6,6 @@ from django.contrib.auth import views as auth_views
 
 from ZH_pos.woocommerce_webhook import woocommerce_webhook
 from ZH_pos.views import pos_view
-from .views.financial_dashboard import financial_dashboard
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -21,7 +20,6 @@ urlpatterns = [
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-    path("finance/", financial_dashboard, name="financial_dashboard"),
 
     # POS
     path("pos/", pos_view, name="pos"),
