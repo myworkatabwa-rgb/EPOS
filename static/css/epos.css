@@ -1,19 +1,4 @@
 /* =========================
-   RESET BOOTSTRAP SIDEBAR LEAKS
-========================= */
-.sidebar ul,
-.sidebar li {
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.sidebar a {
-    text-decoration: none !important;
-    color: inherit;
-}
-
-/* =========================
    GLOBAL
 ========================= */
 * {
@@ -23,39 +8,55 @@
 body {
     margin: 0;
     background: #f5f7fa;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: "Segoe UI", sans-serif;
 }
 
 /* =========================
-   SIDEBAR (ICON ONLY)
+   SIDEBAR (REFERENCE STYLE)
 ========================= */
 .sidebar {
-    width: 60px;
+    width: 96px; /* wider like reference */
     height: 100vh;
-    background: #0f9d58;
     position: fixed;
     left: 0;
     top: 0;
+    background: linear-gradient(180deg, #0f9d58, #0b7d45);
+    display: flex;
+    flex-direction: column;
     z-index: 1000;
 }
 
+/* REMOVE BOOTSTRAP LIST STYLES */
+.sidebar ul,
+.sidebar li {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* MENU STACK */
 .menu {
-    height: 100%;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
+/* EACH MENU ITEM */
 .menu > li {
     position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.12); /* separators */
 }
 
+/* ICON BLOCK */
 .menu > li > a {
-    height: 56px;
+    height: 78px;                 /* taller rows */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    color: #fff !important;
+    color: #ffffff;
+    font-size: 28px;              /* bigger icons */
+    text-decoration: none;
+    transition: background 0.2s ease;
 }
 
 .menu > li > a:hover {
@@ -63,25 +64,27 @@ body {
 }
 
 /* =========================
-   SUBMENU (FLOAT ON HOVER)
+   SUBMENU (FLOAT PANEL)
 ========================= */
 .submenu {
     position: absolute;
     top: 0;
-    left: 60px;
-    min-width: 220px;
+    left: 96px;
+    min-width: 240px;
     background: #ffffff;
-    padding: 6px 0;
+    padding: 10px 0;
     display: none;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
     z-index: 2000;
 }
 
+/* SUBMENU LINKS */
 .submenu li a {
     display: block;
-    padding: 10px 16px;
-    font-size: 14px;
-    color: #333 !important;
+    padding: 12px 20px;
+    font-size: 15px;
+    color: #333;
+    text-decoration: none;
     white-space: nowrap;
 }
 
@@ -98,16 +101,20 @@ body {
    TOPBAR
 ========================= */
 .topbar {
-    height: 60px;
-    background: #fff;
+    height: 64px;
+    background: #ffffff;
     border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    font-weight: 600;
 }
 
 /* =========================
    MAIN CONTENT OFFSET
 ========================= */
 .flex-grow-1 {
-    margin-left: 60px;
+    margin-left: 96px;
 }
 
 /* =========================
@@ -115,8 +122,8 @@ body {
 ========================= */
 .card {
     border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.06);
 }
 
 /* =========================
@@ -125,14 +132,14 @@ body {
 .product-card {
     height: 90px;
     border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    background: #fff;
+    border-radius: 12px;
+    background: #ffffff;
     transition: 0.2s;
 }
 
 .product-card:hover {
     background: #0f9d58;
-    color: #fff;
+    color: #ffffff;
 }
 
 .product-card .price {
@@ -141,7 +148,7 @@ body {
 }
 
 .product-card:hover .price {
-    color: #fff;
+    color: #ffffff;
 }
 
 /* =========================
