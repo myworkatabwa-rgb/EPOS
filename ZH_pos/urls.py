@@ -1,7 +1,7 @@
 from django.urls import path
 from ZH_pos import views
 from .views.sale import sell, sale_history, ecommerce_orders
-from .views.transactions import sale_returns, sale_return_history
+from .views.transaction import sale_returns, sale_return_history
 from .views.items import list_items, add_item
 from .views.inventory import inventory
 from .views.accounts import vouchers
