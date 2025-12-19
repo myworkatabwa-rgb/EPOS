@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h4 class="mb-4">Financial Dashboard</h4>
+
+<div class="row g-3">
+
+    <!-- TOTAL INCOME -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <small>Total Income</small>
+                <h4 class="text-success">PKR {{ total_income|floatformat:0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOTAL EXPENSE -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <small>Total Expense</small>
+                <h4 class="text-danger">PKR {{ total_expense|floatformat:0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCOUNTS RECEIVABLE -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <small>Accounts Receivable</small>
+                <h4 class="text-warning">PKR {{ accounts_receivable|floatformat:0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCOUNTS PAYABLE -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <small>Accounts Payable</small>
+                <h4>PKR {{ accounts_payable|floatformat:0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOTAL PURCHASE -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <small>Total Purchase</small>
+                <h4>PKR {{ total_purchase|floatformat:0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- CASH & BANK -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <small>Cash & Bank Balance</small>
+                <h4 class="text-success">PKR {{ cash_bank_balance|floatformat:0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<hr class="my-4">
+
+<h5>Account Summary</h5>
+
+<div class="row">
+    {% for asset in assets %}
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <strong>{{ asset.name }}</strong>
+                <p class="mb-1">{{ asset.amount|floatformat:0 }} (DR)</p>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
