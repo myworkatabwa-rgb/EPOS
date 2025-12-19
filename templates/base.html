@@ -1,85 +1,95 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>ZH EPOS</title>
+    <title>ZH-EPOS</title>
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/epos.css' %}">
 </head>
 <body>
 
 <div class="d-flex">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="logo text-center py-3">
-            <span class="fw-bold text-success">ZH</span>EPOS
-        </div>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <ul class="menu">
 
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a href="/" class="nav-link active">
-                    <i class="bi bi-speedometer2"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/pos/" class="nav-link">
-                    <i class="bi bi-cart"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-receipt"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-people"></i>
-                </a>
-            </li>
-            <li class="nav-item mt-auto">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-gear"></i>
-                </a>
-            </li>
-        </ul>
-    </aside>
+        <li>
+            <a href="/" title="Dashboard">
+                <i class="bi bi-speedometer2"></i>
+            </a>
+        </li>
 
-    <!-- MAIN CONTENT -->
-    <div class="main flex-grow-1">
+        <li class="has-sub">
+            <a href="javascript:void(0)">
+                <i class="bi bi-cart"></i>
+            </a>
+            <ul class="submenu">
+                <li><a href="/sales/">Sales</a></li>
+                <li><a href="/sales/history/">Sale History</a></li>
+                <li><a href="/sales/ecommerce/">Ecommerce Orders</a></li>
+            </ul>
+        </li>
 
-        <!-- TOP BAR -->
-        <header class="topbar d-flex justify-content-between align-items-center px-4">
-            <div>
-                <strong>Orh WEAR PRIVATE LTD</strong>
-                <span class="badge bg-success ms-2">Main Branch</span>
-            </div>
+        <li class="has-sub">
+            <a href="javascript:void(0)">
+                <i class="bi bi-arrow-repeat"></i>
+            </a>
+            <ul class="submenu">
+                <li><a href="/returns/">Sale Return</a></li>
+                <li><a href="/returns/history/">Sale Return History</a></li>
+            </ul>
+        </li>
 
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-bell"></i>
-                <div class="user">
-                    Abdullah
-                </div>
-            </div>
-        </header>
+        <li class="has-sub">
+            <a href="javascript:void(0)">
+                <i class="bi bi-box"></i>
+            </a>
+            <ul class="submenu">
+                <li><a href="/items/">List Items</a></li>
+                <li><a href="/items/add/">Add Item</a></li>
+            </ul>
+        </li>
 
-        <!-- PAGE CONTENT -->
-        <main class="content p-4">
-            {% block content %}
-            {% endblock %}
-        </main>
+        <li>
+            <a href="/inventory/">
+                <i class="bi bi-clipboard-data"></i>
+            </a>
+        </li>
 
-    </div>
+        <li>
+            <a href="/accounts/vouchers/">
+                <i class="bi bi-wallet2"></i>
+            </a>
+        </li>
+
+        <li class="has-sub mt-auto">
+            <a href="javascript:void(0)">
+                <i class="bi bi-gear"></i>
+            </a>
+            <ul class="submenu">
+                <li><a href="/settings/">Setup</a></li>
+                <li><a href="/settings/users/">Users</a></li>
+            </ul>
+        </li>
+
+    </ul>
+</aside>
+
+<!-- MAIN -->
+<div class="flex-grow-1">
+    <header class="topbar p-3 border-bottom">
+        <strong>ZHEPOS</strong>
+    </header>
+
+    <main class="p-4">
+        {% block content %}{% endblock %}
+    </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</div>
+
 </body>
 </html>
