@@ -1,95 +1,148 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>ZH-EPOS</title>
-        <link rel="icon" href="{% static 'media/favicon.ico' %}" type="image/x-icon">
+    <link rel="icon" href="{% static 'media/favicon.ico' %}" type="image/x-icon">
 
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- App CSS -->
     <link rel="stylesheet" href="{% static 'css/epos.css' %}">
 </head>
 <body>
 
 <div class="d-flex">
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-    <ul class="menu">
+    <!-- =======================
+         SIDEBAR
+    ======================== -->
+    <aside class="sidebar">
+        <ul class="menu">
 
-        <li>
-            <a href="/" title="Dashboard">
-                <i class="bi bi-speedometer2"></i>
-            </a>
-        </li>
+            <li>
+                <a href="/" title="Dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                </a>
+            </li>
 
-        <li class="has-sub">
-            <a href="javascript:void(0)">
-                <i class="bi bi-cart"></i>
-            </a>
-            <ul class="submenu">
-                <li><a href="/sales/">Sales</a></li>
-                <li><a href="/sales/history/">Sale History</a></li>
-                <li><a href="/sales/ecommerce/">Ecommerce Orders</a></li>
-            </ul>
-        </li>
+            <li class="has-sub">
+                <a href="javascript:void(0)">
+                    <i class="bi bi-cart"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a href="/sales/">Sales</a></li>
+                    <li><a href="/sales/history/">Sale History</a></li>
+                    <li><a href="/sales/ecommerce/">Ecommerce Orders</a></li>
+                </ul>
+            </li>
 
-        <li class="has-sub">
-            <a href="javascript:void(0)">
-                <i class="bi bi-arrow-repeat"></i>
-            </a>
-            <ul class="submenu">
-                <li><a href="/returns/">Sale Return</a></li>
-                <li><a href="/returns/history/">Sale Return History</a></li>
-            </ul>
-        </li>
+            <li class="has-sub">
+                <a href="javascript:void(0)">
+                    <i class="bi bi-arrow-repeat"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a href="/returns/">Sale Return</a></li>
+                    <li><a href="/returns/history/">Sale Return History</a></li>
+                </ul>
+            </li>
 
-        <li class="has-sub">
-            <a href="javascript:void(0)">
-                <i class="bi bi-box"></i>
-            </a>
-            <ul class="submenu">
-                <li><a href="/items/">List Items</a></li>
-                <li><a href="/items/add/">Add Item</a></li>
-            </ul>
-        </li>
+            <li class="has-sub">
+                <a href="javascript:void(0)">
+                    <i class="bi bi-box"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a href="/items/">List Items</a></li>
+                    <li><a href="/items/add/">Add Item</a></li>
+                </ul>
+            </li>
 
-        <li>
-            <a href="/inventory/">
-                <i class="bi bi-clipboard-data"></i>
-            </a>
-        </li>
+            <li>
+                <a href="/inventory/">
+                    <i class="bi bi-clipboard-data"></i>
+                </a>
+            </li>
 
-        <li>
-            <a href="/accounts/vouchers/">
-                <i class="bi bi-wallet2"></i>
-            </a>
-        </li>
+            <li>
+                <a href="/accounts/vouchers/">
+                    <i class="bi bi-wallet2"></i>
+                </a>
+            </li>
 
-        <li class="has-sub mt-auto">
-            <a href="javascript:void(0)">
-                <i class="bi bi-gear"></i>
-            </a>
-            <ul class="submenu">
-                <li><a href="/settings/">Setup</a></li>
-                <li><a href="/settings/users/">Users</a></li>
-            </ul>
-        </li>
+            <li class="has-sub mt-auto">
+                <a href="javascript:void(0)">
+                    <i class="bi bi-gear"></i>
+                </a>
+                <ul class="submenu">
+                    <li><a href="/settings/">Setup</a></li>
+                    <li><a href="/settings/users/">Users</a></li>
+                </ul>
+            </li>
 
-    </ul>
-</aside>
+        </ul>
+    </aside>
 
-<!-- MAIN -->
-<div class="flex-grow-1">
-    <header class="topbar p-3 border-bottom">
-        <strong>ZHEPOS</strong>
-    </header>
+    <!-- =======================
+         MAIN AREA
+    ======================== -->
+    <div class="flex-grow-1">
 
-    <main class="p-4">
-        {% block content %}{% endblock %}
-    </main>
-</div>
+        <!-- ===== LIVE EPOS HEADER ===== -->
+        <header class="topbar d-flex align-items-center justify-content-between px-4">
 
+            <!-- LEFT -->
+            <div class="d-flex align-items-center gap-3">
+                <img src="{% static 'media/logo.png' %}" alt="Logo" height="32">
+                <span class="text-uppercase text-muted fw-semibold">
+                    CISEPOS - ORH WEAR PRIVATE LTD
+                </span>
+            </div>
+
+            <!-- CENTER -->
+            <div class="d-flex align-items-center gap-3">
+                <span class="fw-semibold text-muted">BRANCH</span>
+                <select class="form-select form-select-sm" style="width: 150px;">
+                    <option>Main Branch</option>
+                    <option>Warehouse</option>
+                </select>
+
+                <a href="#" class="btn btn-sm btn-primary">
+                    <i class="bi bi-headset"></i> Support
+                </a>
+
+                <a href="#" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-link-45deg"></i>
+                </a>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="d-flex align-items-center gap-4">
+
+                <a href="#" class="btn btn-sm btn-danger position-relative">
+                    What's New
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                        11
+                    </span>
+                </a>
+
+                <i class="bi bi-bell fs-5"></i>
+
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-circle fs-4"></i>
+                    <span class="fw-semibold">Abdullah</span>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- ===== PAGE CONTENT ===== -->
+        <main class="p-4">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
 </div>
 
 </body>
