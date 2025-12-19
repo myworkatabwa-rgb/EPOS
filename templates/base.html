@@ -96,19 +96,26 @@
             <div class="d-flex align-items-center gap-3">
                 <img src="{% static 'media/logo-1.jpeg' %}" alt="Logo" height="32">
                 <span class="text-uppercase text-muted fw-semibold">
-                    ZHePOS - ORH WEAR PRIVATE LTD
+                    ZHEPOS - ORH WEAR PRIVATE LTD
                 </span>
             </div>
 
             <!-- CENTER -->
             <div class="d-flex align-items-center gap-3">
                 <span class="fw-semibold text-muted">BRANCH</span>
-                <select class="form-select form-select-sm" style="width: 150px;">
-                    <option>Main Branch</option>
-                    <option>Warehouse</option>
+
+                <!-- BRANCH SELECT -->
+                <select class="form-select form-select-sm"
+                        style="width: 160px;"
+                        onchange="handleBranchChange(this.value)">
+                    <option value="">Main Branch</option>
+                    <option value="warehouse">Warehouse</option>
                 </select>
 
-                <a href="https://wa.me/923136330101" class="btn btn-sm btn-primary">
+                <!-- SUPPORT -->
+                <a href="https://wa.me/923136330101"
+                   target="_blank"
+                   class="btn btn-sm btn-primary">
                     <i class="bi bi-headset"></i> Support
                 </a>
 
@@ -129,10 +136,14 @@
 
                 <i class="bi bi-bell fs-5"></i>
 
+                <!-- LIVE USER -->
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-person-circle fs-4"></i>
-                    <span class="fw-semibold">Abdullah</span>
+                    <span class="fw-semibold">
+                        {{ request.user.username }}
+                    </span>
                 </div>
+
             </div>
 
         </header>
@@ -144,6 +155,20 @@
 
     </div>
 </div>
+
+<!-- =======================
+     JS
+======================== -->
+<script>
+function handleBranchChange(value) {
+    if (value === "warehouse") {
+        window.open(
+            "https://epos-production-c366.up.railway.app/admin",
+            "_blank"
+        );
+    }
+}
+</script>
 
 </body>
 </html>
