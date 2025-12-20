@@ -15,7 +15,7 @@ body {
    SIDEBAR (REFERENCE STYLE)
 ========================= */
 .sidebar {
-    width: 96px; /* wider like reference */
+    width: 96px;
     height: 100vh;
     position: fixed;
     left: 0;
@@ -26,7 +26,7 @@ body {
     z-index: 1000;
 }
 
-/* REMOVE BOOTSTRAP LIST STYLES */
+/* REMOVE LIST STYLES */
 .sidebar ul,
 .sidebar li {
     list-style: none;
@@ -34,7 +34,9 @@ body {
     margin: 0;
 }
 
-/* MENU STACK */
+/* =========================
+   MENU STACK
+========================= */
 .menu {
     display: flex;
     flex-direction: column;
@@ -44,17 +46,17 @@ body {
 /* EACH MENU ITEM */
 .menu > li {
     position: relative;
-    border-bottom: 1px solid rgba(255,255,255,0.12); /* separators */
+    border-bottom: 1px solid rgba(255,255,255,0.12);
 }
 
 /* ICON BLOCK */
 .menu > li > a {
-    height: 78px;                 /* taller rows */
+    height: 78px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
-    font-size: 28px;              /* bigger icons */
+    font-size: 28px;
     text-decoration: none;
     transition: background 0.2s ease;
 }
@@ -64,37 +66,51 @@ body {
 }
 
 /* =========================
-   SUBMENU (FLOAT PANEL)
+   SUBMENU (2 PORTIONS – FINAL)
 ========================= */
 .submenu {
     position: absolute;
     top: 0;
     left: 96px;
-    min-width: 240px;
+    min-width: 360px;
     background: #ffffff;
-    padding: 10px 0;
+    padding: 12px;
     display: none;
     box-shadow: 0 10px 24px rgba(0,0,0,0.18);
     z-index: 2000;
+
+    /* TWO COLUMN LAYOUT */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+}
+
+/* SUBMENU LIST RESET */
+.submenu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 /* SUBMENU LINKS */
 .submenu li a {
     display: block;
-    padding: 12px 20px;
-    font-size: 15px;
+    padding: 10px 14px;
+    font-size: 14px;
     color: #333;
     text-decoration: none;
+    border-radius: 6px;
     white-space: nowrap;
 }
 
+/* SUBMENU HOVER */
 .submenu li a:hover {
     background: #f2f2f2;
 }
 
 /* SHOW SUBMENU */
 .has-sub:hover .submenu {
-    display: block;
+    display: grid;
 }
 
 /* =========================
