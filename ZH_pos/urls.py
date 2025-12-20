@@ -19,6 +19,7 @@ urlpatterns = [
     path("sales/", sell),
     path("sales/history/", sale_history),
     path("sales/ecommerce/", ecommerce_orders),
+    path("sales/advanced/", advanced_booking),
 
     # TRANSACTIONS
     path("returns/", sale_returns),
