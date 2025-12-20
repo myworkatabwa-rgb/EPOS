@@ -1,6 +1,6 @@
 from django.urls import path
 from ZH_pos import views
-from .views.sale import sell, sale_history, ecommerce_orders
+from .views.sale import sell, sale_history, ecommerce_orders, advance_booking
 from .views.transaction import sale_returns, sale_return_history
 from .views.items import list_items, add_item
 from .views.inventory import inventory
@@ -19,7 +19,7 @@ urlpatterns = [
     path("sales/", sell),
     path("sales/history/", sale_history),
     path("sales/ecommerce/", ecommerce_orders),
-    path("sales/advanced/", advanced_booking),
+    path("sales/advance/", advance_booking),
 
     # TRANSACTIONS
     path("returns/", sale_returns),
