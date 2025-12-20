@@ -49,7 +49,7 @@
               </button>
             <td>
           {% if perms.ZH_pos.delete_order %}
-          <form action="{% url 'delete_order' sale.order_id %}" method="post" style="display:inline;">
+          <form action="{% url 'delete_sale' sale.order_id %}" method="post" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-danger"
                     onclick="return confirm('Are you sure you want to delete this sale?');">
