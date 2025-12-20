@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from ZH_pos import order
+from ZH.pos import order
 
 @login_required
 def sell(request):
