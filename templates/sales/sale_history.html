@@ -47,11 +47,15 @@
                       onclick="loadReceipt('{{ sale.order_id }}')">
                 <i class="bi bi-file-text"></i> Detail
               </button>
-            </td>
             <td>{{ sale.order_id }}</td>
             <td>
-              <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</button>
+              {% if perms.ZH_pos.delete_order %}
+              <button class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+              {% endif %}
             </td>
+
           </tr>
           {% empty %}
           <tr>
