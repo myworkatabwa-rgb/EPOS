@@ -53,10 +53,16 @@
             <td>{{ sale.payment_method|title }}</td>
 
             <td>
-              <a href="#" class="btn btn-sm btn-primary">
-                <i class="bi bi-file-text"></i> Detail
-              </a>
-            </td>
+              <button
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#receiptModal"
+                  onclick="loadReceipt('{{ sale.order_id }}')"
+              >
+                  <i class="bi bi-file-text"></i> Detail
+              </button>
+          </td>
 
             <td>{{ sale.order_id }}</td>
 
