@@ -54,15 +54,15 @@
 
             <td>
               <button
-                  type="button"
-                  class="btn btn-sm btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#receiptModal"
-                  onclick="loadReceipt('{{ sale.order_id }}')"
+                type="button"
+                class="btn btn-sm btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#receiptModal"
+                onclick="loadReceipt('{{ sale.order_id }}')"
               >
-                  <i class="bi bi-file-text"></i> Detail
+                <i class="bi bi-file-text"></i> Detail
               </button>
-          </td>
+            </td>
 
             <td>{{ sale.order_id }}</td>
 
@@ -85,4 +85,27 @@
 
   </div>
 </div>
+
+<!-- =======================
+     RECEIPT MODAL
+======================== -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content p-3" id="receipt-content">
+
+      <div class="text-center mb-2">
+        <img src="{% static 'img/logo.png' %}" height="60" alt="Logo">
+        <p class="small mb-0">Contact : 0339-3777786</p>
+        <hr>
+        <strong>Sales Receipt</strong>
+      </div>
+
+      <div id="receipt-body" class="small text-start">
+        Loading...
+      </div>
+
+    </div>
+  </div>
+</div>
+
 {% endblock %}
