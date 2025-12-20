@@ -55,7 +55,22 @@ from .views.accounts import (
     credit_customers,
 )
 # SETTINGS
-from .views.settings import settings_home, users
+from .views.settings import (
+    settings_home,
+    users,
+    roles,
+    branches,
+    cisepos_payment_invoices,
+    channels,
+    banks,
+    counters,
+    shifts,
+    taxes,
+    ip_restrictions,
+    billing,
+    sms_setup,
+    ecommerce_setup,
+)
 
 # FINANCE
 from .views.financial_dashboard import financial_dashboard
@@ -127,7 +142,19 @@ urlpatterns = [
     path("accounts/voucher-types/", voucher_types, name="voucher_types"),
     path("accounts/credit-customers/", credit_customers, name="credit_customers"),
 
-    # SETTINGS
-    path("settings/", settings_home),
-    path("settings/users/", users),
+    path("settings/", settings_home, name="settings_home"),
+    path("settings/users/", users, name="users"),
+    path("settings/roles/", roles, name="roles"),
+    path("settings/branches/", branches, name="branches"),
+    path("settings/cisepos-payment-invoices/", cisepos_payment_invoices, name="cisepos_payment_invoices"),
+    path("settings/channels/", channels, name="channels"),
+    path("settings/banks/", banks, name="banks"),
+    path("settings/counters/", counters, name="counters"),
+    path("settings/shifts/", shifts, name="shifts"),
+    path("settings/taxes/", taxes, name="taxes"),
+    path("settings/ip-restrictions/", ip_restrictions, name="ip_restrictions"),
+    path("settings/billing/", billing, name="billing"),
+    path("settings/sms-setup/", sms_setup, name="sms_setup"),
+    path("settings/ecommerce-setup/", ecommerce_setup, name="ecommerce_setup"),
+
 ]
