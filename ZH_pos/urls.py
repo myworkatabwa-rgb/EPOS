@@ -91,6 +91,7 @@ urlpatterns = [
     # SALES
     path("sales/", sell),
     path("sales/history/", sale_history),
+    path("sales/receipt/<str:order_id>/", sale_receipt),
     path("sales/ecommerce/", ecommerce_orders),
     path("sales/advance/", advance_booking),
 
