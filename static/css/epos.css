@@ -66,32 +66,32 @@ body {
 }
 
 /* =========================
-   SUBMENU (HIDDEN BY DEFAULT)
+   SUBMENU (DEFAULT: 1 COLUMN)
 ========================= */
 .submenu {
     position: absolute;
     top: 0;
     left: 96px;
-    min-width: 360px;
+    min-width: 240px;
     background: #ffffff;
     padding: 12px;
-    display: none;               /* ✅ hidden initially */
+    display: none;
     box-shadow: 0 10px 24px rgba(0,0,0,0.18);
     z-index: 2000;
 
-    /* layout only */
-    grid-template-columns: 1fr 1fr;
-    column-gap: 14px;
+    display: grid;
+    grid-template-columns: 1fr; /* ✅ single column by default */
+    row-gap: 4px;
 }
 
-/* SUBMENU LIST RESET */
+/* RESET */
 .submenu ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-/* SUBMENU LINKS */
+/* LINKS */
 .submenu li a {
     display: block;
     padding: 10px 14px;
@@ -107,10 +107,26 @@ body {
 }
 
 /* =========================
-   SHOW ONLY ON HOVER
+   AUTO SPLIT (ONLY IF MANY ITEMS)
+   Triggered when 6th item exists
+========================= */
+.submenu li:nth-child(6) ~ li,
+.submenu li:nth-child(6) {
+    grid-column: 2;
+}
+
+/* Make room for 2nd column only when needed */
+.submenu:has(li:nth-child(6)) {
+    grid-template-columns: 1fr 1fr;
+    min-width: 360px;
+    column-gap: 14px;
+}
+
+/* =========================
+   SHOW ON HOVER ONLY
 ========================= */
 .has-sub:hover > .submenu {
-    display: grid;              /* ✅ opens only hovered menu */
+    display: grid;
 }
 
 /* =========================
