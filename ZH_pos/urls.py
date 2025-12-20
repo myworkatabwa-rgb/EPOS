@@ -43,7 +43,7 @@ urlpatterns = [
     path('price-checker/', views.price_checker, name='price_checker'),
     path('courier/', views.courier, name='courier'),
     path('sales-target/', views.sales_target, name='sales_target'),
-]
+
 
     # INVENTORY
     path("inventory/", inventory),
