@@ -29,8 +29,19 @@ from .views.items import (
 )
 
 # INVENTORY
-from .views.inventory import inventory
-
+from .views.inventory import (
+    inventory,
+    physical_stock,
+    stock_audit_form,
+    item_conversion,
+    demand_sheet,
+    purchase_order,
+    goods_receive_note,
+    goods_receive_return_note,
+    item_recipe,
+    transfer_out,
+    transfer_in,
+)
 # ACCOUNTS
 from .views.accounts import vouchers
 
@@ -82,8 +93,19 @@ urlpatterns = [
     path("items/courier/", courier, name="courier"),
     path("items/sales-target/", sales_target, name="sales_target"),
 
-    # INVENTORY
-    path("inventory/", inventory),
+    
+   # INVENTORY
+    path("inventory/", inventory, name="inventory"),
+    path("inventory/physical-stock/", physical_stock, name="physical_stock"),
+    path("inventory/stock-audit-form/", stock_audit_form, name="stock_audit_form"),
+    path("inventory/item-conversion/", item_conversion, name="item_conversion"),
+    path("inventory/demand-sheet/", demand_sheet, name="demand_sheet"),
+    path("inventory/purchase-order/", purchase_order, name="purchase_order"),
+    path("inventory/goods-receive-note/", goods_receive_note, name="goods_receive_note"),
+    path("inventory/goods-receive-return-note/", goods_receive_return_note, name="goods_receive_return_note"),
+    path("inventory/item-recipe/", item_recipe, name="item_recipe"),
+    path("inventory/transfer-out/", transfer_out, name="transfer_out"),
+    path("inventory/transfer-in/", transfer_in, name="transfer_in"),
 
     # ACCOUNTS
     path("accounts/vouchers/", vouchers),
