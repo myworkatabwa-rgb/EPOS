@@ -43,8 +43,17 @@ from .views.inventory import (
     transfer_in,
 )
 # ACCOUNTS
-from .views.accounts import vouchers
-
+from .views.accounts import (
+    vouchers,
+    cash_payment_voucher,
+    cash_received_voucher,
+    bank_payment_voucher,
+    bank_received_voucher,
+    accounts_home,
+    chart_of_accounts,
+    voucher_types,
+    credit_customers,
+)
 # SETTINGS
 from .views.settings import settings_home, users
 
@@ -108,7 +117,15 @@ urlpatterns = [
     path("inventory/transfer-in/", transfer_in, name="transfer_in"),
 
     # ACCOUNTS
-    path("accounts/vouchers/", vouchers),
+    path("accounts/vouchers/", vouchers, name="vouchers"),
+    path("accounts/cash-payment-voucher/", cash_payment_voucher, name="cash_payment_voucher"),
+    path("accounts/cash-received-voucher/", cash_received_voucher, name="cash_received_voucher"),
+    path("accounts/bank-payment-voucher/", bank_payment_voucher, name="bank_payment_voucher"),
+    path("accounts/bank-received-voucher/", bank_received_voucher, name="bank_received_voucher"),
+    path("accounts/", accounts_home, name="accounts_home"),
+    path("accounts/chart-of-accounts/", chart_of_accounts, name="chart_of_accounts"),
+    path("accounts/voucher-types/", voucher_types, name="voucher_types"),
+    path("accounts/credit-customers/", credit_customers, name="credit_customers"),
 
     # SETTINGS
     path("settings/", settings_home),
