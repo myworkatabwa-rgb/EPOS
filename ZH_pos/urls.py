@@ -2,10 +2,10 @@ from django.urls import path
 from ZH_pos import views
 
 # SALES
-from .views.sale import sell, sale_history, ecommerce_orders, advance_booking
+from .views.sale import sell, sale_history, ecommerce_orders, advance_booking, , sale_receipt
 
 # TRANSACTIONS
-from .views.transaction import sale_returns, sale_return_history, sale_receipt
+from .views.transaction import sale_returns, sale_return_history
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
 from .views.items import (
