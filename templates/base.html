@@ -5,7 +5,7 @@
     <title>ZH-EPOS</title>
     <link rel="icon" href="{% static 'media/favicon.ico' %}" type="image/x-icon">
 
-    <!-- Bootstrap -->
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -16,73 +16,45 @@
 
 <div class="d-flex">
 
-    <!-- =======================
-         SIDEBAR
-    ======================== -->
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <ul class="menu">
-
+            <!-- Dashboard -->
             <li class="has-sub">
-    <a href="javascript:void(0)" title="Dashboard">
-        <i class="bi bi-speedometer2"></i>
-    </a>
-    <ul class="submenu">
-        <li><a href="/">Dashboard</a></li>
-        <li><a href="/finance/financial_dashboard/">Financial Dashboard</a></li>
-    </ul>
-</li>
-
-
-
-            <li class="has-sub">
-    <a href="#" role="button">
-        <i class="bi bi-cart"></i>
-    </a>
-
-    <ul class="submenu">
-        <li>
-            <a href="/sales/">Sales</a>
-        </li>
-
-        <li>
-            <a href="/sales/history/">
-                <i class="bi bi-receipt"></i> Sales History
-            </a>
-        </li>
-
-        <li>
-            <a href="/sales/ecommerce/">Ecommerce Orders</a>
-        </li>
-
-        <li>
-            <a href="/sales/advance/">Advanced Booking</a>
-        </li>
-
-        <li>
-            <a href="/sales/packing_sl/">Packing Slip</a>
-        </li>
-
-        <li>
-            <a href="/sales/packing_his/">Packing History</a>
-        </li>
-    </ul>
-</li>
-
-
-            <li class="has-sub">
-                <a href="javascript:void(0)">
-                    <i class="bi bi-arrow-repeat"></i>
+                <a href="javascript:void(0)" title="Dashboard">
+                    <i class="bi bi-speedometer2"></i>
                 </a>
+                <ul class="submenu">
+                    <li><a href="/">Dashboard</a></li>
+                    <li><a href="/finance/financial_dashboard/">Financial Dashboard</a></li>
+                </ul>
+            </li>
+
+            <!-- Sales -->
+            <li class="has-sub">
+                <a href="#" role="button"><i class="bi bi-cart"></i></a>
+                <ul class="submenu">
+                    <li><a href="/sales/">Sales</a></li>
+                    <li><a href="/sales/history/"><i class="bi bi-receipt"></i> Sales History</a></li>
+                    <li><a href="/sales/ecommerce/">Ecommerce Orders</a></li>
+                    <li><a href="/sales/advance/">Advanced Booking</a></li>
+                    <li><a href="/sales/packing_sl/">Packing Slip</a></li>
+                    <li><a href="/sales/packing_his/">Packing History</a></li>
+                </ul>
+            </li>
+
+            <!-- Returns -->
+            <li class="has-sub">
+                <a href="javascript:void(0)"><i class="bi bi-arrow-repeat"></i></a>
                 <ul class="submenu">
                     <li><a href="/returns/">Sale Return</a></li>
                     <li><a href="/returns/history/">Sale Return History</a></li>
                 </ul>
             </li>
 
+            <!-- Items -->
             <li class="has-sub">
-                <a href="javascript:void(0)">
-                    <i class="bi bi-box"></i>
-                </a>
+                <a href="javascript:void(0)"><i class="bi bi-box"></i></a>
                 <ul class="submenu">
                     <li><a href="/items/">List Items</a></li>
                     <li><a href="/items/add/">Add Item</a></li>
@@ -101,142 +73,108 @@
                     <li><a href="/items/price-checker/">Price Checker</a></li>
                     <li><a href="/items/courier/">Courier</a></li>
                     <li><a href="/items/sales-target/">Sales Target</a></li>
-
                 </ul>
             </li>
 
-                    <li class="has-sub">
-            <a href="javascript:void(0)" title="Inventory">
-                <i class="bi bi-clipboard-data"></i>
-            </a>
-            <ul class="submenu">
-                <li><a href="/inventory/">Inventory</a></li>
-                <li><a href="/inventory/physical-stock/">Physical Stock</a></li>
-                <li><a href="/inventory/stock-audit-form/">Stock Audit Form</a></li>
-                <li><a href="/inventory/item-conversion/">Item Conversion</a></li>
-                <li><a href="/inventory/demand-sheet/">Demand Sheet</a></li>
-                <li><a href="/inventory/purchase-order/">Purchase Order</a></li>
-                <li><a href="/inventory/goods-receive-note/">Goods Receive Note</a></li>
-                <li><a href="/inventory/goods-receive-return-note/">Goods Receive Return Note</a></li>
-                <li><a href="/inventory/item-recipe/">Item Recipe</a></li>
-                <li><a href="/inventory/transfer-out/">Transfer Out</a></li>
-                <li><a href="/inventory/transfer-in/">Transfer In</a></li>
-            </ul>
-        </li>
-
-
+            <!-- Inventory -->
             <li class="has-sub">
-    <a href="javascript:void(0)" title="Accounts">
-        <i class="bi bi-wallet2"></i>
-    </a>
-    <ul class="submenu">
-        <li><a href="/accounts/vouchers/">Vouchers</a></li>
-        <li><a href="/accounts/cash-payment-voucher/">Cash Payment Voucher</a></li>
-        <li><a href="/accounts/cash-received-voucher/">Cash Received Voucher</a></li>
-        <li><a href="/accounts/bank-payment-voucher/">Bank Payment Voucher</a></li>
-        <li><a href="/accounts/bank-received-voucher/">Bank Received Voucher</a></li>
-        <li><a href="/accounts/">Accounts</a></li>
-        <li><a href="/accounts/chart-of-accounts/">Chart Of Accounts</a></li>
-        <li><a href="/accounts/voucher-types/">Voucher Types</a></li>
-        <li><a href="/accounts/credit-customers/">Credit Customers</a></li>
-    </ul>
-</li>
+                <a href="javascript:void(0)" title="Inventory"><i class="bi bi-clipboard-data"></i></a>
+                <ul class="submenu">
+                    <li><a href="/inventory/">Inventory</a></li>
+                    <li><a href="/inventory/physical-stock/">Physical Stock</a></li>
+                    <li><a href="/inventory/stock-audit-form/">Stock Audit Form</a></li>
+                    <li><a href="/inventory/item-conversion/">Item Conversion</a></li>
+                    <li><a href="/inventory/demand-sheet/">Demand Sheet</a></li>
+                    <li><a href="/inventory/purchase-order/">Purchase Order</a></li>
+                    <li><a href="/inventory/goods-receive-note/">Goods Receive Note</a></li>
+                    <li><a href="/inventory/goods-receive-return-note/">Goods Receive Return Note</a></li>
+                    <li><a href="/inventory/item-recipe/">Item Recipe</a></li>
+                    <li><a href="/inventory/transfer-out/">Transfer Out</a></li>
+                    <li><a href="/inventory/transfer-in/">Transfer In</a></li>
+                </ul>
+            </li>
 
+            <!-- Accounts -->
             <li class="has-sub">
-    <a href="javascript:void(0)" title="Settings">
-        <i class="bi bi-gear"></i>
-    </a>
-    <ul class="submenu">
-        <li><a href="/settings/">Setup</a></li>
-        <li><a href="/settings/users/">Users</a></li>
-        <li><a href="/settings/roles/">Roles</a></li>
-        <li><a href="/settings/branches/">Branches</a></li>
-        <li><a href="/settings/cisepos-payment-invoices/">Cisepos Payment Invoices</a></li>
-        <li><a href="/settings/channels/">Channels</a></li>
-        <li><a href="/settings/banks/">Banks</a></li>
-        <li><a href="/settings/counters/">Counters</a></li>
-        <li><a href="/settings/shifts/">Shifts</a></li>
-        <li><a href="/settings/taxes/">Taxes</a></li>
-        <li><a href="/settings/ip-restrictions/">IP Restrictions</a></li>
-        <li><a href="/settings/billing/">Billing</a></li>
-        <li><a href="/settings/sms-setup/">SMS Setup</a></li>
-        <li><a href="/settings/ecommerce-setup/">Ecommerce Setup</a></li>
-    </ul>
-</li>
+                <a href="javascript:void(0)" title="Accounts"><i class="bi bi-wallet2"></i></a>
+                <ul class="submenu">
+                    <li><a href="/accounts/vouchers/">Vouchers</a></li>
+                    <li><a href="/accounts/cash-payment-voucher/">Cash Payment Voucher</a></li>
+                    <li><a href="/accounts/cash-received-voucher/">Cash Received Voucher</a></li>
+                    <li><a href="/accounts/bank-payment-voucher/">Bank Payment Voucher</a></li>
+                    <li><a href="/accounts/bank-received-voucher/">Bank Received Voucher</a></li>
+                    <li><a href="/accounts/">Accounts</a></li>
+                    <li><a href="/accounts/chart-of-accounts/">Chart Of Accounts</a></li>
+                    <li><a href="/accounts/voucher-types/">Voucher Types</a></li>
+                    <li><a href="/accounts/credit-customers/">Credit Customers</a></li>
+                </ul>
+            </li>
 
+            <!-- Settings -->
+            <li class="has-sub">
+                <a href="javascript:void(0)" title="Settings"><i class="bi bi-gear"></i></a>
+                <ul class="submenu">
+                    <li><a href="/settings/">Setup</a></li>
+                    <li><a href="/settings/users/">Users</a></li>
+                    <li><a href="/settings/roles/">Roles</a></li>
+                    <li><a href="/settings/branches/">Branches</a></li>
+                    <li><a href="/settings/cisepos-payment-invoices/">Cisepos Payment Invoices</a></li>
+                    <li><a href="/settings/channels/">Channels</a></li>
+                    <li><a href="/settings/banks/">Banks</a></li>
+                    <li><a href="/settings/counters/">Counters</a></li>
+                    <li><a href="/settings/shifts/">Shifts</a></li>
+                    <li><a href="/settings/taxes/">Taxes</a></li>
+                    <li><a href="/settings/ip-restrictions/">IP Restrictions</a></li>
+                    <li><a href="/settings/billing/">Billing</a></li>
+                    <li><a href="/settings/sms-setup/">SMS Setup</a></li>
+                    <li><a href="/settings/ecommerce-setup/">Ecommerce Setup</a></li>
+                </ul>
+            </li>
 
         </ul>
     </aside>
 
-    <!-- =======================
-         MAIN AREA
-    ======================== -->
+    <!-- MAIN AREA -->
     <div class="flex-grow-1">
 
-        <!-- ===== LIVE EPOS HEADER ===== -->
+        <!-- TOPBAR HEADER -->
         <header class="topbar d-flex align-items-center justify-content-between px-4">
-
             <!-- LEFT -->
             <div class="d-flex align-items-center gap-3">
-                    <a href="https://epos-production-c366.up.railway.app/">
-                <img src="{% static 'media/logo-1.jpeg' %}" alt="Logo" height="32">
-            </a>
-
-
-                <span class="text-uppercase text-muted fw-semibold">
-                    ZHEPOS - ORH WEAR PRIVATE LTD
-                </span>
+                <a href="https://epos-production-c366.up.railway.app/">
+                    <img src="{% static 'media/logo-1.jpeg' %}" alt="Logo" height="32">
+                </a>
+                <span class="text-uppercase text-muted fw-semibold">ZHEPOS - ORH WEAR PRIVATE LTD</span>
             </div>
 
             <!-- CENTER -->
             <div class="d-flex align-items-center gap-3">
                 <span class="fw-semibold text-muted">BRANCH</span>
-
-                <!-- BRANCH SELECT -->
-                <select class="form-select form-select-sm"
-                        style="width: 160px;"
-                        onchange="handleBranchChange(this.value)">
+                <select class="form-select form-select-sm" style="width: 160px;" onchange="handleBranchChange(this.value)">
                     <option value="">Main Branch</option>
                     <option value="warehouse">Warehouse</option>
                 </select>
-
-                <!-- SUPPORT -->
-                <a href="https://wa.me/923136330101"
-                   target="_blank"
-                   class="btn btn-sm btn-primary">
+                <a href="https://wa.me/923136330101" target="_blank" class="btn btn-sm btn-primary">
                     <i class="bi bi-headset"></i> Support
                 </a>
-
-                <a href="#" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-link-45deg"></i>
-                </a>
+                <a href="#" class="btn btn-sm btn-outline-secondary"><i class="bi bi-link-45deg"></i></a>
             </div>
 
             <!-- RIGHT -->
             <div class="d-flex align-items-center gap-4">
-
                 <a href="#" class="btn btn-sm btn-danger position-relative">
                     What's New
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                        11
-                    </span>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">11</span>
                 </a>
-
                 <i class="bi bi-bell fs-5"></i>
-
-                <!-- LIVE USER -->
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-person-circle fs-4"></i>
-                    <span class="fw-semibold">
-                        {{ request.user.username }}
-                    </span>
+                    <span class="fw-semibold">{{ request.user.username }}</span>
                 </div>
-
             </div>
-
         </header>
 
-        <!-- ===== PAGE CONTENT ===== -->
+        <!-- MAIN CONTENT -->
         <main class="p-4">
             {% block content %}{% endblock %}
         </main>
@@ -244,16 +182,13 @@
     </div>
 </div>
 
-<!-- =======================
-     JS
-======================== -->
+<!-- BOOTSTRAP JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 function handleBranchChange(value) {
     if (value === "warehouse") {
-        window.open(
-            "https://epos-production-c366.up.railway.app/admin",
-            "_blank"
-        );
+        window.open("https://epos-production-c366.up.railway.app/admin", "_blank");
     }
 }
 </script>
