@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import permission_required
+
 
 from ZH_pos.models import Order
 
@@ -48,6 +50,11 @@ def sale_receipt(request, order_id):
         ],
         "total": float(order.total),
     })
+
+@permission_required("ZH_pos.delete_order", raise_exception=True)
+def delete_sale(request, order_id):
+    Order.objects.filter(order_id=order_id).delete()
+    return redirect("/sales/history/")
 
 
 @login_required(login_url="/login/")
