@@ -28,6 +28,22 @@ urlpatterns = [
     # ITEMS
     path("items/", list_items),
     path("items/add/", add_item),
+    path('modifiers/', views.item_modifiers, name='item_modifiers'),
+    path('suppliers/', views.suppliers, name='suppliers'),
+    path('brands/', views.brands, name='brands'),
+    path('search/', views.search_item, name='search_item'),
+    path('print-barcodes/', views.print_multiple_barcodes, name='print_multiple_barcodes'),
+    path('discount/', views.discount, name='discount'),
+    path('colors/', views.colors, name='colors'),
+    path('sizes/', views.sizes, name='sizes'),
+    path('units/', views.units, name='units'),
+    path('promotions/', views.promotions, name='promotions'),
+    path('price-list/', views.price_list, name='price_list'),
+    path('bulk-update/', views.bulk_update, name='bulk_update'),
+    path('price-checker/', views.price_checker, name='price_checker'),
+    path('courier/', views.courier, name='courier'),
+    path('sales-target/', views.sales_target, name='sales_target'),
+]
 
     # INVENTORY
     path("inventory/", inventory),
