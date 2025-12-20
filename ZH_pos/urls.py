@@ -5,7 +5,7 @@ from ZH_pos import views
 from .views.sale import sell, sale_history, ecommerce_orders, advance_booking
 
 # TRANSACTIONS
-from .views.transaction import sale_returns, sale_return_history
+from .views.transaction import sale_returns, sale_return_history, sale_receipt
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
 from .views.items import (
