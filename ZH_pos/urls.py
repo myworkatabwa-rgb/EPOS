@@ -92,7 +92,7 @@ urlpatterns = [
     path("sales/", sell),
     path("sales/history/", sale_history),
     path("sales/receipt/<str:order_id>/", sale_receipt),
-    path('sales/delete/<str:order_id>/', views.delete_sale, name='delete_sale'),
+    path('sales/delete/<str:order_id>/', delete_sale),
     path("sales/ecommerce/", ecommerce_orders),
     path("sales/advance/", advance_booking),
 
