@@ -59,7 +59,17 @@ def delete_sale(request, order_id):
 
 @login_required(login_url="/login/")
 def ecommerce_orders(request):
-    return render(request, "sales/ecommerce_orders.html")
+    orders = (
+        Order.objects
+        .filter(order_type="online")   # OR source="woocommerce"
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "sales/ecommerce_orders.html",
+        {"orders": orders}
+    )
 
 
 @login_required(login_url="/login/")
