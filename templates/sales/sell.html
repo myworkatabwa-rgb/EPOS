@@ -124,11 +124,13 @@
             <select class="form-control">
               <option>Select Bank</option>
               <option>HABIBMETRO Bank</option>
-              <option>Allied banck</option>
+              <option>Allied Bank</option>
               <option>MCB</option>
             </select>
             <label class="mt-2">Card Number</label>
             <input type="text" class="form-control" placeholder="XXXX-XXXX-XXXX-XXXX">
+            <label class="mt-2">Cash Received in Account</label>
+            <input type="number" class="form-control" placeholder="Cash received for safety">
           </div>
 
           <!-- PARTY -->
@@ -161,8 +163,26 @@
   </div>
 </div>
 
-<script src="{% static 'js/pos.js' %}"></script>
+<!-- RECEIPT MODAL -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content p-3">
+      <div class="text-center mb-2">
+        <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+        <p class="small mb-0">Contact : 0313-6330101</p>
+        <hr>
+        <strong>Sales Receipt</strong>
+      </div>
+      <div id="receipt-body" class="small text-start">Loading...</div>
+      <div class="d-flex justify-content-between mt-2">
+        <button class="btn btn-secondary w-50" id="receiptOkBtn">OK (Esc)</button>
+        <button class="btn btn-success w-50" id="receiptPrintBtn">🖨 Print (F9)</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<script src="{% static 'js/pos.js' %}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -203,16 +223,50 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // CONFIRM PAYMENT
-  document.getElementById("confirmPayBtn")?.addEventListener("click", () => confirmPayment(false));
-  document.getElementById("confirmPrintBtn")?.addEventListener("click", () => confirmPayment(true));
+  function handlePayment(print=false){
+    if(Object.keys(cart).length === 0){ alert("Cart is empty!"); return; }
+
+    confirmPayment(print).then(data=>{
+      bootstrap.Modal.getInstance(document.getElementById("paymentModal"))?.hide();
+
+      // Show receipt modal
+      const receiptBody = document.getElementById("receipt-body");
+      let html = "";
+      data.items.forEach(item=>{
+        html += `<div>${item.name} x ${item.qty} - PKR ${item.price * item.qty}</div>`;
+      });
+      html += `<hr><strong>Total: PKR ${data.total}</strong>`;
+      receiptBody.innerHTML = html;
+
+      new bootstrap.Modal(document.getElementById("receiptModal")).show();
+    });
+  }
+
+  document.getElementById("confirmPayBtn")?.addEventListener("click", ()=>handlePayment(false));
+  document.getElementById("confirmPrintBtn")?.addEventListener("click", ()=>handlePayment(true));
+
+  // RECEIPT MODAL BUTTONS
+  document.getElementById("receiptOkBtn")?.addEventListener("click", ()=>{
+    bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
+  });
+  document.getElementById("receiptPrintBtn")?.addEventListener("click", ()=>{
+    window.print();
+  });
 
   // SHORTCUT KEYS
   document.addEventListener("keydown", function(e){
-    if(e.key === "F7"){ e.preventDefault(); document.getElementById("payBtn")?.click(); }
-    if(e.key === "F9"){ e.preventDefault(); document.getElementById("confirmPrintBtn")?.click(); }
-    if(e.key === "Escape"){
-      const modal = bootstrap.Modal.getInstance(document.getElementById("paymentModal"));
-      if(modal) modal.hide();
+    if(e.key==="F7"){ e.preventDefault(); document.getElementById("payBtn")?.click(); }
+    if(e.key==="F9"){ 
+      e.preventDefault();
+      const receiptModal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
+      if(receiptModal) document.getElementById("receiptPrintBtn")?.click();
+      else document.getElementById("confirmPrintBtn")?.click();
+    }
+    if(e.key==="Escape"){
+      const paymentModal = bootstrap.Modal.getInstance(document.getElementById("paymentModal"));
+      if(paymentModal) paymentModal.hide();
+      const receiptModal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
+      if(receiptModal) receiptModal.hide();
     }
   });
 
