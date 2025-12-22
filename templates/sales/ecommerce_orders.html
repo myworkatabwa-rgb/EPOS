@@ -4,9 +4,15 @@
 
 <h4 class="mb-3 text-success">E-Commerce Orders</h4>
 
-<!-- EXPORT BUTTONS -->
-<div id="export-buttons" class="mb-2"></div>
+<!-- EXPORT BUTTONS ABOVE SEARCH -->
+<div class="mb-3 text-end" id="export-buttons"></div>
 
+<!-- SEARCH INPUT -->
+<div class="mb-3 text-end">
+  <input type="text" class="form-control w-25 d-inline" placeholder="Search" id="table-search">
+</div>
+
+<!-- E-COMMERCE ORDERS TABLE -->
 <table id="ecommerceTable" class="display table table-bordered w-100">
   <thead>
     <tr>
@@ -21,7 +27,6 @@
       <th>Detail</th>
     </tr>
   </thead>
-
   <tbody>
     {% for order in orders %}
     <tr>
@@ -32,19 +37,16 @@
       <td>{{ order.subtotal }}</td>
       <td>PKRs {{ order.total }}</td>
       <td>Online Store</td>
-
       <td>
         <span class="badge 
           {% if order.status == 'pending' %}bg-info
           {% elif order.status == 'processing' %}bg-warning
           {% elif order.status == 'completed' %}bg-success
           {% elif order.status == 'cancelled' %}bg-danger
-          {% else %}bg-secondary{% endif %}
-        ">
+          {% else %}bg-secondary{% endif %}">
           {{ order.status|title }}
         </span>
       </td>
-
       <td>
         <button
           class="btn btn-sm btn-primary"
@@ -75,6 +77,7 @@
 </div>
 <!-- ================================================= -->
 
+<!-- ================= DATATABLES & EXPORT BUTTONS ================= -->
 <script>
 $(document).ready(function () {
   const table = $('#ecommerceTable').DataTable({
@@ -94,8 +97,13 @@ $(document).ready(function () {
     ]
   });
 
-  // Move buttons above search
+  // Move DataTables buttons to custom div above search
   table.buttons().container().appendTo('#export-buttons');
+
+  // Hook custom search input
+  $('#table-search').on('keyup', function() {
+    table.search(this.value).draw();
+  });
 });
 </script>
 
