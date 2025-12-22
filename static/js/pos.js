@@ -24,11 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmPrintBtn = document.getElementById("confirmPrintBtn");
 
     if (confirmPayBtn) {
-        confirmPayBtn.addEventListener("click", () => confirmPayment(false));
+        confirmPayBtn.addEventListener("click", () => handlePayment(false));
     }
 
     if (confirmPrintBtn) {
-        confirmPrintBtn.addEventListener("click", () => confirmPayment(true));
+        confirmPrintBtn.addEventListener("click", () => handlePayment(true));
     }
 
     // PAYMENT MODE SWITCH
@@ -47,6 +47,42 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cashInput) {
         cashInput.addEventListener("input", calculateReturn);
     }
+
+    // RECEIPT MODAL BUTTONS
+    document.getElementById("receiptOkBtn")?.addEventListener("click", () => {
+        bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
+    });
+    document.getElementById("receiptPrintBtn")?.addEventListener("click", () => {
+        window.print();
+    });
+
+    // SHORTCUT KEYS
+    document.addEventListener("keydown", function(e){
+        if(e.key === "F7"){ e.preventDefault(); payBtn?.click(); }
+        if(e.key === "F9"){ 
+            e.preventDefault();
+            const receiptModal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
+            if(receiptModal) document.getElementById("receiptPrintBtn")?.click();
+            else confirmPrintBtn?.click();
+        }
+        if(e.key === "Escape"){
+            const paymentModal = bootstrap.Modal.getInstance(document.getElementById("paymentModal"));
+            if(paymentModal) paymentModal.hide();
+            const receiptModal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
+            if(receiptModal) receiptModal.hide();
+        }
+    });
+
+    // ADD TO CART
+    document.querySelectorAll(".add-to-cart").forEach(btn => {
+        btn.addEventListener("click", () => {
+            addToCart(btn.dataset.id, btn.dataset.name, btn.dataset.price);
+        });
+    });
+
+    // CLEAR CART
+    document.getElementById("clearCartBtn")?.addEventListener("click", clearCart);
+
 });
 
 // =======================
@@ -114,9 +150,7 @@ function openPaymentModal() {
     document.getElementById("cashTendered").value = totalAmount;
     calculateReturn();
 
-    new bootstrap.Modal(
-        document.getElementById("paymentModal")
-    ).show();
+    new bootstrap.Modal(document.getElementById("paymentModal")).show();
 }
 
 // =======================
@@ -131,13 +165,22 @@ function switchPaymentMode(btn) {
     btn.classList.remove("btn-secondary");
     btn.classList.add("btn-primary", "active");
     selectedPaymentMode = btn.dataset.mode;
+
+    // Show relevant input
+    document.querySelectorAll(".cash-mode, .card-mode, .party-mode, .split-mode")
+        .forEach(el => el.classList.add("d-none"));
+
+    if (selectedPaymentMode === "cash") document.querySelector(".cash-mode")?.classList.remove("d-none");
+    if (selectedPaymentMode === "card") document.querySelector(".card-mode")?.classList.remove("d-none");
+    if (selectedPaymentMode === "party") document.querySelector(".party-mode")?.classList.remove("d-none");
+    if (selectedPaymentMode === "split") document.querySelector(".split-mode")?.classList.remove("d-none");
 }
 
 // =======================
 // CALCULATE RETURN CASH
 // =======================
 function calculateReturn() {
-    const cash = Number(document.getElementById("cashTendered").value || 0);
+    const cash = Number(document.getElementById("cashTendered")?.value || 0);
     const change = cash - totalAmount;
 
     document.getElementById("returnCash").innerText =
@@ -148,7 +191,12 @@ function calculateReturn() {
 // CONFIRM PAYMENT → BACKEND
 // =======================
 function confirmPayment(print = false) {
-    fetch("/pos/checkout/", {
+    if(Object.keys(cart).length === 0){
+        alert("Cart is empty!");
+        return Promise.reject("Cart empty");
+    }
+
+    return fetch("/pos/checkout/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -159,23 +207,43 @@ function confirmPayment(print = false) {
             discount,
             payment_mode: selectedPaymentMode,
             total: totalAmount,
-            print
+            print,
+            cash_received: selectedPaymentMode === "card" 
+                            ? Number(document.querySelector(".card-mode input[type='number']")?.value || 0)
+                            : undefined
         })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
             clearCart();
-            alert("Payment Successful!");
-
-            bootstrap.Modal.getInstance(
-                document.getElementById("paymentModal")
-            ).hide();
+            return data; // Return data for receipt modal
         } else {
             alert(data.error || "Payment failed");
+            return Promise.reject(data.error || "Payment failed");
         }
     })
-    .catch(() => alert("Server error!"));
+    .catch(err => {
+        alert(err || "Server error!");
+        return Promise.reject(err);
+    });
+}
+
+// =======================
+// HANDLE PAYMENT & SHOW RECEIPT
+// =======================
+function handlePayment(print=false){
+    confirmPayment(print).then(data=>{
+        const receiptBody = document.getElementById("receipt-body");
+        let html = "";
+        data.items.forEach(item=>{
+            html += `<div>${item.name} x ${item.qty} - PKR ${(item.price * item.qty).toFixed(2)}</div>`;
+        });
+        html += `<hr><strong>Total: PKR ${data.total.toFixed(2)}</strong>`;
+        receiptBody.innerHTML = html;
+
+        new bootstrap.Modal(document.getElementById("receiptModal")).show();
+    }).catch(()=>{ /* payment failed or cart empty */ });
 }
 
 // =======================
