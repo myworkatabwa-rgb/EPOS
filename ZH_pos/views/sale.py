@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
-from ZH_Pos.models import products
+from ZH_Pos.models import Product
 
 
 from ZH_pos.models import Order
@@ -10,7 +10,15 @@ from ZH_pos.models import Order
 
 @login_required(login_url="/login/")
 def sell(request):
-    return render(request, "sales/sell.html")
+    products = (
+        Product.objects
+        .filter(source="woocommerce", is_active=True)
+        .order_by("name")
+    )
+
+    return render(request, "sales/sell.html", {
+        "products": products
+    })
 
 
 @login_required(login_url="/login/")
