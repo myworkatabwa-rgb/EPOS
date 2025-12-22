@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 
 <h4 class="mb-3 text-success">E-Commerce Orders</h4>
@@ -29,7 +30,7 @@
       <td>PKRs {{ order.total }}</td>
       <td>Online Store</td>
 
-      <!-- STATUS FROM WOO -->
+      <!-- STATUS -->
       <td>
         <span class="badge 
           {% if order.status == 'pending' %}bg-info
@@ -57,7 +58,23 @@
   </tbody>
 </table>
 
-{% include "sales/receipt_modal.html" %}
+<!-- ================= RECEIPT MODAL (INLINE) ================= -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content p-3">
+      <div class="text-center mb-2">
+        <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+        <p class="small mb-0">Contact : 0313-6330101</p>
+        <hr>
+        <strong>Sales Receipt</strong>
+      </div>
+      <div id="receipt-body" class="small text-start">
+        Loading...
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ========================================================== -->
 
 <script>
 $(document).ready(function () {
@@ -77,6 +94,40 @@ $(document).ready(function () {
     ]
   });
 });
+</script>
+
+<!-- ================= RECEIPT FETCH ================= -->
+<script>
+function loadReceipt(orderId) {
+  fetch(`/sales/receipt/${orderId}/`)
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to load receipt');
+      return res.json();
+    })
+    .then(data => {
+      let html = `
+        <p><strong>Bill No:</strong> ${data.bill}</p>
+        <p><strong>Date:</strong> ${data.date}</p>
+        <p><strong>Payment:</strong> ${data.payment}</p>
+        <p><strong>Customer:</strong> ${data.customer}</p>
+        <hr>
+        <table class="table table-sm">
+          ${data.items.map(i => `
+            <tr>
+              <td>${i.name} x ${i.qty}</td>
+              <td class="text-end">${i.amount}</td>
+            </tr>
+          `).join("")}
+        </table>
+        <hr>
+        <h6 class="text-center">Total : ${data.total}</h6>
+      `;
+      document.getElementById("receipt-body").innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById("receipt-body").innerHTML = "Failed to load receipt.";
+    });
+}
 </script>
 
 {% endblock %}
