@@ -61,7 +61,7 @@ def delete_sale(request, order_id):
 def ecommerce_orders(request):
     orders = (
         Order.objects
-        .filter(order_type="online")   # OR source="woocommerce"
+        .filter(order_type="woocommerce")   # OR source="woocommerce"
         .order_by("-created_at")
     )
 
