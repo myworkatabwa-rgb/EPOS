@@ -92,21 +92,18 @@
 
 <!-- ================= PAYMENT MODAL ================= -->
 <div class="modal fade" id="paymentModal" tabindex="-1">
-  <div class="modal-dialog modal-sm modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg"> <!-- increased width with modal-lg -->
     <div class="modal-content">
 
-      <!-- HEADER -->
       <div class="modal-header justify-content-center">
         <h5 class="modal-title">Select Payment Mode</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <!-- TOTAL -->
       <div class="bg-info text-white text-center p-2 fw-bold">
         Total Payment : PKRs <span id="payTotal">0</span>
       </div>
 
-      <!-- BODY -->
       <div class="modal-body">
         <!-- PAYMENT MODES -->
         <div class="d-flex justify-content-between mb-3">
@@ -116,10 +113,37 @@
           <button class="btn btn-secondary payment-btn" data-mode="split">🔀 Split</button>
         </div>
 
-        <!-- CASH INPUT -->
-        <div class="mb-2">
-          <label>Cash Tendered</label>
-          <input type="number" id="cashTendered" class="form-control">
+        <div id="paymentDetails">
+          <!-- CASH INPUT -->
+          <div class="cash-mode mb-2">
+            <label>Cash Tendered</label>
+            <input type="number" id="cashTendered" class="form-control">
+          </div>
+
+          <!-- CARD INPUT -->
+          <div class="card-mode mb-2 d-none">
+            <label>Bank</label>
+            <select class="form-control">
+              <option>Select Bank</option>
+              <option>Bank A</option>
+              <option>Bank B</option>
+              <option>Bank C</option>
+            </select>
+            <label class="mt-2">Card Number</label>
+            <input type="text" class="form-control" placeholder="XXXX-XXXX-XXXX-XXXX">
+          </div>
+
+          <!-- PARTY INPUT -->
+          <div class="party-mode mb-2 d-none">
+            <label>Party Remarks</label>
+            <textarea class="form-control" placeholder="Enter courier/party info"></textarea>
+          </div>
+
+          <!-- SPLIT PAYMENT -->
+          <div class="split-mode mb-2 d-none">
+            <label>Split Payment</label>
+            <p class="text-muted">You can split payment across multiple modes. (Placeholder)</p>
+          </div>
         </div>
 
         <!-- RETURN -->
@@ -128,14 +152,8 @@
           <div id="returnCash" class="fs-4">0</div>
         </div>
 
-        <!-- REMARKS -->
-        <div class="mt-2">
-          <label>Remarks</label>
-          <textarea id="paymentRemarks" class="form-control"></textarea>
-        </div>
       </div>
 
-      <!-- FOOTER -->
       <div class="modal-footer d-flex justify-content-between">
         <button class="btn btn-success" id="confirmPayBtn">💰 Pay (F7)</button>
         <button class="btn btn-success" id="confirmPrintBtn">🖨 Pay & Print (F9)</button>
@@ -145,41 +163,48 @@
   </div>
 </div>
 
-<!-- ================= POS JS ================= -->
 <script src="{% static 'js/pos.js' %}"></script>
 
-<!-- ================= SHORTCUT KEYS ================= -->
 <script>
-document.addEventListener("keydown", function (e) {
-  if (e.key === "F7") {
-    e.preventDefault();
-    document.getElementById("payBtn")?.click();
-  }
-  if (e.key === "F9") {
-    e.preventDefault();
-    document.getElementById("confirmPrintBtn")?.click();
-  }
-  if (e.key === "Escape") {
-    const modal = bootstrap.Modal.getInstance(
-      document.getElementById("paymentModal")
-    );
-    if (modal) modal.hide();
-  }
-});
-
-// ================= ADD TO CART BUTTON BINDING =================
 document.addEventListener("DOMContentLoaded", () => {
+
+  // ================= ADD TO CART =================
   document.querySelectorAll(".add-to-cart").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      const name = btn.dataset.name;
-      const price = btn.dataset.price;
-      addToCart(id, name, price);
+      addToCart(btn.dataset.id, btn.dataset.name, btn.dataset.price);
     });
   });
 
-  // CLEAR CART BUTTON
+  // ================= CLEAR CART =================
   document.getElementById("clearCartBtn")?.addEventListener("click", clearCart);
+
+  // ================= PAYMENT MODE SWITCH =================
+  const paymentButtons = document.querySelectorAll(".payment-btn");
+  paymentButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      paymentButtons.forEach(b => b.classList.remove("btn-primary"));
+      paymentButtons.forEach(b => b.classList.add("btn-secondary"));
+      btn.classList.add("btn-primary");
+
+      const mode = btn.dataset.mode;
+      document.querySelectorAll(".cash-mode, .card-mode, .party-mode, .split-mode").forEach(el => el.classList.add("d-none"));
+      if (mode === "cash") document.querySelector(".cash-mode").classList.remove("d-none");
+      if (mode === "card") document.querySelector(".card-mode").classList.remove("d-none");
+      if (mode === "party") document.querySelector(".party-mode").classList.remove("d-none");
+      if (mode === "split") document.querySelector(".split-mode").classList.remove("d-none");
+    });
+  });
+
+  // ================= SHORTCUT KEYS =================
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "F7") { e.preventDefault(); document.getElementById("payBtn")?.click(); }
+    if (e.key === "F9") { e.preventDefault(); document.getElementById("confirmPrintBtn")?.click(); }
+    if (e.key === "Escape") {
+      const modal = bootstrap.Modal.getInstance(document.getElementById("paymentModal"));
+      if (modal) modal.hide();
+    }
+  });
+
 });
 </script>
 
