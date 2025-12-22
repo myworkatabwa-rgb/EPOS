@@ -1,13 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <p>
-        Hi here you can view the sales history of all time yet 
-    </p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+
+<h4 class="mb-3 text-success">E-Commerce Orders</h4>
+
+<table id="ecommerceTable" class="display table table-bordered w-100">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Order Number</th>
+      <th>Order By</th>
+      <th>Customer</th>
+      <th>Sale Total</th>
+      <th>Net Amount</th>
+      <th>Order Type</th>
+      <th>Status</th>
+      <th>Detail</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for order in orders %}
+    <tr>
+      <td>{{ order.created_at|date:"Y-m-d H:i:s" }}</td>
+      <td>{{ order.order_id }}</td>
+      <td>{{ order.created_by.username|default:"admin" }}</td>
+      <td>{{ order.customer.name|default:"Guest" }}</td>
+      <td>{{ order.subtotal }}</td>
+      <td>PKRs {{ order.total }}</td>
+      <td>Online Store</td>
+
+      <!-- STATUS FROM WOO -->
+      <td>
+        <span class="badge 
+          {% if order.status == 'pending' %}bg-info
+          {% elif order.status == 'processing' %}bg-warning
+          {% elif order.status == 'completed' %}bg-success
+          {% elif order.status == 'cancelled' %}bg-danger
+          {% else %}bg-secondary{% endif %}
+        ">
+          {{ order.status|title }}
+        </span>
+      </td>
+
+      <!-- DETAIL -->
+      <td>
+        <button
+          class="btn btn-sm btn-primary"
+          onclick="loadReceipt('{{ order.order_id }}')"
+          data-bs-toggle="modal"
+          data-bs-target="#receiptModal">
+          Detail
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include "sales/receipt_modal.html" %}
+
+<script>
+$(document).ready(function () {
+  $('#ecommerceTable').DataTable({
+    pageLength: 10,
+    lengthMenu: [10, 100, 200, 500],
+    dom: 'Bflrtip',
+    buttons: [
+      { extend: 'excelHtml5', title: 'Ecommerce_Orders' },
+      { extend: 'csvHtml5', title: 'Ecommerce_Orders' },
+      {
+        extend: 'pdfHtml5',
+        title: 'Ecommerce Orders',
+        orientation: 'portrait',
+        pageSize: 'A4'
+      }
+    ]
+  });
+});
+</script>
+
+{% endblock %}
