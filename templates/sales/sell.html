@@ -175,64 +175,7 @@
     </div>
   </div>
 </div>
-<script>
-let selectedPaymentMode = "cash";
-let totalAmount = 0;
-let printAfterPay = false;
 
-function openPaymentModal(print=false) {
-  printAfterPay = print;
-  totalAmount = parseFloat(document.getElementById("total-payment").innerText);
-  document.getElementById("payTotal").innerText = totalAmount.toFixed(2);
-  document.getElementById("cashTendered").value = totalAmount;
-  calculateReturn();
-
-  new bootstrap.Modal(document.getElementById("paymentModal")).show();
-}
-
-// Payment mode switch
-document.querySelectorAll(".payment-btn").forEach(btn => {
-  btn.addEventListener("click", function () {
-    document.querySelectorAll(".payment-btn").forEach(b => {
-      b.classList.remove("btn-primary", "active");
-      b.classList.add("btn-secondary");
-    });
-    this.classList.remove("btn-secondary");
-    this.classList.add("btn-primary", "active");
-    selectedPaymentMode = this.dataset.mode;
-  });
-});
-
-// Calculate return
-function calculateReturn() {
-  let cash = parseFloat(document.getElementById("cashTendered").value || 0);
-  let returnCash = cash - totalAmount;
-  document.getElementById("returnCash").innerText = returnCash > 0 ? returnCash.toFixed(2) : 0;
-}
-
-// Confirm payment
-function confirmPayment(print) {
-  const payload = {
-    payment_mode: selectedPaymentMode,
-    total: totalAmount,
-    cash_tendered: document.getElementById("cashTendered").value,
-    remarks: document.getElementById("paymentRemarks").value,
-    print: print
-  };
-
-  console.log("PAYMENT DATA:", payload);
-
-  // Next step: AJAX submit to backend
-  alert("Payment Successful!");
-
-  if (print) {
-    // trigger receipt print
-    console.log("Printing receipt...");
-  }
-
-  bootstrap.Modal.getInstance(document.getElementById("paymentModal")).hide();
-}
-</script>
 
 
 <script src="{% static 'js/pos.js' %}"></script>
