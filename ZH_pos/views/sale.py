@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
-from ZH_Pos.models import Product
+from ZH_pos.models import Product
 
 
 from ZH_pos.models import Order
