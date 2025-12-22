@@ -2,14 +2,18 @@
 {% load static %}
 {% block content %}
 
-<h4 class="mb-3 text-success">E-Commerce Orders</h4>
+<!-- HEADER ROW WITH TITLE, BUTTONS, AND SEARCH -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h4 class="text-success mb-0">E-Commerce Orders</h4>
 
-<!-- EXPORT BUTTONS ABOVE SEARCH -->
-<div class="mb-3 text-end" id="export-buttons"></div>
+  <div class="d-flex align-items-center gap-2">
 
-<!-- SEARCH INPUT -->
-<div class="mb-3 text-end">
-  <input type="text" class="form-control w-25 d-inline" placeholder="Search" id="table-search">
+    <!-- EXPORT BUTTONS -->
+    <div id="export-buttons" class="me-2"></div>
+
+    <!-- SEARCH BAR -->
+    <input type="text" id="table-search" class="form-control form-control-sm" placeholder="Search">
+  </div>
 </div>
 
 <!-- E-COMMERCE ORDERS TABLE -->
@@ -97,10 +101,10 @@ $(document).ready(function () {
     ]
   });
 
-  // Move DataTables buttons to custom div above search
+  // Move DataTables buttons into the custom export-buttons div
   table.buttons().container().appendTo('#export-buttons');
 
-  // Hook custom search input
+  // Hook existing search bar
   $('#table-search').on('keyup', function() {
     table.search(this.value).draw();
   });
