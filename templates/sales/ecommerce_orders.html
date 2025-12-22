@@ -4,6 +4,9 @@
 
 <h4 class="mb-3 text-success">E-Commerce Orders</h4>
 
+<!-- EXPORT BUTTONS -->
+<div id="export-buttons" class="mb-2"></div>
+
 <table id="ecommerceTable" class="display table table-bordered w-100">
   <thead>
     <tr>
@@ -30,7 +33,6 @@
       <td>PKRs {{ order.total }}</td>
       <td>Online Store</td>
 
-      <!-- STATUS -->
       <td>
         <span class="badge 
           {% if order.status == 'pending' %}bg-info
@@ -43,7 +45,6 @@
         </span>
       </td>
 
-      <!-- DETAIL -->
       <td>
         <button
           class="btn btn-sm btn-primary"
@@ -58,7 +59,7 @@
   </tbody>
 </table>
 
-<!-- ================= RECEIPT MODAL (INLINE) ================= -->
+<!-- ================= RECEIPT MODAL ================= -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content p-3">
@@ -68,31 +69,33 @@
         <hr>
         <strong>Sales Receipt</strong>
       </div>
-      <div id="receipt-body" class="small text-start">
-        Loading...
-      </div>
+      <div id="receipt-body" class="small text-start">Loading...</div>
     </div>
   </div>
 </div>
-<!-- ========================================================== -->
+<!-- ================================================= -->
 
 <script>
 $(document).ready(function () {
-  $('#ecommerceTable').DataTable({
+  const table = $('#ecommerceTable').DataTable({
     pageLength: 10,
     lengthMenu: [10, 100, 200, 500],
-    dom: 'Bflrtip',
+    dom: 'Bfrtip',
     buttons: [
-      { extend: 'excelHtml5', title: 'Ecommerce_Orders' },
-      { extend: 'csvHtml5', title: 'Ecommerce_Orders' },
-      {
+      { extend: 'excelHtml5', className: 'btn btn-sm btn-outline-success me-1', title: 'Ecommerce_Orders' },
+      { extend: 'csvHtml5', className: 'btn btn-sm btn-outline-primary me-1', title: 'Ecommerce_Orders' },
+      { 
         extend: 'pdfHtml5',
+        className: 'btn btn-sm btn-outline-danger',
         title: 'Ecommerce Orders',
         orientation: 'portrait',
         pageSize: 'A4'
       }
     ]
   });
+
+  // Move buttons above search
+  table.buttons().container().appendTo('#export-buttons');
 });
 </script>
 
