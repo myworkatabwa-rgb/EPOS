@@ -2,64 +2,79 @@
 {% load static %}
 {% block content %}
 
-<h4 class="mb-3 text-success">E-Commerce Orders</h4>
+<div class="card shadow-sm">
+  <div class="card-body">
 
-<!-- EXPORT BUTTONS -->
-<div id="export-buttons" class="mb-2"></div>
+    <!-- TITLE -->
+    <h5 class="text-success mb-3">E-Commerce Orders</h5>
 
-<table id="ecommerceTable" class="display table table-bordered w-100">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Order Number</th>
-      <th>Order By</th>
-      <th>Customer</th>
-      <th>Sale Total</th>
-      <th>Net Amount</th>
-      <th>Order Type</th>
-      <th>Status</th>
-      <th>Detail</th>
-    </tr>
-  </thead>
+    <!-- EXPORT BUTTONS -->
+    <div id="export-buttons" class="mb-2"></div>
 
-  <tbody>
-    {% for order in orders %}
-    <tr>
-      <td>{{ order.created_at|date:"Y-m-d H:i:s" }}</td>
-      <td>{{ order.order_id }}</td>
-      <td>{{ order.created_by.username|default:"admin" }}</td>
-      <td>{{ order.customer.name|default:"Guest" }}</td>
-      <td>{{ order.subtotal }}</td>
-      <td>PKRs {{ order.total }}</td>
-      <td>Online Store</td>
+    <!-- SEARCH BAR -->
+    <div class="mb-3 text-end">
+      <input type="text" id="tableSearch" class="form-control w-25 d-inline" placeholder="Search">
+    </div>
 
-      <td>
-        <span class="badge 
-          {% if order.status == 'pending' %}bg-info
-          {% elif order.status == 'processing' %}bg-warning
-          {% elif order.status == 'completed' %}bg-success
-          {% elif order.status == 'cancelled' %}bg-danger
-          {% else %}bg-secondary{% endif %}
-        ">
-          {{ order.status|title }}
-        </span>
-      </td>
+    <!-- TABLE -->
+    <div class="table-responsive">
+      <table id="ecommerceTable" class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Order Number</th>
+            <th>Order By</th>
+            <th>Customer</th>
+            <th>Sale Total</th>
+            <th>Net Amount</th>
+            <th>Order Type</th>
+            <th>Status</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
 
-      <td>
-        <button
-          class="btn btn-sm btn-primary"
-          onclick="loadReceipt('{{ order.order_id }}')"
-          data-bs-toggle="modal"
-          data-bs-target="#receiptModal">
-          Detail
-        </button>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td>{{ order.created_at|date:"Y-m-d H:i:s" }}</td>
+            <td>{{ order.order_id }}</td>
+            <td>{{ order.created_by.username|default:"admin" }}</td>
+            <td>{{ order.customer.name|default:"Guest" }}</td>
+            <td>{{ order.subtotal }}</td>
+            <td>PKRs {{ order.total }}</td>
+            <td>Online Store</td>
 
-<!-- ================= RECEIPT MODAL ================= -->
+            <td>
+              <span class="badge 
+                {% if order.status == 'pending' %}bg-info
+                {% elif order.status == 'processing' %}bg-warning
+                {% elif order.status == 'completed' %}bg-success
+                {% elif order.status == 'cancelled' %}bg-danger
+                {% else %}bg-secondary{% endif %}
+              ">
+                {{ order.status|title }}
+              </span>
+            </td>
+
+            <td>
+              <button
+                class="btn btn-sm btn-primary"
+                onclick="loadReceipt('{{ order.order_id }}')"
+                data-bs-toggle="modal"
+                data-bs-target="#receiptModal">
+                Detail
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content p-3">
@@ -73,8 +88,8 @@
     </div>
   </div>
 </div>
-<!-- ================================================= -->
 
+<!-- DATATABLES INIT -->
 <script>
 $(document).ready(function () {
   const table = $('#ecommerceTable').DataTable({
@@ -82,12 +97,12 @@ $(document).ready(function () {
     lengthMenu: [10, 100, 200, 500],
     dom: 'Bfrtip',
     buttons: [
-      { extend: 'excelHtml5', className: 'btn btn-sm btn-outline-success me-1', title: 'Ecommerce_Orders' },
-      { extend: 'csvHtml5', className: 'btn btn-sm btn-outline-primary me-1', title: 'Ecommerce_Orders' },
+      { extend: 'excelHtml5', className: 'btn btn-sm btn-outline-success me-1', title: 'E-Commerce Orders' },
+      { extend: 'csvHtml5', className: 'btn btn-sm btn-outline-primary me-1', title: 'E-Commerce Orders' },
       { 
         extend: 'pdfHtml5',
         className: 'btn btn-sm btn-outline-danger',
-        title: 'Ecommerce Orders',
+        title: 'E-Commerce Orders',
         orientation: 'portrait',
         pageSize: 'A4'
       }
@@ -96,10 +111,15 @@ $(document).ready(function () {
 
   // Move buttons above search
   table.buttons().container().appendTo('#export-buttons');
+
+  // Search input
+  $('#tableSearch').on('keyup', function () {
+    table.search(this.value).draw();
+  });
 });
 </script>
 
-<!-- ================= RECEIPT FETCH ================= -->
+<!-- RECEIPT FETCH -->
 <script>
 function loadReceipt(orderId) {
   fetch(`/sales/receipt/${orderId}/`)
