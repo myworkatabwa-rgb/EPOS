@@ -23,11 +23,25 @@
       </div>
     </div>
 
+    <!-- ================= CATEGORIES ================= -->
+    <div class="card mb-2">
+      <div class="card-body">
+        <h6>Categories</h6>
+        <div class="d-flex gap-2 flex-wrap">
+          {% for c in "123456"|make_list %}
+          <div class="border rounded p-3 text-center" style="width:140px;">
+            Category {{ forloop.counter }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
     <!-- ================= ITEMS ================= -->
     <div class="card">
       <div class="card-body">
         <h6>Items</h6>
-
+        <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
         <div class="row g-2">
           {% for product in products %}
           <div class="col-md-3">
@@ -48,50 +62,32 @@
 
   <!-- ================= RIGHT CART ================= -->
   <div class="col-md-4">
-
     <div class="card">
       <div class="card-header"><strong>Cart</strong></div>
-
       <div class="card-body" id="cart-items" style="min-height:300px">
         <p class="text-muted">No items added</p>
       </div>
-
       <div class="card-footer">
         <p>Total Items: <span id="total-items">0</span></p>
         <p>Total Qty: <span id="total-qty">0</span></p>
         <p>Sub Total: PKR <span id="sub-total">0</span></p>
-
+        <hr>
         <div class="mb-2">
-          Discount:
-          <input type="number" id="discount" value="0"
-                 class="form-control form-control-sm">
+          Bill Discount:
+          <input type="number" id="discount" value="0" class="form-control form-control-sm">
         </div>
-
         <h5>Total Payment: PKR <span id="total">0</span></h5>
       </div>
     </div>
-
   </div>
 </div>
 
 <!-- ================= ACTION BUTTONS ================= -->
 <div class="row mt-3">
-  <div class="col-md-3">
-    <button class="btn btn-success w-100">Synced</button>
-  </div>
-  <div class="col-md-3">
-    <button class="btn btn-success w-100">Recall Web Orders</button>
-  </div>
-  <div class="col-md-3">
-    <button class="btn btn-success w-100" id="payBtn">
-      Pay (F7)
-    </button>
-  </div>
-  <div class="col-md-3">
-    <button class="btn btn-danger w-100" id="clearCartBtn">
-      Discard Sale
-    </button>
-  </div>
+  <div class="col-md-3"><button class="btn btn-success w-100">Synced</button></div>
+  <div class="col-md-3"><button class="btn btn-success w-100">Recall Web Orders</button></div>
+  <div class="col-md-3"><button class="btn btn-success w-100" id="payBtn">Pay (F7)</button></div>
+  <div class="col-md-3"><button class="btn btn-danger w-100" id="clearCartBtn">Discard Sale</button></div>
 </div>
 
 <!-- ================= PAYMENT MODAL ================= -->
@@ -99,17 +95,19 @@
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content">
 
+      <!-- HEADER -->
       <div class="modal-header justify-content-center">
-        <h5>Select Payment Mode</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title">Select Payment Mode</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
+      <!-- TOTAL -->
       <div class="bg-info text-white text-center p-2 fw-bold">
-        Total Payment : PKR <span id="payTotal">0</span>
+        Total Payment : PKRs <span id="payTotal">0</span>
       </div>
 
+      <!-- BODY -->
       <div class="modal-body">
-
         <!-- PAYMENT MODES -->
         <div class="d-flex justify-content-between mb-3">
           <button class="btn btn-primary payment-btn active" data-mode="cash">💵 Cash</button>
@@ -118,31 +116,36 @@
           <button class="btn btn-secondary payment-btn" data-mode="split">🔀 Split</button>
         </div>
 
+        <!-- CASH INPUT -->
         <div class="mb-2">
           <label>Cash Tendered</label>
           <input type="number" id="cashTendered" class="form-control">
         </div>
 
+        <!-- RETURN -->
         <div class="bg-light text-center p-2 fw-bold">
-          Return Cash
+          Return Cash (PKRs)
           <div id="returnCash" class="fs-4">0</div>
         </div>
 
+        <!-- REMARKS -->
+        <div class="mt-2">
+          <label>Remarks</label>
+          <textarea id="paymentRemarks" class="form-control"></textarea>
+        </div>
       </div>
 
+      <!-- FOOTER -->
       <div class="modal-footer d-flex justify-content-between">
-        <button class="btn btn-success" id="confirmPayBtn">
-          💰 Pay (F7)
-        </button>
-        <button class="btn btn-success" id="confirmPrintBtn">
-          🖨 Pay & Print (F9)
-        </button>
+        <button class="btn btn-success" id="confirmPayBtn">💰 Pay (F7)</button>
+        <button class="btn btn-success" id="confirmPrintBtn">🖨 Pay & Print (F9)</button>
       </div>
 
     </div>
   </div>
 </div>
 
+<!-- ================= POS JS ================= -->
 <script src="{% static 'js/pos.js' %}"></script>
 
 <!-- ================= SHORTCUT KEYS ================= -->
@@ -152,18 +155,31 @@ document.addEventListener("keydown", function (e) {
     e.preventDefault();
     document.getElementById("payBtn")?.click();
   }
-
   if (e.key === "F9") {
     e.preventDefault();
     document.getElementById("confirmPrintBtn")?.click();
   }
-
   if (e.key === "Escape") {
     const modal = bootstrap.Modal.getInstance(
       document.getElementById("paymentModal")
     );
     if (modal) modal.hide();
   }
+});
+
+// ================= ADD TO CART BUTTON BINDING =================
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".add-to-cart").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      const price = btn.dataset.price;
+      addToCart(id, name, price);
+    });
+  });
+
+  // CLEAR CART BUTTON
+  document.getElementById("clearCartBtn")?.addEventListener("click", clearCart);
 });
 </script>
 
