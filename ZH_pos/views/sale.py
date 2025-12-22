@@ -12,7 +12,7 @@ from ZH_pos.models import Order
 def sell(request):
     products = (
         Product.objects
-        .filter(source="woocommerce", is_active=True)
+        .filter(source="woocommerce")
         .order_by("name")
     )
 
