@@ -115,6 +115,125 @@
     <button class="btn btn-danger w-100" onclick="clearCart()">Discard Sale</button>
   </div>
 </div>
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="modal-header justify-content-center">
+        <h5 class="modal-title">Select Payment Mode</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- TOTAL -->
+      <div class="bg-info text-white text-center p-2 fw-bold">
+        Total Payment : PKRs <span id="payTotal">0</span>
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <!-- PAYMENT MODES -->
+        <div class="d-flex justify-content-between mb-3">
+          <button class="btn btn-primary payment-btn active" data-mode="cash">💵 Cash</button>
+          <button class="btn btn-secondary payment-btn" data-mode="card">💳 Card</button>
+          <button class="btn btn-secondary payment-btn" data-mode="party">👤 Party</button>
+          <button class="btn btn-secondary payment-btn" data-mode="split">🔀 Split</button>
+        </div>
+
+        <!-- CASH INPUT -->
+        <div class="mb-2">
+          <label>Cash Tendered</label>
+          <input type="number" id="cashTendered" class="form-control" value="0">
+        </div>
+
+        <button class="btn btn-light w-100 mb-2" onclick="calculateReturn()">ENTER</button>
+
+        <!-- RETURN -->
+        <div class="bg-light text-center p-2 fw-bold">
+          Return Cash (PKRs)
+          <div id="returnCash" class="fs-4">0</div>
+        </div>
+
+        <!-- REMARKS -->
+        <div class="mt-2">
+          <label>Remarks</label>
+          <textarea id="paymentRemarks" class="form-control"></textarea>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer d-flex justify-content-between">
+        <button class="btn btn-success" onclick="confirmPayment(false)">
+          💰 Pay (TAB + F7)
+        </button>
+        <button class="btn btn-success" onclick="confirmPayment(true)">
+          🖨 Pay & Print (TAB + F9)
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+let selectedPaymentMode = "cash";
+let totalAmount = 0;
+let printAfterPay = false;
+
+function openPaymentModal(print=false) {
+  printAfterPay = print;
+  totalAmount = parseFloat(document.getElementById("total-payment").innerText);
+  document.getElementById("payTotal").innerText = totalAmount.toFixed(2);
+  document.getElementById("cashTendered").value = totalAmount;
+  calculateReturn();
+
+  new bootstrap.Modal(document.getElementById("paymentModal")).show();
+}
+
+// Payment mode switch
+document.querySelectorAll(".payment-btn").forEach(btn => {
+  btn.addEventListener("click", function () {
+    document.querySelectorAll(".payment-btn").forEach(b => {
+      b.classList.remove("btn-primary", "active");
+      b.classList.add("btn-secondary");
+    });
+    this.classList.remove("btn-secondary");
+    this.classList.add("btn-primary", "active");
+    selectedPaymentMode = this.dataset.mode;
+  });
+});
+
+// Calculate return
+function calculateReturn() {
+  let cash = parseFloat(document.getElementById("cashTendered").value || 0);
+  let returnCash = cash - totalAmount;
+  document.getElementById("returnCash").innerText = returnCash > 0 ? returnCash.toFixed(2) : 0;
+}
+
+// Confirm payment
+function confirmPayment(print) {
+  const payload = {
+    payment_mode: selectedPaymentMode,
+    total: totalAmount,
+    cash_tendered: document.getElementById("cashTendered").value,
+    remarks: document.getElementById("paymentRemarks").value,
+    print: print
+  };
+
+  console.log("PAYMENT DATA:", payload);
+
+  // Next step: AJAX submit to backend
+  alert("Payment Successful!");
+
+  if (print) {
+    // trigger receipt print
+    console.log("Printing receipt...");
+  }
+
+  bootstrap.Modal.getInstance(document.getElementById("paymentModal")).hide();
+}
+</script>
+
 
 <script src="{% static 'js/pos.js' %}"></script>
 {% endblock %}
