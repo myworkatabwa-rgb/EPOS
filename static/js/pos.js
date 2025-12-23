@@ -229,15 +229,19 @@ function completePayment(print) {
 // =======================
 // RECEIPT
 // =======================
+// =======================
+// RECEIPT
+// =======================
 function showReceipt(data) {
     let html = "";
 
     if (data.items && data.items.length) {
         data.items.forEach(i => {
+            const itemTotal = i.price * i.qty;
             html += `
                 <div class="d-flex justify-content-between">
                     <span>${i.name} x ${i.qty}</span>
-                    <span>PKR ${(i.price * i.qty).toFixed(2)}</span>
+                    <span>PKR ${itemTotal.toFixed(2)}</span>
                 </div>
             `;
         });
@@ -245,9 +249,23 @@ function showReceipt(data) {
         html += `<p class="text-muted">No items available</p>`;
     }
 
+    // Show discount if present
+    if (discount > 0) {
+        html += `
+            <div class="d-flex justify-content-between">
+                <span><strong>Discount</strong></span>
+                <span>PKR ${discount.toFixed(2)}</span>
+            </div>
+        `;
+    }
+
+    // Final total
     html += `
         <hr>
-        <strong>Total: PKR ${data.total?.toFixed(2) || 0}</strong>
+        <div class="d-flex justify-content-between">
+            <strong>Total</strong>
+            <strong>PKR ${data.total?.toFixed(2) || 0}</strong>
+        </div>
     `;
 
     document.getElementById("receipt-body").innerHTML = html;
