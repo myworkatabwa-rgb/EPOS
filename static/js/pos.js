@@ -88,7 +88,7 @@ function handlePayFlow() {
 // =======================
 // ADD TO CART
 // =======================
-function addToCart(id, name, price) {
+function addToCart(id, name, price, sku) {
     price = Number(price);
     cart[id] ? cart[id].qty++ : cart[id] = { id, name, price, sku, qty: 1 };
     renderCart();
