@@ -184,10 +184,54 @@ function completePayment(print) {
 // =======================
 // RECEIPT
 // =======================
+// =======================
+// COMPLETE PAYMENT
+// =======================
+function completePayment(print) {
+    fetch("/pos/checkout/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+            cart,
+            discount,
+            total: totalAmount,
+            payment_mode: selectedPaymentMode,
+            print
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.error || "Payment failed");
+            return;
+        }
+
+        const paymentModalEl = document.getElementById("paymentModal");
+        const paymentModal = bootstrap.Modal.getInstance(paymentModalEl);
+
+        // Hide payment modal first
+        paymentModal?.hide();
+
+        // 🔑 Wait for Bootstrap to finish
+        setTimeout(() => {
+            // Pass backend items if present, otherwise use local cart
+            const itemsToShow = data.items && data.items.length ? data.items : Object.values(cart);
+            showReceipt({ items: itemsToShow, total: data.total || totalAmount });
+            clearCart();          // clear for new sale
+            paymentStep = "IDLE"; // reset POS
+        }, 300);
+    });
+}
+
+// =======================
+// RECEIPT
+// =======================
 function showReceipt(data) {
     let html = "";
 
-    // ✅ Safely handle cases where data.items is undefined
     if (data.items && data.items.length) {
         data.items.forEach(i => {
             html += `
@@ -213,6 +257,7 @@ function showReceipt(data) {
         { backdrop: "static", keyboard: true }
     ).show();
 }
+
 
 
 
