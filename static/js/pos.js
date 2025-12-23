@@ -181,21 +181,29 @@ function completePayment(print) {
 // =======================
 // RECEIPT
 // =======================
+// =======================
+// RECEIPT
+// =======================
 function showReceipt(data) {
     let html = "";
 
-    data.items.forEach(i => {
-        html += `
-            <div class="d-flex justify-content-between">
-                <span>${i.name} x ${i.qty}</span>
-                <span>PKR ${(i.price * i.qty).toFixed(2)}</span>
-            </div>
-        `;
-    });
+    // ✅ Safely handle cases where data.items is undefined
+    if (data.items && data.items.length) {
+        data.items.forEach(i => {
+            html += `
+                <div class="d-flex justify-content-between">
+                    <span>${i.name} x ${i.qty}</span>
+                    <span>PKR ${(i.price * i.qty).toFixed(2)}</span>
+                </div>
+            `;
+        });
+    } else {
+        html += `<p class="text-muted">No items available</p>`;
+    }
 
     html += `
         <hr>
-        <strong>Total: PKR ${data.total.toFixed(2)}</strong>
+        <strong>Total: PKR ${data.total?.toFixed(2) || 0}</strong>
     `;
 
     document.getElementById("receipt-body").innerHTML = html;
@@ -205,6 +213,7 @@ function showReceipt(data) {
         { backdrop: "static", keyboard: true }
     ).show();
 }
+
 
 
 // =======================
