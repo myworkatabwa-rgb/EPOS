@@ -15,21 +15,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // PAY BUTTON (F7)
     const payBtn = document.getElementById("payBtn");
-    if (payBtn) {
-        payBtn.addEventListener("click", openPaymentModal);
-    }
+    if (payBtn) payBtn.addEventListener("click", openPaymentModal);
 
     // CONFIRM PAYMENT BUTTONS
     const confirmPayBtn = document.getElementById("confirmPayBtn");
     const confirmPrintBtn = document.getElementById("confirmPrintBtn");
 
-    if (confirmPayBtn) {
-        confirmPayBtn.addEventListener("click", () => handlePayment(false));
-    }
-
-    if (confirmPrintBtn) {
-        confirmPrintBtn.addEventListener("click", () => handlePayment(true));
-    }
+    if (confirmPayBtn) confirmPayBtn.addEventListener("click", () => handlePayment(false));
+    if (confirmPrintBtn) confirmPrintBtn.addEventListener("click", () => handlePayment(true));
 
     // PAYMENT MODE SWITCH
     document.querySelectorAll(".payment-btn").forEach(btn => {
@@ -37,39 +30,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // DISCOUNT CHANGE
-    const discountInput = document.getElementById("discount");
-    if (discountInput) {
-        discountInput.addEventListener("input", renderCart);
-    }
+    document.getElementById("discount")?.addEventListener("input", renderCart);
 
     // CASH TENDERED CHANGE
-    const cashInput = document.getElementById("cashTendered");
-    if (cashInput) {
-        cashInput.addEventListener("input", calculateReturn);
-    }
+    document.getElementById("cashTendered")?.addEventListener("input", calculateReturn);
 
-    // RECEIPT MODAL BUTTONS
-    document.getElementById("receiptOkBtn")?.addEventListener("click", () => {
-        bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
-    });
+    // RECEIPT BUTTONS
+    document.getElementById("receiptOkBtn")?.addEventListener("click", closeReceiptAndReset);
     document.getElementById("receiptPrintBtn")?.addEventListener("click", () => {
         window.print();
+        closeReceiptAndReset();
     });
 
     // SHORTCUT KEYS
-    document.addEventListener("keydown", function(e){
-        if(e.key === "F7"){ e.preventDefault(); payBtn?.click(); }
-        if(e.key === "F9"){ 
+    document.addEventListener("keydown", e => {
+        if (e.key === "F7") {
             e.preventDefault();
-            const receiptModal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
-            if(receiptModal) document.getElementById("receiptPrintBtn")?.click();
-            else confirmPrintBtn?.click();
+            payBtn?.click();
         }
-        if(e.key === "Escape"){
-            const paymentModal = bootstrap.Modal.getInstance(document.getElementById("paymentModal"));
-            if(paymentModal) paymentModal.hide();
-            const receiptModal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
-            if(receiptModal) receiptModal.hide();
+        if (e.key === "F9") {
+            e.preventDefault();
+            document.getElementById("receiptPrintBtn")?.click();
+        }
+        if (e.key === "Escape") {
+            bootstrap.Modal.getInstance(document.getElementById("paymentModal"))?.hide();
+            bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
         }
     });
 
@@ -82,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // CLEAR CART
     document.getElementById("clearCartBtn")?.addEventListener("click", clearCart);
-
 });
 
 // =======================
@@ -90,12 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // =======================
 function addToCart(id, name, price) {
     price = Number(price);
-
-    if (!cart[id]) {
-        cart[id] = { id, name, price, qty: 1 };
-    } else {
-        cart[id].qty++;
-    }
+    cart[id] ? cart[id].qty++ : cart[id] = { id, name, price, qty: 1 };
     renderCart();
 }
 
@@ -107,9 +86,7 @@ function renderCart() {
     if (!cartDiv) return;
 
     cartDiv.innerHTML = "";
-
-    let subTotal = 0;
-    let totalQty = 0;
+    let subTotal = 0, totalQty = 0;
 
     Object.values(cart).forEach(item => {
         const itemTotal = item.price * item.qty;
@@ -120,8 +97,7 @@ function renderCart() {
             <div class="d-flex justify-content-between mb-1">
                 <span>${item.name} x ${item.qty}</span>
                 <span>PKR ${itemTotal.toFixed(2)}</span>
-            </div>
-        `;
+            </div>`;
     });
 
     discount = Number(document.getElementById("discount")?.value || 0);
@@ -132,7 +108,7 @@ function renderCart() {
     document.getElementById("total-qty").innerText = totalQty;
     document.getElementById("total-items").innerText = Object.keys(cart).length;
 
-    if (Object.keys(cart).length === 0) {
+    if (!Object.keys(cart).length) {
         cartDiv.innerHTML = `<p class="text-muted">No items added</p>`;
     }
 }
@@ -141,7 +117,7 @@ function renderCart() {
 // OPEN PAYMENT MODAL
 // =======================
 function openPaymentModal() {
-    if (Object.keys(cart).length === 0) {
+    if (!Object.keys(cart).length) {
         alert("Cart is empty!");
         return;
     }
@@ -158,22 +134,18 @@ function openPaymentModal() {
 // =======================
 function switchPaymentMode(btn) {
     document.querySelectorAll(".payment-btn").forEach(b => {
-        b.classList.remove("btn-primary", "active");
-        b.classList.add("btn-secondary");
+        b.classList.replace("btn-primary", "btn-secondary");
+        b.classList.remove("active");
     });
 
-    btn.classList.remove("btn-secondary");
-    btn.classList.add("btn-primary", "active");
+    btn.classList.replace("btn-secondary", "btn-primary");
+    btn.classList.add("active");
     selectedPaymentMode = btn.dataset.mode;
 
-    // Show relevant input
-    document.querySelectorAll(".cash-mode, .card-mode, .party-mode, .split-mode")
+    document.querySelectorAll(".cash-mode,.card-mode,.party-mode,.split-mode")
         .forEach(el => el.classList.add("d-none"));
 
-    if (selectedPaymentMode === "cash") document.querySelector(".cash-mode")?.classList.remove("d-none");
-    if (selectedPaymentMode === "card") document.querySelector(".card-mode")?.classList.remove("d-none");
-    if (selectedPaymentMode === "party") document.querySelector(".party-mode")?.classList.remove("d-none");
-    if (selectedPaymentMode === "split") document.querySelector(".split-mode")?.classList.remove("d-none");
+    document.querySelector(`.${selectedPaymentMode}-mode`)?.classList.remove("d-none");
 }
 
 // =======================
@@ -181,20 +153,15 @@ function switchPaymentMode(btn) {
 // =======================
 function calculateReturn() {
     const cash = Number(document.getElementById("cashTendered")?.value || 0);
-    const change = cash - totalAmount;
-
     document.getElementById("returnCash").innerText =
-        change > 0 ? change.toFixed(2) : "0.00";
+        Math.max(cash - totalAmount, 0).toFixed(2);
 }
 
 // =======================
 // CONFIRM PAYMENT → BACKEND
 // =======================
 function confirmPayment(print = false) {
-    if(Object.keys(cart).length === 0){
-        alert("Cart is empty!");
-        return Promise.reject("Cart empty");
-    }
+    if (!Object.keys(cart).length) return Promise.reject("Empty cart");
 
     return fetch("/pos/checkout/", {
         method: "POST",
@@ -205,45 +172,37 @@ function confirmPayment(print = false) {
         body: JSON.stringify({
             cart,
             discount,
-            payment_mode: selectedPaymentMode,
             total: totalAmount,
-            print,
-            cash_received: selectedPaymentMode === "card" 
-                            ? Number(document.querySelector(".card-mode input[type='number']")?.value || 0)
-                            : undefined
+            payment_mode: selectedPaymentMode,
+            print
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            clearCart();
-            return data; // Return data for receipt modal
-        } else {
-            alert(data.error || "Payment failed");
-            return Promise.reject(data.error || "Payment failed");
-        }
-    })
-    .catch(err => {
-        alert(err || "Server error!");
-        return Promise.reject(err);
-    });
+    }).then(res => res.json());
 }
 
 // =======================
-// HANDLE PAYMENT & SHOW RECEIPT
+// HANDLE PAYMENT & RECEIPT
 // =======================
-function handlePayment(print=false){
-    confirmPayment(print).then(data=>{
+function handlePayment(print) {
+    confirmPayment(print).then(data => {
+        if (!data.success) throw data.error;
+
+        bootstrap.Modal.getInstance(document.getElementById("paymentModal"))?.hide();
+
         const receiptBody = document.getElementById("receipt-body");
-        let html = "";
-        data.items.forEach(item=>{
-            html += `<div>${item.name} x ${item.qty} - PKR ${(item.price * item.qty).toFixed(2)}</div>`;
-        });
-        html += `<hr><strong>Total: PKR ${data.total.toFixed(2)}</strong>`;
-        receiptBody.innerHTML = html;
+        receiptBody.innerHTML = data.items.map(i =>
+            `<div>${i.name} x ${i.qty} — PKR ${(i.qty * i.price).toFixed(2)}</div>`
+        ).join("") + `<hr><strong>Total: PKR ${data.total.toFixed(2)}</strong>`;
 
         new bootstrap.Modal(document.getElementById("receiptModal")).show();
-    }).catch(()=>{ /* payment failed or cart empty */ });
+    }).catch(err => alert(err || "Payment failed"));
+}
+
+// =======================
+// CLOSE RECEIPT & RESET
+// =======================
+function closeReceiptAndReset() {
+    bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
+    clearCart();
 }
 
 // =======================
@@ -252,26 +211,14 @@ function handlePayment(print=false){
 function clearCart() {
     cart = {};
     discount = 0;
-
-    const discountInput = document.getElementById("discount");
-    if (discountInput) discountInput.value = 0;
-
+    document.getElementById("discount").value = 0;
     renderCart();
 }
 
 // =======================
-// CSRF TOKEN HELPER
+// CSRF TOKEN
 // =======================
 function getCookie(name) {
-    let cookieValue = null;
-
-    document.cookie.split(";").forEach(cookie => {
-        cookie = cookie.trim();
-        if (cookie.startsWith(name + "=")) {
-            cookieValue = decodeURIComponent(
-                cookie.substring(name.length + 1)
-            );
-        }
-    });
-    return cookieValue;
+    return document.cookie.split("; ").find(c => c.startsWith(name + "="))
+        ?.split("=")[1] || null;
 }
