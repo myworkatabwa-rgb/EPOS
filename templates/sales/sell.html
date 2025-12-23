@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
 
-<div class="row">
+<div class="row g-0"> <!-- Removed gap between left and right panel -->
 
   <!-- LEFT PANEL -->
   <div class="col-md-8">
@@ -24,7 +24,7 @@
     </div>
 
     <!-- CATEGORIES -->
-    <div class="card mb-2">
+    <div class="card mb-2" style="border-radius: 0;">
       <div class="card-body">
         <h6>Categories</h6>
         <div class="d-flex gap-2 flex-wrap">
@@ -36,42 +36,39 @@
     </div>
 
     <!-- ITEMS TABLE -->
-<div class="card">
-  <div class="card-body">
-    <h6>Items</h6>
-    <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
+    <div class="card" style="border-radius: 0;">
+      <div class="card-body">
+        <h6 style="color: green;">Items</h6> <!-- Product title in green -->
+        <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
 
-    <div class="table-responsive">
-      <table class="table table-bordered table-sm table-hover">
-        <thead class="table-light">
-          <tr>
-            <th>BarCode (SKU)</th>
-            <th>Product ID</th>
-            <th>Name</th>
-          </tr>
-        </thead>
-        <tbody id="product-table-body">
-          {% for product in products %}
-          <tr>
-            <td>{{ product.sku }}</td>
-            <td>{{ product.id }}</td>
-            <td>
-              <button class="btn btn-link p-0 add-to-cart"
-                      data-id="{{ product.id }}"
-                      data-name="{{ product.name }}"
-                      data-price="{{ product.sales_price }}">
-                {{ product.name }}
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-  </div>
-</div>
-
+        <div class="table-responsive" style="max-height:400px;">
+          <table class="table table-bordered table-sm table-hover">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 30%;">BarCode (SKU)</th>
+                <th style="width: 20%;">Product ID</th>
+                <th style="width: 50%;">Name</th>
+              </tr>
+            </thead>
+            <tbody id="product-table-body">
+              {% for product in products %}
+              <tr>
+                <td>{{ product.sku }}</td>
+                <td>{{ product.id }}</td>
+                <td>
+                  <button class="btn btn-link p-0 add-to-cart" 
+                          style="color: green; font-weight: 500;" 
+                          data-id="{{ product.id }}" 
+                          data-name="{{ product.name }}" 
+                          data-price="{{ product.sales_price }}">
+                    {{ product.name }}
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
       </div>
     </div>
@@ -80,7 +77,7 @@
 
   <!-- RIGHT CART -->
   <div class="col-md-4">
-    <div class="card">
+    <div class="card" style="border-radius: 0; height:100%;">
       <div class="card-header"><strong>Cart</strong></div>
       <div class="card-body" id="cart-items" style="min-height:300px">
         <p class="text-muted">No items added</p>
@@ -98,10 +95,11 @@
       </div>
     </div>
   </div>
+
 </div>
 
 <!-- ACTION BUTTONS -->
-<div class="row mt-3">
+<div class="row mt-3 g-2">
   <div class="col-md-3"><button class="btn btn-success w-100">Synced</button></div>
   <div class="col-md-3"><button class="btn btn-success w-100">Recall Web Orders</button></div>
   <div class="col-md-3"><button class="btn btn-success w-100" id="payBtn">Pay (F7)</button></div>
@@ -112,19 +110,14 @@
 <div class="modal fade" id="paymentModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered" style="min-width: 650px; max-width: 800px;">
     <div class="modal-content">
-
       <div class="modal-header justify-content-center">
         <h5 class="modal-title">Select Payment Mode</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
       <div class="bg-info text-white text-center p-2 fw-bold">
         Total Payment : PKRs <span id="payTotal">0</span>
       </div>
-
       <div class="modal-body">
-
-        <!-- PAYMENT MODES -->
         <div class="d-flex justify-content-between mb-3">
           <button class="btn btn-primary payment-btn active" data-mode="cash">💵 Cash</button>
           <button class="btn btn-secondary payment-btn" data-mode="card">💳 Card</button>
@@ -133,13 +126,10 @@
         </div>
 
         <div id="paymentDetails">
-          <!-- CASH -->
           <div class="cash-mode mb-2">
             <label>Cash Tendered</label>
             <input type="number" id="cashTendered" class="form-control">
           </div>
-
-          <!-- CARD -->
           <div class="card-mode mb-2 d-none">
             <label>Bank</label>
             <select class="form-control">
@@ -153,37 +143,28 @@
             <label class="mt-2">Cash Received in Account</label>
             <input type="number" class="form-control" placeholder="Cash received for safety">
           </div>
-
-          <!-- PARTY -->
           <div class="party-mode mb-2 d-none">
             <label>Party Remarks</label>
             <textarea class="form-control" placeholder="Enter courier/party info"></textarea>
           </div>
-
-          <!-- SPLIT -->
           <div class="split-mode mb-2 d-none">
             <label>Split Payment</label>
             <p class="text-muted">You can split payment across multiple modes. (Placeholder)</p>
           </div>
         </div>
 
-        <!-- RETURN -->
         <div class="bg-light text-center p-2 fw-bold">
           Return Cash (PKRs)
           <div id="returnCash" class="fs-4">0</div>
         </div>
-
       </div>
 
       <div class="modal-footer d-flex justify-content-between">
         <button type="button" class="btn btn-success w-100" id="payBtn">Pay (F7)</button>
         <button type="button" class="btn btn-danger w-100" id="clearCartBtn">Discard Sale</button>
-        
         <button type="button" class="btn btn-success" id="confirmPayBtn">💰 Pay (F7)</button>
         <button type="button" class="btn btn-success" id="confirmPrintBtn">🖨 Pay & Print (F9)</button>
-
       </div>
-
     </div>
   </div>
 </div>
