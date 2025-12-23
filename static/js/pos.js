@@ -1,5 +1,5 @@
 // =======================
-// POS Cart Script (FINAL)
+// POS Cart Script (FINAL UPDATED)
 // =======================
 
 let cart = {};
@@ -7,6 +7,9 @@ let discount = 0;
 let selectedPaymentMode = "cash";
 let totalAmount = 0;
 let paymentStep = "IDLE"; // IDLE | PAYMENT_OPEN
+
+// Get logged-in user from HTML dataset
+const loggedInUser = document.getElementById('pos-root')?.dataset.username || 'N/A';
 
 // =======================
 // DOM READY
@@ -163,10 +166,7 @@ function completePayment(print) {
             return;
         }
 
-        const paymentModalEl = document.getElementById("paymentModal");
-        const paymentModal = bootstrap.Modal.getInstance(paymentModalEl);
-
-        paymentModal?.hide();
+        bootstrap.Modal.getInstance(document.getElementById("paymentModal"))?.hide();
 
         setTimeout(() => {
             const itemsToShow = data.items && data.items.length ? data.items : Object.values(cart);
@@ -175,7 +175,7 @@ function completePayment(print) {
                 items: itemsToShow,
                 total: data.total || totalAmount,
                 bill_no: data.bill_no || "00001",
-                user: data.user || "N/A",
+                user: data.user || loggedInUser,
                 counter: data.counter || "0001"
             };
 
@@ -191,11 +191,9 @@ function completePayment(print) {
 // =======================
 function showReceipt(data) {
     const now = new Date();
-
     const pad = n => (n < 10 ? "0" + n : n);
     const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
     const paymentType = selectedPaymentMode.charAt(0).toUpperCase() + selectedPaymentMode.slice(1);
 
     let totalQty = 0;
@@ -203,6 +201,12 @@ function showReceipt(data) {
 
     let html = `
         <div style="font-family: monospace; font-size:12px; padding:10px;">
+            
+            <!-- Sale Complete Title Top Right -->
+            <div style="text-align:right; font-weight:bold; color:green; margin-bottom:5px;">
+                Sale Complete ✅
+            </div>
+
             <div style="text-align:center; margin-bottom:10px;">
                 <div>Contact : 0313-6330101</div>
                 <h5>Sales Receipt</h5>
