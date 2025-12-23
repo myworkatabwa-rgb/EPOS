@@ -1,13 +1,167 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <p>
-      Hi is there is working ?
-    </p>
-</body>
-</html>
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="row g-0" id="pos-root" data-username="{{ request.user.username }}">
+
+  <!-- LEFT PANEL -->
+  <div class="col-md-8">
+
+    <!-- HEADER -->
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-3"><strong>Branch :</strong> Main Branch</div>
+          <div class="col-md-3"><strong>Booking No :</strong> {{ bill_no|default:"Auto" }}</div>
+          <div class="col-md-3">
+            <input type="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-3 text-end">
+            <button class="btn btn-info btn-sm">+ Add New Customer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="card mb-2" style="border-radius: 0;">
+      <div class="card-body">
+        <h6>Categories</h6>
+        <div class="d-flex gap-2 flex-wrap">
+          {% for c in "123456"|make_list %}
+          <div class="border rounded p-3 text-center" style="width:140px;">
+            Category {{ forloop.counter }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div class="card" style="border-radius: 0;">
+      <div class="card-body">
+        <h6 style="color: green;">Items</h6>
+        <input type="text" class="form-control mb-2" placeholder="Search item">
+
+        <div class="table-responsive" style="max-height:400px;">
+          <table class="table table-bordered table-sm table-hover">
+            <thead class="table-light">
+              <tr>
+                <th style="width:30%;">BarCode (SKU)</th>
+                <th style="width:20%;">Product ID</th>
+                <th style="width:50%;">Name</th>
+              </tr>
+            </thead>
+            <tbody id="product-table-body">
+              {% for product in products %}
+              <tr>
+                <td>{{ product.sku }}</td>
+                <td>{{ product.id }}</td>
+                <td>
+                  <button
+                    class="btn btn-link p-0 add-to-cart"
+                    style="color: green; font-weight: 500;"
+                    data-id="{{ product.id }}"
+                    data-name="{{ product.name }}"
+                    data-price="{{ product.price }}"
+                    data-sku="{{ product.sku }}"
+                  >
+                    {{ product.name }}
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT CART -->
+  <div class="col-md-4">
+    <div class="card" style="border-radius: 0; height:100%;">
+      <div class="card-header"><strong>Booking Cart</strong></div>
+      <div class="card-body" id="cart-items" style="min-height:300px">
+        <p class="text-muted">No items added</p>
+      </div>
+      <div class="card-footer">
+        <p>Total Items: <span id="total-items">0</span></p>
+        <p>Total Qty: <span id="total-qty">0</span></p>
+        <p>Sub Total: PKR <span id="sub-total">0</span></p>
+        <hr>
+        <div class="mb-2">
+          Booking Discount:
+          <input type="number" id="discount" value="0" class="form-control form-control-sm">
+        </div>
+        <h5>Total Booking Amount: PKR <span id="total">0</span></h5>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ACTION BUTTONS -->
+<div class="row mt-3 g-2">
+  <div class="col-md-3">
+    <button class="btn btn-success w-100">Synced</button>
+  </div>
+
+  <div class="col-md-3">
+    <button class="btn btn-success w-100">Recall Bookings</button>
+  </div>
+
+  <!-- ✅ SAVE BOOKING -->
+  <div class="col-md-3">
+    <button class="btn btn-primary w-100" id="saveBookingBtn">
+      Save Booking
+    </button>
+  </div>
+
+  <!-- DISCARD -->
+  <div class="col-md-3">
+    <button class="btn btn-danger w-100" id="clearCartBtn">
+      Discard Booking
+    </button>
+  </div>
+</div>
+
+<!-- ================= RECEIPT MODAL (REUSED) ================= -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="min-width: 400px; max-width: 500px;">
+    <div class="modal-content p-3">
+
+      <div class="d-flex justify-content-end mb-2">
+        <div class="fw-bold text-success">Booking Saved ✅</div>
+      </div>
+
+      <div class="text-center mb-2">
+        <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+        <p class="small mb-0">Contact : 0313-6330101</p>
+        <hr>
+        <strong>Booking Receipt</strong>
+      </div>
+
+      <div id="receipt-body" class="small text-start">
+        Loading...
+      </div>
+
+      <div class="d-flex justify-content-between mt-2">
+        <button class="btn btn-secondary w-50" id="receiptOkBtn">
+          OK
+        </button>
+        <button class="btn btn-success w-50" id="receiptPrintBtn">
+          🖨 Print
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADVANCED BOOKING SCRIPT -->
+<script src="{% static 'js/advanced_booking.js' %}"></script>
+
+{% endblock %}
