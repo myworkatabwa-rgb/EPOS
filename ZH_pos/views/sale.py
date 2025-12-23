@@ -91,7 +91,7 @@ def advance_booking(request):
         .order_by("name")
     )
 
-    return render(request, "advanced_booking.html", {
+    return render(request, "advance_booking.html", {
         "products": products,
         "bill_no": "Auto",
         "today": date.today()
