@@ -94,7 +94,7 @@ urlpatterns = [
     path("sales/receipt/<str:order_id>/", sale_receipt),   
     path('sales/delete/<str:order_id>/', delete_sale, name='delete_sale'),
     path("sales/ecommerce/", ecommerce_orders),
-    path("sales/advance/", advanced_booking),
+    path("sales/advance/", advance_booking),
     path ("sales/packing_sl/", packing_slip),
     path("sales/packing_his/", packing_history),
 
