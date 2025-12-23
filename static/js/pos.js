@@ -166,118 +166,143 @@ function completePayment(print) {
         const paymentModalEl = document.getElementById("paymentModal");
         const paymentModal = bootstrap.Modal.getInstance(paymentModalEl);
 
-        // Hide payment modal first
         paymentModal?.hide();
 
-        // 🔑 CRITICAL FIX: wait for Bootstrap to finish
         setTimeout(() => {
-            showReceipt(data);
-            clearCart();          // clear for new sale
-            paymentStep = "IDLE"; // reset POS
-        }, 300);
-    });
-}
-
-// =======================
-// RECEIPT
-// =======================
-// =======================
-// RECEIPT
-// =======================
-// =======================
-// COMPLETE PAYMENT
-// =======================
-function completePayment(print) {
-    fetch("/pos/checkout/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken")
-        },
-        body: JSON.stringify({
-            cart,
-            discount,
-            total: totalAmount,
-            payment_mode: selectedPaymentMode,
-            print
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) {
-            alert(data.error || "Payment failed");
-            return;
-        }
-
-        const paymentModalEl = document.getElementById("paymentModal");
-        const paymentModal = bootstrap.Modal.getInstance(paymentModalEl);
-
-        // Hide payment modal first
-        paymentModal?.hide();
-
-        // 🔑 Wait for Bootstrap to finish
-        setTimeout(() => {
-            // Pass backend items if present, otherwise use local cart
+            // Pass backend items if present, else fallback to cart
             const itemsToShow = data.items && data.items.length ? data.items : Object.values(cart);
-            showReceipt({ items: itemsToShow, total: data.total || totalAmount });
-            clearCart();          // clear for new sale
-            paymentStep = "IDLE"; // reset POS
+
+            // Add extra info for receipt
+            const receiptData = {
+                items: itemsToShow,
+                total: data.total || totalAmount,
+                bill_no: data.bill_no || "00001",
+                user: data.user || "N/A",
+                counter: data.counter || "0001"
+            };
+
+            showReceipt(receiptData);
+            clearCart();
+            paymentStep = "IDLE";
         }, 300);
     });
 }
 
 // =======================
-// RECEIPT
-// =======================
-// =======================
-// RECEIPT
+// RECEIPT - NEW UI
 // =======================
 function showReceipt(data) {
-    let html = "";
+    const now = new Date();
 
-    if (data.items && data.items.length) {
-        data.items.forEach(i => {
-            const itemTotal = i.price * i.qty;
-            html += `
-                <div class="d-flex justify-content-between">
-                    <span>${i.name} x ${i.qty}</span>
-                    <span>PKR ${itemTotal.toFixed(2)}</span>
-                </div>
-            `;
-        });
-    } else {
-        html += `<p class="text-muted">No items available</p>`;
-    }
+    const pad = n => (n < 10 ? "0" + n : n);
+    const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    // Show discount if present
-    if (discount > 0) {
-        html += `
-            <div class="d-flex justify-content-between">
-                <span><strong>Discount</strong></span>
-                <span>PKR ${discount.toFixed(2)}</span>
+    const paymentType = selectedPaymentMode.charAt(0).toUpperCase() + selectedPaymentMode.slice(1);
+
+    let totalQty = 0;
+    let totalAmount = 0;
+
+    let html = `
+        <div style="font-family: monospace; font-size:12px; padding:10px;">
+            <div style="text-align:center; margin-bottom:10px;">
+                <div>Contact : 0339-3777786</div>
+                <h5>Sales Receipt</h5>
             </div>
-        `;
-    }
 
-    // Final total
+            <div>
+                Bill No  :  ${data.bill_no}<br>
+                Date & Time  :  ${dateStr} ${timeStr}<br>
+                Payment Type  :  ${paymentType}<br>
+                User  :  ${data.user}<br>
+                Counter  :  ${data.counter}<br>
+            </div>
+
+            <hr>
+
+            <table style="width:100%; font-size:12px; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Description</th>
+                        <th style="text-align:center;">Qty</th>
+                        <th style="text-align:right;">Rate</th>
+                        <th style="text-align:right;">Amount (PKRs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    data.items.forEach(i => {
+        const itemTotal = i.price * i.qty;
+        totalQty += i.qty;
+        totalAmount += itemTotal;
+
+        html += `
+            <tr>
+                <td>${i.name}</td>
+                <td style="text-align:center;">${i.qty}</td>
+                <td style="text-align:right;">${i.price.toFixed(2)}</td>
+                <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
     html += `
-        <hr>
-        <div class="d-flex justify-content-between">
-            <strong>Total</strong>
-            <strong>PKR ${data.total?.toFixed(2) || 0}</strong>
+                </tbody>
+            </table>
+
+            <hr>
+            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                <span>No Of Items: ${data.items.length}</span>
+                <span>Total Qty: ${totalQty}</span>
+                <span>${totalAmount.toFixed(2)}</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between;">
+                <span>Total:</span>
+                <span>${totalAmount.toFixed(2)}</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between;">
+                <span>Cash Paid:</span>
+                <span>${Number(document.getElementById("cashTendered")?.value || totalAmount).toFixed(2)}</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between;">
+                <span>Cash Balance:</span>
+                <span>${Math.max(Number(document.getElementById("cashTendered")?.value || totalAmount) - totalAmount,0).toFixed(2)}</span>
+            </div>
+
+            <div style="text-align:center; margin:10px 0;">
+                <svg id="barcode"></svg>
+                <div>${data.bill_no}</div>
+            </div>
+
+            <div style="text-align:center; font-size:10px; margin-top:10px;">
+                Print Date: ${dateStr} Print Time: ${timeStr}<br>
+                Powered by: ZHePOS
+            </div>
         </div>
     `;
 
     document.getElementById("receipt-body").innerHTML = html;
+
+    // Barcode generation using JsBarcode (include JsBarcode library in HTML)
+    if (typeof JsBarcode !== "undefined") {
+        JsBarcode("#barcode", data.bill_no, {
+            format: "CODE128",
+            lineColor: "#000",
+            width: 2,
+            height: 40,
+            displayValue: false
+        });
+    }
 
     new bootstrap.Modal(
         document.getElementById("receiptModal"),
         { backdrop: "static", keyboard: true }
     ).show();
 }
-
-
-
 
 // =======================
 // PAYMENT MODE
