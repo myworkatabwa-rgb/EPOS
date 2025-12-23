@@ -90,7 +90,7 @@ function handlePayFlow() {
 // =======================
 function addToCart(id, name, price) {
     price = Number(price);
-    cart[id] ? cart[id].qty++ : cart[id] = { id, name, price, qty: 1 };
+    cart[id] ? cart[id].qty++ : cart[id] = { id, name, price, sku, qty: 1 };
     renderCart();
 }
 
@@ -206,7 +206,7 @@ function showReceipt(data) {
     let html = `
         <div style="font-family: monospace; font-size:12px; padding:10px;">
             <div style="text-align:center; margin-bottom:10px;">
-                <div>Contact : 0339-3777786</div>
+                <div>Contact : 0313-6330101</div>
                 <h5>Sales Receipt</h5>
             </div>
 
@@ -241,6 +241,7 @@ function showReceipt(data) {
             <tr>
                 <td>${i.name}</td>
                 <td style="text-align:center;">${i.qty}</td>
+                <td style="text-align:center;">${i.sku}</td>
                 <td style="text-align:right;">${i.price.toFixed(2)}</td>
                 <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
             </tr>
