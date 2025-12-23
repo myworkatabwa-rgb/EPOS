@@ -2,7 +2,7 @@ from django.urls import path
 from ZH_pos import views
 
 # SALES
-from .views.sale import sell, sale_history, ecommerce_orders, advance_booking, sale_receipt, delete_sale
+from .views.sale import sell, sale_history, ecommerce_orders, advance_booking, sale_receipt, delete_sale,packing_slip,packing_history
 
 # TRANSACTIONS
 from .views.transaction import sale_returns, sale_return_history
@@ -95,6 +95,8 @@ urlpatterns = [
     path('sales/delete/<str:order_id>/', delete_sale, name='delete_sale'),
     path("sales/ecommerce/", ecommerce_orders),
     path("sales/advance/", advance_booking),
+    path ("sales/packing/", packing_slip),
+    path("sales/packing_his/", packing_history),
 
     # TRANSACTIONS
     path("returns/", sale_returns),
