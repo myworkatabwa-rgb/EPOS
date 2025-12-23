@@ -83,7 +83,14 @@ def ecommerce_orders(request):
 
 @login_required(login_url="/login/")
 def advance_booking(request):
-    return render(request, "sales/advance_booking.html")
+    products= product.objects.all()
+     return render(request, "advanced_booking.html", {
+        "products": products,
+        "bill_no": booking_no,
+        "today": date.today()
+    })
+    
+                 
 @login_required(login_url="/login/")
 def packing_slip(request):
     return render(request, "sales/packing_slip.html")
