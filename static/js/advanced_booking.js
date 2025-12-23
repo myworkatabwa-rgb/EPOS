@@ -17,7 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
             addToCart(
                 btn.dataset.id,
                 btn.dataset.name,
-                btn.dataset.price
+                btn.dataset.price,
+                btn.dataset.sku || "-"
             );
         });
     });
@@ -50,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // =======================
 // ADD TO CART
 // =======================
-function addToCart(id, name, price) {
+function addToCart(id, name, price, sku) {
     price = Number(price);
 
     if (cart[id]) {
@@ -60,6 +61,7 @@ function addToCart(id, name, price) {
             id,
             name,
             price,
+            sku,
             qty: 1
         };
     }
@@ -108,7 +110,7 @@ function renderCart() {
 }
 
 // =======================
-// SAVE BOOKING
+// SAVE BOOKING (WITH RECEIPT UI)
 // =======================
 function saveBooking() {
     if (Object.keys(cart).length === 0) {
@@ -116,32 +118,105 @@ function saveBooking() {
         return;
     }
 
-    // Build receipt HTML
-    let html = "";
+    const now = new Date();
+    const pad = n => (n < 10 ? "0" + n : n);
+
+    const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    const bookingNo = "BK-" + Date.now();
+    let totalQty = 0;
+    let html = `
+        <div style="font-family: monospace; font-size:12px; padding:10px;">
+
+            <div style="text-align:right; font-weight:bold; color:green;">
+                Booking Saved ✅
+            </div>
+
+            <div style="text-align:center; margin-bottom:10px;">
+                <div>Contact : 0313-6330101</div>
+                <h5>Booking Receipt</h5>
+            </div>
+
+            <div>
+                Booking No : ${bookingNo}<br>
+                Date & Time : ${dateStr} ${timeStr}<br>
+            </div>
+
+            <hr>
+
+            <table style="width:100%; font-size:12px;">
+                <thead>
+                    <tr>
+                        <th align="left">Description</th>
+                        <th align="center">Qty</th>
+                        <th align="center">SKU</th>
+                        <th align="right">Rate</th>
+                        <th align="right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
 
     Object.values(cart).forEach(item => {
+        const itemTotal = item.price * item.qty;
+        totalQty += item.qty;
+
         html += `
-            <div class="d-flex justify-content-between">
-                <span>${item.name} x ${item.qty}</span>
-                <span>PKR ${(item.price * item.qty).toFixed(2)}</span>
-            </div>
+            <tr>
+                <td>${item.name}</td>
+                <td align="center">${item.qty}</td>
+                <td align="center">${item.sku}</td>
+                <td align="right">${item.price.toFixed(2)}</td>
+                <td align="right">${itemTotal.toFixed(2)}</td>
+            </tr>
         `;
     });
 
     html += `
-        <hr>
-        <strong>Total Booking Amount: PKR ${totalAmount.toFixed(2)}</strong>
+                </tbody>
+            </table>
+
+            <hr>
+
+            <div style="display:flex; justify-content:space-between;">
+                <span>No Of Items: ${Object.keys(cart).length}</span>
+                <span>Total Qty: ${totalQty}</span>
+                <span><b>${totalAmount.toFixed(2)}</b></span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between;">
+                <span>Total Booking Amount:</span>
+                <span>${totalAmount.toFixed(2)}</span>
+            </div>
+
+            <div style="text-align:center; margin-top:10px;">
+                <svg id="barcode"></svg>
+                <div>${bookingNo}</div>
+            </div>
+
+            <div style="text-align:center; font-size:10px;">
+                Powered by: ZHePOS
+            </div>
+        </div>
     `;
 
     document.getElementById("receipt-body").innerHTML = html;
 
-    // Show receipt modal
+    if (typeof JsBarcode !== "undefined") {
+        JsBarcode("#barcode", bookingNo, {
+            format: "CODE128",
+            width: 2,
+            height: 40,
+            displayValue: false
+        });
+    }
+
     new bootstrap.Modal(
         document.getElementById("receiptModal"),
         { backdrop: "static", keyboard: true }
     ).show();
 
-    // Clear cart for next booking
     clearCart();
 }
 
