@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
 
-<div class="row g-0" id="pos-root" data-username="{{ request.user.username }}"> <!-- Logged-in user -->
+<div class="row g-0" id="pos-root" data-username="{{ request.user.username }}">
 
   <!-- LEFT PANEL -->
   <div class="col-md-8">
@@ -12,7 +12,7 @@
       <div class="card-body">
         <div class="row g-2 align-items-center">
           <div class="col-md-3"><strong>Branch :</strong> Main Branch</div>
-          <div class="col-md-3"><strong>Bill No :</strong> {{ bill_no|default:"Auto" }}</div>
+          <div class="col-md-3"><strong>Booking No :</strong> {{ bill_no|default:"Auto" }}</div>
           <div class="col-md-3">
             <input type="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
           </div>
@@ -29,7 +29,9 @@
         <h6>Categories</h6>
         <div class="d-flex gap-2 flex-wrap">
           {% for c in "123456"|make_list %}
-          <div class="border rounded p-3 text-center" style="width:140px;">Category {{ forloop.counter }}</div>
+          <div class="border rounded p-3 text-center" style="width:140px;">
+            Category {{ forloop.counter }}
+          </div>
           {% endfor %}
         </div>
       </div>
@@ -38,30 +40,32 @@
     <!-- ITEMS TABLE -->
     <div class="card" style="border-radius: 0;">
       <div class="card-body">
-        <h6 style="color: green;">Items</h6> 
-        <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
+        <h6 style="color: green;">Items</h6>
+        <input type="text" class="form-control mb-2" placeholder="Search item">
 
         <div class="table-responsive" style="max-height:400px;">
           <table class="table table-bordered table-sm table-hover">
             <thead class="table-light">
               <tr>
-                <th style="width: 30%;">BarCode (SKU)</th>
-                <th style="width: 20%;">Product ID</th>
-                <th style="width: 50%;">Name</th>
+                <th style="width:30%;">BarCode (SKU)</th>
+                <th style="width:20%;">Product ID</th>
+                <th style="width:50%;">Name</th>
               </tr>
             </thead>
-            <tbody id="product-table-body">
+            <tbody>
               {% for product in products %}
               <tr>
                 <td>{{ product.sku }}</td>
                 <td>{{ product.id }}</td>
                 <td>
-                  <button class="btn btn-link p-0 add-to-cart" 
-                          style="color: green; font-weight: 500;" 
-                          data-id="{{ product.id }}" 
-                          data-name="{{ product.name }}" 
-                          data-price="{{ product.price }}"
-                          data-sku="{{ product.sku }}">
+                  <button
+                    class="btn btn-link p-0 add-to-cart"
+                    style="color: green; font-weight: 500;"
+                    data-id="{{ product.id }}"
+                    data-name="{{ product.name }}"
+                    data-price="{{ product.price }}"
+                    data-sku="{{ product.sku }}"
+                  >
                     {{ product.name }}
                   </button>
                 </td>
@@ -79,7 +83,7 @@
   <!-- RIGHT CART -->
   <div class="col-md-4">
     <div class="card" style="border-radius: 0; height:100%;">
-      <div class="card-header"><strong>Cart</strong></div>
+      <div class="card-header"><strong>Booking Cart</strong></div>
       <div class="card-body" id="cart-items" style="min-height:300px">
         <p class="text-muted">No items added</p>
       </div>
@@ -89,10 +93,10 @@
         <p>Sub Total: PKR <span id="sub-total">0</span></p>
         <hr>
         <div class="mb-2">
-          Bill Discount:
+          Booking Discount:
           <input type="number" id="discount" value="0" class="form-control form-control-sm">
         </div>
-        <h5>Total Payment: PKR <span id="total">0</span></h5>
+        <h5>Total Booking Amount: PKR <span id="total">0</span></h5>
       </div>
     </div>
   </div>
@@ -101,99 +105,63 @@
 
 <!-- ACTION BUTTONS -->
 <div class="row mt-3 g-2">
-  <div class="col-md-3"><button class="btn btn-success w-100">Synced</button></div>
-  <div class="col-md-3"><button class="btn btn-success w-100">Recall Web Orders</button></div>
-  <div class="col-md-3"><button class="btn btn-success w-100" id="payBtn">Pay (F7)</button></div>
-  <div class="col-md-3"><button class="btn btn-danger w-100" id="clearCartBtn">Discard Sale</button></div>
-</div>
+  <div class="col-md-3">
+    <button class="btn btn-success w-100">Synced</button>
+  </div>
 
-<!-- PAYMENT MODAL -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered" style="min-width: 650px; max-width: 800px;">
-    <div class="modal-content">
-      <div class="modal-header justify-content-center">
-        <h5 class="modal-title">Select Payment Mode</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="bg-info text-white text-center p-2 fw-bold">
-        Total Payment : PKRs <span id="payTotal">0</span>
-      </div>
-      <div class="modal-body">
-        <div class="d-flex justify-content-between mb-3">
-          <button class="btn btn-primary payment-btn active" data-mode="cash">💵 Cash</button>
-          <button class="btn btn-secondary payment-btn" data-mode="card">💳 Card</button>
-          <button class="btn btn-secondary payment-btn" data-mode="party">👤 Party</button>
-          <button class="btn btn-secondary payment-btn" data-mode="split">🔀 Split</button>
-        </div>
+  <div class="col-md-3">
+    <button class="btn btn-success w-100">Recall Bookings</button>
+  </div>
 
-        <div id="paymentDetails">
-          <div class="cash-mode mb-2">
-            <label>Cash Tendered</label>
-            <input type="number" id="cashTendered" class="form-control">
-          </div>
-          <div class="card-mode mb-2 d-none">
-            <label>Bank</label>
-            <select class="form-control">
-              <option>Select Bank</option>
-              <option>HABIBMETRO Bank</option>
-              <option>Allied Bank</option>
-              <option>MCB</option>
-            </select>
-            <label class="mt-2">Card Number</label>
-            <input type="text" class="form-control" placeholder="XXXX-XXXX-XXXX-XXXX">
-            <label class="mt-2">Cash Received in Account</label>
-            <input type="number" class="form-control" placeholder="Cash received for safety">
-          </div>
-          <div class="party-mode mb-2 d-none">
-            <label>Party Remarks</label>
-            <textarea class="form-control" placeholder="Enter courier/party info"></textarea>
-          </div>
-          <div class="split-mode mb-2 d-none">
-            <label>Split Payment</label>
-            <p class="text-muted">You can split payment across multiple modes. (Placeholder)</p>
-          </div>
-        </div>
+  <!-- ✅ SAVE BOOKING -->
+  <div class="col-md-3">
+    <button class="btn btn-primary w-100" id="saveBookingBtn">
+      Save Booking
+    </button>
+  </div>
 
-        <div class="bg-light text-center p-2 fw-bold">
-          Return Cash (PKRs)
-          <div id="returnCash" class="fs-4">0</div>
-        </div>
-      </div>
-
-      <div class="modal-footer d-flex justify-content-between">
-        <button type="button" class="btn btn-success" id="confirmPayBtn">💰 Pay (F7)</button>
-        <button type="button" class="btn btn-success" id="confirmPrintBtn">🖨 Pay & Print (F9)</button>
-      </div>
-    </div>
+  <!-- DISCARD -->
+  <div class="col-md-3">
+    <button class="btn btn-danger w-100" id="clearCartBtn">
+      Discard Booking
+    </button>
   </div>
 </div>
 
-<!-- RECEIPT MODAL -->
+<!-- ================= RECEIPT MODAL (REUSED) ================= -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="min-width: 400px; max-width: 500px;">
     <div class="modal-content p-3">
-      
-      <!-- Sale Complete title -->
+
       <div class="d-flex justify-content-end mb-2">
-        <div class="fw-bold text-success">Sale Complete ✅</div>
+        <div class="fw-bold text-success">Booking Saved ✅</div>
       </div>
 
       <div class="text-center mb-2">
         <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
         <p class="small mb-0">Contact : 0313-6330101</p>
         <hr>
-        <strong>Sales Receipt</strong>
+        <strong>Booking Receipt</strong>
       </div>
-      <div id="receipt-body" class="small text-start">Loading...</div>
+
+      <div id="receipt-body" class="small text-start">
+        Loading...
+      </div>
+
       <div class="d-flex justify-content-between mt-2">
-        <button class="btn btn-secondary w-50" id="receiptOkBtn">OK (Esc)</button>
-        <button class="btn btn-success w-50" id="receiptPrintBtn">🖨 Print (F9)</button>
+        <button class="btn btn-secondary w-50" id="receiptOkBtn">
+          OK
+        </button>
+        <button class="btn btn-success w-50" id="receiptPrintBtn">
+          🖨 Print
+        </button>
       </div>
+
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-<script src="{% static 'js/pos.js' %}"></script>
+<!-- ADVANCED BOOKING SCRIPT -->
+<script src="{% static 'js/advanced_booking.js' %}"></script>
 
 {% endblock %}
