@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ADD TO CART
     document.querySelectorAll(".add-to-cart").forEach(btn => {
         btn.addEventListener("click", () => {
-            addToCart(btn.dataset.id, btn.dataset.name, btn.dataset.price);
+            addToCart(btn.dataset.id, btn.dataset.name, btn.dataset.price, btn.dataset.sku);
         });
     });
 
@@ -24,15 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("payBtn")?.addEventListener("click", handlePayFlow);
 
     // CONFIRM BUTTONS
-    document.getElementById("confirmPayBtn")
-        ?.addEventListener("click", () => completePayment(false));
-
-    document.getElementById("confirmPrintBtn")
-        ?.addEventListener("click", () => completePayment(true));
+    document.getElementById("confirmPayBtn")?.addEventListener("click", () => completePayment(false));
+    document.getElementById("confirmPrintBtn")?.addEventListener("click", () => completePayment(true));
 
     // CLEAR CART
-    document.getElementById("clearCartBtn")
-        ?.addEventListener("click", clearCart);
+    document.getElementById("clearCartBtn")?.addEventListener("click", clearCart);
 
     // PAYMENT MODE
     document.querySelectorAll(".payment-btn").forEach(btn => {
@@ -90,7 +86,11 @@ function handlePayFlow() {
 // =======================
 function addToCart(id, name, price, sku) {
     price = Number(price);
-    cart[id] ? cart[id].qty++ : cart[id] = { id, name, price, sku, qty: 1 };
+    if (cart[id]) {
+        cart[id].qty++;
+    } else {
+        cart[id] = { id, name, price, sku, qty: 1 };
+    }
     renderCart();
 }
 
@@ -169,10 +169,8 @@ function completePayment(print) {
         paymentModal?.hide();
 
         setTimeout(() => {
-            // Pass backend items if present, else fallback to cart
             const itemsToShow = data.items && data.items.length ? data.items : Object.values(cart);
 
-            // Add extra info for receipt
             const receiptData = {
                 items: itemsToShow,
                 total: data.total || totalAmount,
@@ -225,6 +223,7 @@ function showReceipt(data) {
                     <tr>
                         <th style="text-align:left;">Description</th>
                         <th style="text-align:center;">Qty</th>
+                        <th style="text-align:center;">SKU</th>
                         <th style="text-align:right;">Rate</th>
                         <th style="text-align:right;">Amount (PKRs)</th>
                     </tr>
@@ -241,7 +240,7 @@ function showReceipt(data) {
             <tr>
                 <td>${i.name}</td>
                 <td style="text-align:center;">${i.qty}</td>
-                <td style="text-align:center;">${i.sku}</td>
+                <td style="text-align:center;">${i.sku || "-"}</td>
                 <td style="text-align:right;">${i.price.toFixed(2)}</td>
                 <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
             </tr>
@@ -288,7 +287,7 @@ function showReceipt(data) {
 
     document.getElementById("receipt-body").innerHTML = html;
 
-    // Barcode generation using JsBarcode (include JsBarcode library in HTML)
+    // Barcode generation using JsBarcode
     if (typeof JsBarcode !== "undefined") {
         JsBarcode("#barcode", data.bill_no, {
             format: "CODE128",
