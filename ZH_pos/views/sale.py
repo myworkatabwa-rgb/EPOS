@@ -84,3 +84,13 @@ def ecommerce_orders(request):
 @login_required(login_url="/login/")
 def advance_booking(request):
     return render(request, "sales/advance_booking.html")
+@login_required(login_url="/login/")
+def packing_slip(request):
+    return render(request, "sales/packing_slip.html")
+@login_required(login_url="/login/")
+def packing_history(request):
+    return render(request, "sales/packing_history.html")
+
+
+
+
