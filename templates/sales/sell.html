@@ -36,54 +36,42 @@
     </div>
 
     <!-- ITEMS TABLE -->
-    <div class="card">
-      <div class="card-body">
-        <h6>Items</h6>
-        <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
+<div class="card">
+  <div class="card-body">
+    <h6>Items</h6>
+    <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
 
-        <div class="table-responsive">
-          <table class="table table-bordered table-sm table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>ID</th>
-                <th>BarCode</th>
-                <th>Name</th>
-                <th>Unit</th>
-                <th>Category</th>
-                <th>SubCategory</th>
-                <th>Purchase Rate</th>
-                <th>Sales Rate</th>
-                <th>Status</th>
-                <th>Print BarCode</th>
-              </tr>
-            </thead>
-            <tbody id="product-table-body">
-              {% for product in products %}
-              <tr>
-                <td>{{ product.id }}</td>
-                <td>{{ product.barcode }}</td>
-                <td>
-                  <button class="btn btn-link p-0 add-to-cart"
-                          data-id="{{ product.id }}"
-                          data-name="{{ product.name }}"
-                          data-price="{{ product.sales_price }}">
-                    {{ product.name }}
-                  </button>
-                </td>
-                <td>{{ product.unit }}</td>
-                <td>{{ product.category }}</td>
-                <td>{{ product.sub_category }}</td>
-                <td>{{ product.purchase_price }}</td>
-                <td>{{ product.sales_price }}</td>
-                <td>{{ product.status }}</td>
-                <td>
-                  <button class="btn btn-sm btn-outline-secondary">Print</button>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>BarCode (SKU)</th>
+            <th>Product ID</th>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody id="product-table-body">
+          {% for product in products %}
+          <tr>
+            <td>{{ product.barcode }}</td>
+            <td>{{ product.id }}</td>
+            <td>
+              <button class="btn btn-link p-0 add-to-cart"
+                      data-id="{{ product.id }}"
+                      data-name="{{ product.name }}"
+                      data-price="{{ product.sales_price }}">
+                {{ product.name }}
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
 
       </div>
     </div>
