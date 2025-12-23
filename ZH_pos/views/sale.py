@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
 from ZH_pos.models import Product
+from datetime import date
+
 
 
 from ZH_pos.models import Order
@@ -83,12 +85,18 @@ def ecommerce_orders(request):
 
 @login_required(login_url="/login/")
 def advance_booking(request):
-    products= product.objects.all()
-     return render(request, "advanced_booking.html", {
+    products = (
+        Product.objects
+        .filter(source="woocommerce")
+        .order_by("name")
+    )
+
+    return render(request, "advanced_booking.html", {
         "products": products,
-        "bill_no": booking_no,
+        "bill_no": "Auto",
         "today": date.today()
     })
+
     
                  
 @login_required(login_url="/login/")
