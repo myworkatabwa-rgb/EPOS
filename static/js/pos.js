@@ -163,9 +163,18 @@ function completePayment(print) {
             return;
         }
 
-        bootstrap.Modal.getInstance(document.getElementById("paymentModal"))?.hide();
-        showReceipt(data);
-        paymentStep = "IDLE";
+        const paymentModalEl = document.getElementById("paymentModal");
+        const paymentModal = bootstrap.Modal.getInstance(paymentModalEl);
+
+        // Hide payment modal first
+        paymentModal?.hide();
+
+        // 🔑 CRITICAL FIX: wait for Bootstrap to finish
+        setTimeout(() => {
+            showReceipt(data);
+            clearCart();          // clear for new sale
+            paymentStep = "IDLE"; // reset POS
+        }, 300);
     });
 }
 
@@ -174,6 +183,7 @@ function completePayment(print) {
 // =======================
 function showReceipt(data) {
     let html = "";
+
     data.items.forEach(i => {
         html += `
             <div class="d-flex justify-content-between">
@@ -183,11 +193,19 @@ function showReceipt(data) {
         `;
     });
 
-    html += `<hr><strong>Total: PKR ${data.total.toFixed(2)}</strong>`;
+    html += `
+        <hr>
+        <strong>Total: PKR ${data.total.toFixed(2)}</strong>
+    `;
+
     document.getElementById("receipt-body").innerHTML = html;
 
-    new bootstrap.Modal(document.getElementById("receiptModal")).show();
+    new bootstrap.Modal(
+        document.getElementById("receiptModal"),
+        { backdrop: "static", keyboard: true }
+    ).show();
 }
+
 
 // =======================
 // PAYMENT MODE
