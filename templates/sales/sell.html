@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
 
-<div class="row g-0"> <!-- Removed gap between left and right panel -->
+<div class="row g-0" id="pos-root" data-username="{{ request.user.username }}"> <!-- Logged-in user -->
 
   <!-- LEFT PANEL -->
   <div class="col-md-8">
@@ -38,7 +38,7 @@
     <!-- ITEMS TABLE -->
     <div class="card" style="border-radius: 0;">
       <div class="card-body">
-        <h6 style="color: green;">Items</h6> <!-- Product title in green -->
+        <h6 style="color: green;">Items</h6> 
         <input type="text" class="form-control mb-2" placeholder="Search item" id="itemSearch">
 
         <div class="table-responsive" style="max-height:400px;">
@@ -161,7 +161,6 @@
       </div>
 
       <div class="modal-footer d-flex justify-content-between">
-        
         <button type="button" class="btn btn-success" id="confirmPayBtn">💰 Pay (F7)</button>
         <button type="button" class="btn btn-success" id="confirmPrintBtn">🖨 Pay & Print (F9)</button>
       </div>
@@ -173,6 +172,12 @@
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="min-width: 400px; max-width: 500px;">
     <div class="modal-content p-3">
+      
+      <!-- Sale Complete title -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="fw-bold text-success">Sale Complete ✅</div>
+      </div>
+
       <div class="text-center mb-2">
         <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
         <p class="small mb-0">Contact : 0313-6330101</p>
