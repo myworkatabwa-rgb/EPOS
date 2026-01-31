@@ -102,10 +102,35 @@ def advance_booking(request):
                  
 @login_required(login_url="/login/")
 def packing_slip(request):
-    return render(request, "sales/packing_slip.html")
+    orders = (
+        Order.objects
+        .select_related("customer")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "sales/packing_slip.html",
+        {
+            "orders": orders
+        }
+    )
+
 @login_required(login_url="/login/")
 def packing_history(request):
-    return render(request, "sales/packing_history.html")
+    packings = (
+        Packing.objects
+        .select_related("customer", "order")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "sales/packing_history.html",
+        {
+            "packings": packings
+        }
+    )
 
 
 
