@@ -1,5 +1,5 @@
 from django.urls import path
-#from ZH_pos import views
+from ZH_pos import views
 
 # SALES
 from .views.sale import (
