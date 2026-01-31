@@ -35,54 +35,64 @@
           </tr>
         </thead>
         <tbody>
-          {% for booking in bookings %}
-          <tr>
-            <td>{{ booking.created_at|date:"Y-m-d H:i" }}</td>
-            <td>{{ booking.booking_no }}</td>
-            <td>{{ booking.user.username|default:request.user.username }}</td>
-            <td>{{ booking.customer.name|default:"Walk-in" }}</td>
-            <td>{{ booking.total_items }}</td>
-            <td>{{ booking.total_qty }}</td>
-            <td>PKR {{ booking.discount|default:"0.00"|floatformat:2 }}</td>
-            <td>PKR {{ booking.net_amount|floatformat:2 }}</td>
+  {% for booking in bookings %}
+  <tr>
+    <td>{{ booking.created_at|date:"Y-m-d H:i" }}</td>
+    <td>{{ booking.booking_no }}</td>
+    <td>{{ booking.user.username|default:request.user.username }}</td>
+    <td>{{ booking.customer.name|default:"Walk-in" }}</td>
+    <td>{{ booking.total_items }}</td>
+    <td>{{ booking.total_qty }}</td>
+    <td>PKR {{ booking.discount|default:"0.00"|floatformat:2 }}</td>
+    <td>PKR {{ booking.net_amount|floatformat:2 }}</td>
 
-            <!-- Detail Button -->
-            <td>
-              <button type="button" class="btn btn-sm btn-primary"
-                      data-bs-toggle="modal"
-                      data-bs-target="#packingDetailModal"
-                      onclick="loadPackingDetail('{{ booking.booking_no }}')">
-                <i class="bi bi-file-text"></i> Detail
-              </button>
-            </td>
+    <td>
+      <button type="button" class="btn btn-sm btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#packingDetailModal"
+              onclick="loadPackingDetail('{{ booking.booking_no }}')">
+        <i class="bi bi-file-text"></i> Detail
+      </button>
+    </td>
 
-            <!-- Print Slip -->
-            <td>
-              <button type="button" class="btn btn-sm btn-success"
-                      onclick="printPackingSlip('{{ booking.booking_no }}')">
-                <i class="bi bi-printer"></i> Print
-              </button>
-            </td>
+    <td>
+      <button type="button" class="btn btn-sm btn-success"
+              onclick="printPackingSlip('{{ booking.booking_no }}')">
+        <i class="bi bi-printer"></i> Print
+      </button>
+    </td>
 
-            <!-- Delete -->
-            <td>
-              {% if perms.ZH_pos.delete_booking %}
-              <form action="{% url 'delete_booking' booking.booking_no %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-danger"
-                        onclick="return confirm('Are you sure you want to delete this packing slip?');">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </form>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="11" class="text-center text-muted">No packing slips found</td>
-          </tr>
-          {% endfor %}
-        </tbody>
+    <td>
+      {% if perms.ZH_pos.delete_booking %}
+      <form action="{% url 'delete_booking' booking.booking_no %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-danger"
+                onclick="return confirm('Are you sure you want to delete this packing slip?');">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td class="text-center text-muted">
+      No packing slips found
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
       </table>
     </div>
 
