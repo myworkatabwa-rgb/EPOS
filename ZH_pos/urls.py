@@ -6,7 +6,7 @@ from .views.sale import sell, sale_history, ecommerce_orders, advance_booking, s
 # Returns
 
 # TRANSACTIONS
-from .views.returns import sale_returns, sale_return_history
+from .views.returns import sale_returns, sale_return_history, fetch_sale_for_return, confirm_sale_return
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
 from .views.items import (
