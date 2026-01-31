@@ -19,10 +19,12 @@ SECRET_KEY = 'django-insecure-dlyx0gx!h@x%lux-pznk2@-wk0ij@0%&azu67hhs)!epahh_aq
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'epos-production-c366.up.railway.app'
+    'epos-production-c366.up.railway.app',
+    'epos-production-3026.up.railway.app'
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "https://epos-production-c366.up.railway.app"
+    "https://epos-production-c366.up.railway.app",
+    "https://epos-production-3026.up.railway.app"
 ]
 
 # =====================================================
