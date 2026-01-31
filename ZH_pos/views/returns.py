@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 import json
 
-from .models import Order, OrderItem, Return
+from ZH_pos.models import Order, OrderItem, Return
 
 
 @login_required
