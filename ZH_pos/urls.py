@@ -1,12 +1,27 @@
 from django.urls import path
-from ZH_pos import views
+#from ZH_pos import views
 
 # SALES
-from .views.sale import sell, sale_history, ecommerce_orders, advance_booking, sale_receipt, delete_sale,packing_slip,packing_history
+from .views.sale import (
+    sell,
+    sale_history,
+    ecommerce_orders,
+    advance_booking,
+    sale_receipt,
+    delete_sale,
+    packing_slip,
+    packing_history,
+)
+
 # Returns
 
 # TRANSACTIONS
-from .views.returns import sale_returns, sale_return_history, fetch_sale_for_return, confirm_sale_return
+from .views.returns import (
+    sale_returns,
+    sale_return_history,
+    fetch_sale_for_return,
+    confirm_sale_return,
+)
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
 from .views.items import (
