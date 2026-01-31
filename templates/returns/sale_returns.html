@@ -1,14 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <p>
-        Hi here you can view the sales history of all time yet 
-    </p>
-</body>
-</html>
+<div class="card mb-2">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+
+      <div class="col-md-2">
+        <input type="text" id="billNo" class="form-control" placeholder="Bill No">
+      </div>
+
+      <div class="col-md-2">
+        <input type="text" id="invoiceNo" class="form-control" placeholder="Invoice No">
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-info w-100" onclick="fetchSale()">+ Add Sale Items</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Barcode</th>
+          <th>Name</th>
+          <th>Qty</th>
+          <th>Return Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="returnTable"></tbody>
+    </table>
+
+  </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+  <button class="btn btn-success" onclick="confirmReturn()">Return</button>
+  <button class="btn btn-secondary">Discard Current Return</button>
+</div>
+
+<script src="{% static 'js/sale_return.js' %}"></script>
+{% endblock %}
