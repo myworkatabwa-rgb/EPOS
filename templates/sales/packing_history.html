@@ -1,11 +1,290 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-</body>
-</html>
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="text-success mb-0">Packing Slip History</h5>
+      <div id="export-buttons"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="mb-3 text-end">
+      <input type="text" id="tableSearch" class="form-control w-25 d-inline" placeholder="Search">
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-responsive">
+      <table id="packingTable" class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Booking No</th>
+            <th>Packed By</th>
+            <th>Customer</th>
+            <th>Total Items</th>
+            <th>Total Qty</th>
+            <th>Discount</th>
+            <th>Net Amount</th>
+            <th>Detail</th>
+            <th>Print Slip</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in bookings %}
+          <tr>
+            <td>{{ booking.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ booking.booking_no }}</td>
+            <td>{{ booking.user.username|default:request.user.username }}</td>
+            <td>{{ booking.customer.name|default:"Walk-in" }}</td>
+            <td>{{ booking.total_items }}</td>
+            <td>{{ booking.total_qty }}</td>
+            <td>PKR {{ booking.discount|default:"0.00"|floatformat:2 }}</td>
+            <td>PKR {{ booking.net_amount|floatformat:2 }}</td>
+
+            <!-- Detail Button -->
+            <td>
+              <button type="button" class="btn btn-sm btn-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#packingDetailModal"
+                      onclick="loadPackingDetail('{{ booking.booking_no }}')">
+                <i class="bi bi-file-text"></i> Detail
+              </button>
+            </td>
+
+            <!-- Print Slip -->
+            <td>
+              <button type="button" class="btn btn-sm btn-success"
+                      onclick="printPackingSlip('{{ booking.booking_no }}')">
+                <i class="bi bi-printer"></i> Print
+              </button>
+            </td>
+
+            <!-- Delete -->
+            <td>
+              {% if perms.ZH_pos.delete_booking %}
+              <form action="{% url 'delete_booking' booking.booking_no %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Are you sure you want to delete this packing slip?');">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="11" class="text-center text-muted">No packing slips found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- PACKING DETAIL MODAL -->
+<div class="modal fade" id="packingDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+    <div class="modal-content p-3">
+      
+      <div class="d-flex justify-content-between mb-2">
+        <h6 class="text-success mb-0">📦 Packing Slip Details</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="text-center mb-2">
+        <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+        <p class="small mb-0">Contact : 0313-6330101</p>
+        <hr>
+        <strong>Booking Receipt</strong>
+      </div>
+
+      <div id="packing-detail-body" class="small text-start">
+        Loading...
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-secondary flex-fill" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button class="btn btn-success flex-fill" onclick="printCurrentDetail()">
+          🖨 Print
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DATATABLES INIT -->
+<script>
+$(document).ready(function () {
+  const table = $('#packingTable').DataTable({
+    pageLength: 25,
+    ordering: true,
+    dom: 'Brtip',
+    order: [[0, 'desc']], // Sort by date descending
+    buttons: [
+      {
+        extend: 'excel',
+        className: 'btn btn-sm btn-outline-success me-1',
+        title: 'Packing Slip History',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5, 6, 7] // Exclude action columns
+        }
+      },
+      {
+        extend: 'pdf',
+        className: 'btn btn-sm btn-outline-danger me-1',
+        title: 'Packing Slip History',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5, 6, 7]
+        }
+      },
+      {
+        extend: 'csv',
+        className: 'btn btn-sm btn-outline-primary',
+        title: 'Packing Slip History',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5, 6, 7]
+        }
+      }
+    ]
+  });
+
+  table.buttons().container().appendTo('#export-buttons');
+
+  $('#tableSearch').on('keyup', function () {
+    table.search(this.value).draw();
+  });
+});
+</script>
+
+<!-- PACKING DETAIL FETCH -->
+<script>
+let currentPackingData = null;
+
+function loadPackingDetail(bookingNo) {
+  fetch(`/bookings/detail/${bookingNo}/`)
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to load packing details');
+      return res.json();
+    })
+    .then(data => {
+      currentPackingData = data;
+      let html = `
+        <div class="border-bottom pb-2 mb-2">
+          <p class="mb-1"><strong>Booking No:</strong> ${data.booking_no}</p>
+          <p class="mb-1"><strong>Date:</strong> ${data.date}</p>
+          <p class="mb-1"><strong>Packed By:</strong> ${data.packed_by}</p>
+          <p class="mb-1"><strong>Customer:</strong> ${data.customer || 'Walk-in'}</p>
+          <p class="mb-1"><strong>Branch:</strong> ${data.branch || 'Main Branch'}</p>
+        </div>
+        
+        <h6 class="text-success mb-2">Items:</h6>
+        <table class="table table-sm table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Item</th>
+              <th class="text-center">Qty</th>
+              <th class="text-end">Price</th>
+              <th class="text-end">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.items.map(item => `
+              <tr>
+                <td>${item.name}</td>
+                <td class="text-center">${item.qty}</td>
+                <td class="text-end">PKR ${parseFloat(item.price).toFixed(2)}</td>
+                <td class="text-end">PKR ${parseFloat(item.amount).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="border-top pt-2 mt-2">
+          <div class="d-flex justify-content-between mb-1">
+            <span><strong>Sub Total:</strong></span>
+            <span>PKR ${parseFloat(data.sub_total).toFixed(2)}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span><strong>Discount:</strong></span>
+            <span class="text-danger">- PKR ${parseFloat(data.discount || 0).toFixed(2)}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <h6 class="mb-0"><strong>Net Amount:</strong></h6>
+            <h6 class="mb-0 text-success"><strong>PKR ${parseFloat(data.net_amount).toFixed(2)}</strong></h6>
+          </div>
+        </div>
+      `;
+      document.getElementById("packing-detail-body").innerHTML = html;
+    })
+    .catch(err => {
+      console.error('Error loading packing details:', err);
+      document.getElementById("packing-detail-body").innerHTML = 
+        '<p class="text-danger">Failed to load packing slip details.</p>';
+    });
+}
+
+function printCurrentDetail() {
+  if (!currentPackingData) {
+    alert('No data loaded to print');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Packing Slip - ${currentPackingData.booking_no}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; }
+          .text-end { text-align: right; }
+          .text-center { text-align: center; }
+          .total-section { margin-top: 20px; }
+          @media print {
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>📦 Packing Slip</h2>
+          <p>Contact: 0313-6330101</p>
+        </div>
+        ${document.getElementById('packing-detail-body').innerHTML}
+        <button onclick="window.print()">Print</button>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+function printPackingSlip(bookingNo) {
+  // Quick print without opening modal
+  fetch(`/bookings/detail/${bookingNo}/`)
+    .then(res => res.json())
+    .then(data => {
+      currentPackingData = data;
+      printCurrentDetail();
+    })
+    .catch(err => {
+      alert('Failed to load packing slip for printing');
+      console.error(err);
+    });
+}
+</script>
+
+{% endblock %}
