@@ -4,10 +4,9 @@ from ZH_pos import views
 # SALES
 from .views.sale import sell, sale_history, ecommerce_orders, advance_booking, sale_receipt, delete_sale,packing_slip,packing_history
 # Returns
-from .views.returns import process_return
 
 # TRANSACTIONS
-from .views.transaction import sale_returns, sale_return_history
+from .views.returns import sale_returns, sale_return_history
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
 from .views.items import (
