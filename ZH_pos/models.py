@@ -19,31 +19,6 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 # =========================
-# PACKING
-# =========================
-class Packing(models.Model):
-    order = models.OneToOneField(
-        Order,
-        on_delete=models.CASCADE,
-        related_name="packing"
-    )
-    customer = models.ForeignKey(
-        Customer,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-    packed_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Packing for {self.order.order_id}"
-
 
 
 # =========================
@@ -86,6 +61,31 @@ class Order(models.Model):
 
     def __str__(self):
         return self.order_id
+
+# PACKING
+# =========================
+class Packing(models.Model):
+    order = models.OneToOneField(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="packing"
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    packed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Packing for {self.order.order_id}"
 
 
 # =========================
