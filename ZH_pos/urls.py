@@ -89,7 +89,7 @@ urlpatterns = [
 
     # RETURNS
     path("returns/<str:order_id>/", views.process_return, name="process_return"),
-    path ("returns/", sale_return),
+    path ("returns/", sale_returns),
 
     # SALES
     path("sales/", sell),
