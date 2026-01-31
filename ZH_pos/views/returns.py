@@ -45,7 +45,7 @@ def fetch_sale_for_return(request):
             "items": items
         })
 
-    except Sale.DoesNotExist:
+    except sale.DoesNotExist:
         return JsonResponse({
             "success": False,
             "error": "Sale not found"
