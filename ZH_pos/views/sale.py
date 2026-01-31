@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
-from ZH_pos.models import Product
+from ZH_pos.models import Product, Packing
 from datetime import date
 
 
@@ -119,7 +119,7 @@ def packing_slip(request):
 @login_required(login_url="/login/")
 def packing_history(request):
     packings = (
-        packing.objects
+        Packing.objects
         .select_related("customer", "order")
         .order_by("-created_at")
     )
