@@ -90,6 +90,8 @@ urlpatterns = [
     #path("returns/<str:order_id>/", views.process_return, name="process_return"),
     #path ("returns/", sale_returns),
     path("returns/", sale_returns),
+    path("returns/fetch-sale/", fetch_sale_for_return, name="fetch_sale_for_return"),
+    path("returns/confirm/", confirm_sale_return, name="confirm_sale_return"),
     path("returns/history/", sale_return_history),
 
     # SALES
