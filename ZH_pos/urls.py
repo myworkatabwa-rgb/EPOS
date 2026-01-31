@@ -87,8 +87,10 @@ urlpatterns = [
     path("pos/checkout/", views.pos_checkout, name="pos_checkout"),
 
     # RETURNS
-    #path("returns/<str:order_id>/", views.process_return, name="process_return"),
+    path("returns/<str:order_id>/", views.process_return, name="process_return"),
     #path ("returns/", sale_returns),
+    path("returns/", sale_returns),
+    path("returns/history/", sale_return_history),
 
     # SALES
     path("sales/", sell),
@@ -101,8 +103,8 @@ urlpatterns = [
     path("sales/packing_his/", packing_history),
 
     # TRANSACTIONS
-    path("returns/", sale_returns),
-    path("returns/history/", sale_return_history),
+   # path("returns/", sale_returns),
+    #path("returns/history/", sale_return_history),
 
     # ITEMS ✅ (NOW CORRECT)
     path("items/", list_items, name="list_items"),
