@@ -24,9 +24,9 @@ from .views.returns import (
 )
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
+from .views.items import import_items
 from .views.items import (
     list_items,
-    import_items,
     add_item,
     item_modifiers,
     suppliers,
@@ -126,7 +126,7 @@ urlpatterns = [
 
     # ITEMS ✅ (NOW CORRECT)
     path("items/", list_items, name="list_items"),
-    path("items/import/", views.import_items, name="import_items"),
+    path("items/import/", import_items, name="import_items"),
     path("items/add/", add_item, name="add_item"),
     path("items/modifiers/", item_modifiers, name="item_modifiers"),
     path("items/suppliers/", suppliers, name="suppliers"),
