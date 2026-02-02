@@ -75,7 +75,7 @@ def import_items(request):
             print("BAD STOCK:", e)
             stock = 0
 
-        product, was_created = Product.objects.update_or_create(
+        Product.objects.update_or_create(
             sku=sku,
             defaults={
                 "name": name,
@@ -83,6 +83,7 @@ def import_items(request):
                 "stock": stock,
             }
         )
+
 
         if was_created:
             created += 1
