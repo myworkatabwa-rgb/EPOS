@@ -78,7 +78,7 @@ def import_items(request):
                 "price": price,
                 "stock": stock,
                 "source": "import",
-                "woo_id": 0,
+                "woo_id": None,
             }
         )
         saved += 1
