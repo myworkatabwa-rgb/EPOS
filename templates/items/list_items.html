@@ -51,37 +51,24 @@
           </thead>
 
           <tbody>
-            {% for item in items %}
-            <tr>
-              <td>{{ item.id }}</td>
-              <td>{{ item.barcode }}</td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.unit }}</td>
-              <td>{{ item.category }}</td>
-              <td>{{ item.subcategory }}</td>
-              <td>{{ item.purchase_rate|default:"0.00" }}</td>
-              <td>{{ item.sale_rate }}</td>
-              <td>
-                <span class="badge bg-success">Active</span>
-              </td>
-              <td>
-                <a href="#" class="text-primary">Print</a>
-              </td>
-              <td>
-                <a href="#" class="text-info">Edit</a>
-              </td>
-              <td>
-                <button class="btn btn-danger btn-sm">Delete</button>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="12" class="text-center text-muted">
-                No items found
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.id }}</td>
+    <td>{{ item.barcode }}</td>
+    <td>{{ item.name }}</td>
+    <td>{{ item.unit }}</td>
+    <td>{{ item.category }}</td>
+    <td>{{ item.subcategory }}</td>
+    <td>{{ item.purchase_rate|default:"0.00" }}</td>
+    <td>{{ item.sale_rate }}</td>
+    <td><span class="badge bg-success">Active</span></td>
+    <td><a href="#" class="text-primary">Print</a></td>
+    <td><a href="#" class="text-info">Edit</a></td>
+    <td><button class="btn btn-danger btn-sm">Delete</button></td>
+  </tr>
+  {% endfor %}
+</tbody>
+
 
         </table>
       </div>
