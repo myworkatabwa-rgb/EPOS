@@ -17,8 +17,7 @@ def list_items(request):
         {
             "items": products  # keep template unchanged
         }
-    )
-@csrf_exempt
+    )@csrf_exempt
 @login_required
 def import_items(request):
     if request.method != "POST":
@@ -28,52 +27,35 @@ def import_items(request):
     if not file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
-    ext = file.name.split(".")[-1].lower()
+    ext = file.name.split('.')[-1].lower()
+    rows = []
 
-    # ---------- READ FILE ----------
     if ext == "csv":
         content = file.read().decode("utf-8-sig")
         reader = csv.DictReader(content.splitlines())
-        rows = [{k.lower().strip(): v for k, v in row.items()} for row in reader]
+        rows = [{k.strip().lower(): v for k, v in row.items()} for row in reader]
 
     elif ext == "xlsx":
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
         headers = [str(cell.value).strip().lower() for cell in sheet[1]]
-        rows = []
         for row in sheet.iter_rows(min_row=2, values_only=True):
             rows.append(dict(zip(headers, row)))
 
     else:
         return JsonResponse({"error": "Unsupported file type"}, status=400)
 
-    created = 0
-    updated = 0
+    saved = 0
 
-    # ---------- PROCESS ROWS ----------
     for row in rows:
-        print("IMPORT ROW:", row)  # DEBUG (watch terminal)
-
         sku = str(row.get("sku", "")).strip()
         name = str(row.get("name", "")).strip()
 
         if not sku or not name:
-            print("SKIPPED: missing sku/name")
             continue
 
-        # SAFE price
-        try:
-            price = Decimal(str(row.get("price", "0")).strip())
-        except Exception as e:
-            print("BAD PRICE:", e)
-            price = Decimal("0.00")
-
-        # SAFE stock
-        try:
-            stock = int(str(row.get("stock", "0")).strip())
-        except Exception as e:
-            print("BAD STOCK:", e)
-            stock = 0
+        price = Decimal(row.get("price") or 0)
+        stock = int(row.get("stock") or 0)
 
         Product.objects.update_or_create(
             sku=sku,
@@ -81,20 +63,14 @@ def import_items(request):
                 "name": name,
                 "price": price,
                 "stock": stock,
+                "source": "import",   # REQUIRED
+                "woo_id": 0           # REQUIRED
             }
         )
 
+        saved += 1
 
-        if was_created:
-            created += 1
-        else:
-            updated += 1
-
-    return JsonResponse({
-        "success": True,
-        "created": created,
-        "updated": updated
-    })
+    return JsonResponse({"success": True, "saved": saved})
 
 
 @login_required
