@@ -28,28 +28,32 @@ def import_items(request):
 
     ext = file.name.split('.')[-1].lower()
 
+    # ---------- READ FILE ----------
     if ext == "csv":
-        rows = csv.DictReader(file.read().decode("utf-8").splitlines())
+        content = file.read().decode("utf-8-sig")
+        rows = csv.DictReader(content.splitlines())
 
     elif ext == "xlsx":
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
+        headers = [str(cell.value).strip().lower() for cell in sheet[1]]
         rows = []
-        headers = [cell.value for cell in sheet[1]]
         for row in sheet.iter_rows(min_row=2, values_only=True):
             rows.append(dict(zip(headers, row)))
 
     else:
         return JsonResponse({"error": "Unsupported file type"}, status=400)
 
+    # ---------- PROCESS ROWS ----------
     for row in rows:
-        sku = str(row.get("sku")).strip()
-        name = row.get("name")
-        price = row.get("price") or 0
-        stock = row.get("stock") or 0
+        sku = str(row.get("sku", "")).strip()
+        name = str(row.get("name", "")).strip()
 
         if not sku or not name:
             continue
+
+        price = Decimal(row.get("price") or 0)
+        stock = int(row.get("stock") or 0)
 
         product, created = Product.objects.get_or_create(
             sku=sku,
@@ -61,14 +65,13 @@ def import_items(request):
         )
 
         if not created:
-            # MERGE duplicate
+            # MERGE DUPLICATES
             product.name = name
             product.price = price
-            product.stock += int(stock)
+            product.stock += stock
             product.save()
 
     return JsonResponse({"success": True})
-
 
 @login_required
 def add_item(request):
