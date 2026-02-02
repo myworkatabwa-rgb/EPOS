@@ -50,3 +50,17 @@ $(document).ready(function () {
     });
 
 });
+$('#itemTable').DataTable({
+    pageLength: 10,
+    lengthChange: true,
+    dom: 'Bfrtip',
+    language: {
+        emptyTable: "No items found"
+    },
+    buttons: [
+        { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
+        { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
+        { extend: 'csv', className: 'btn btn-sm btn-outline-secondary' },
+        { extend: 'colvis', className: 'btn btn-sm btn-outline-secondary' }
+    ]
+});
