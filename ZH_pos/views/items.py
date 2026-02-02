@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from ZH_POS.models import Product
+from ZH_pos.models import Product
 
 
 @login_required
