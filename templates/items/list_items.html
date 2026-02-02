@@ -14,10 +14,12 @@
         <a href="#" class="btn btn-primary btn-sm">Add New Item</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Bulk Update</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Print Multiple Barcodes</a>
-        <a href="#"
-           class="btn btn-outline-secondary btn-sm"
-           data-bs-toggle="modal"
-           data-bs-target="#importModal">
+        <a
+          href="#"
+          class="btn btn-outline-secondary btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#importModal"
+        >
           Import Page
         </a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Export Items Data</a>
@@ -76,14 +78,14 @@
               <td>
                 <span class="badge bg-success">Active</span>
               </td>
-              <td>
-                <a href="#" class="text-primary">Print</a>
-              </td>
-              <td>
-                <a href="#" class="text-info">Edit</a>
-              </td>
-              <td>
-                <button class="btn btn-danger btn-sm">Delete</button>
+              <td><a href="#" class="text-primary">Print</a></td>
+              <td><a href="#" class="text-info">Edit</a></td>
+              <td><button class="btn btn-danger btn-sm">Delete</button></td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="12" class="text-center text-muted">
+                No items found
               </td>
             </tr>
             {% endfor %}
@@ -97,15 +99,6 @@
 
 </div>
 
-<!-- JS -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-
-<script src="{% static 'js/item_list.js' %}"></script>
-
 <!-- IMPORT MODAL -->
 <div class="modal fade" id="importModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
@@ -116,7 +109,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form id="importForm" enctype="multipart/form-data">
+      <!-- ✅ FIXED FORM -->
+      <form
+        id="importForm"
+        method="post"
+        action="{% url 'import_items' %}"
+        enctype="multipart/form-data"
+      >
         {% csrf_token %}
 
         <div class="modal-body">
@@ -146,5 +145,14 @@
     </div>
   </div>
 </div>
+
+<!-- JS (ORDER MATTERS) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+
+<script src="{% static 'js/item_list.js' %}"></script>
 
 {% endblock %}
