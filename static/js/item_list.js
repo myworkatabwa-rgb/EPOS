@@ -1,29 +1,34 @@
 $(document).ready(function () {
 
-    const table = $('#itemTable').DataTable({
-        pageLength: 10,
-        lengthChange: true,
-        dom: 'Bfrtip',
-        language: {
-            emptyTable: "No items found"
-        },
-        buttons: [
-            { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
-            { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
-            { extend: 'csv', className: 'btn btn-sm btn-outline-secondary' },
-            { extend: 'colvis', className: 'btn btn-sm btn-outline-secondary' }
-        ]
-    });
+    let table;
 
-    // Move buttons to custom container
-    table.buttons().container().appendTo('#tableButtons');
+    if ($.fn.DataTable.isDataTable('#itemTable')) {
+        table = $('#itemTable').DataTable();
+    } else {
+        table = $('#itemTable').DataTable({
+            pageLength: 10,
+            lengthChange: true,
+            dom: 'Bfrtip',
+            language: {
+                emptyTable: "No items found"
+            },
+            buttons: [
+                { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
+                { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
+                { extend: 'csv', className: 'btn btn-sm btn-outline-secondary' },
+                { extend: 'colvis', className: 'btn btn-sm btn-outline-secondary' }
+            ]
+        });
+
+        table.buttons().container().appendTo('#tableButtons');
+    }
 
     // Custom search
     $('#itemSearch').on('keyup', function () {
         table.search(this.value).draw();
     });
 
-    // IMPORT FORM (AJAX)
+    // IMPORT FORM
     $('#importForm').on('submit', function (e) {
         e.preventDefault();
 
@@ -39,7 +44,7 @@ $(document).ready(function () {
             success: function () {
                 $('#importStatus').html('<span class="text-success">Import successful</span>');
                 $('#importModal').modal('hide');
-                location.reload();
+                location.reload(); // SAFE now
             },
             error: function (xhr) {
                 $('#importStatus').html(
