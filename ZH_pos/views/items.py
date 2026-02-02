@@ -28,31 +28,44 @@ def import_items(request):
     if not file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
-    ext = file.name.split('.')[-1].lower()
+    ext = file.name.split(".")[-1].lower()
     rows = []
 
+    # ---------- READ FILE ----------
     if ext == "csv":
         content = file.read().decode("utf-8-sig")
         reader = csv.DictReader(content.splitlines())
-        rows = [{k.strip().lower(): v for k, v in row.items()} for row in reader]
+
+        for row in reader:
+            clean = {}
+            for k, v in row.items():
+                if k:
+                    clean[k.strip().lower().replace(" ", "_")] = v
+            rows.append(clean)
 
     elif ext == "xlsx":
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
-        headers = [str(cell.value).strip().lower() for cell in sheet[1]]
-        for row in sheet.iter_rows(min_row=2, values_only=True):
-            rows.append(dict(zip(headers, row)))
+        headers = [
+            str(cell.value).strip().lower().replace(" ", "_")
+            for cell in sheet[1]
+        ]
+        for r in sheet.iter_rows(min_row=2, values_only=True):
+            rows.append(dict(zip(headers, r)))
 
     else:
         return JsonResponse({"error": "Unsupported file type"}, status=400)
 
     saved = 0
+    skipped = 0
 
+    # ---------- PROCESS ----------
     for row in rows:
         sku = str(row.get("sku", "")).strip()
         name = str(row.get("name", "")).strip()
 
         if not sku or not name:
+            skipped += 1
             continue
 
         price = Decimal(row.get("price") or 0)
@@ -64,14 +77,18 @@ def import_items(request):
                 "name": name,
                 "price": price,
                 "stock": stock,
-                "source": "import",   # REQUIRED
-                "woo_id": 0           # REQUIRED
+                "source": "import",
+                "woo_id": 0,
             }
         )
-
         saved += 1
 
-    return JsonResponse({"success": True, "saved": saved})
+    return JsonResponse({
+        "success": True,
+        "saved": saved,
+        "skipped": skipped
+    })
+
 
 
 @login_required
