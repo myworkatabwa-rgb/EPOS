@@ -4,6 +4,9 @@ $(document).ready(function () {
         pageLength: 10,
         lengthChange: true,
         dom: 'Bfrtip',
+        language: {
+            emptyTable: "No items found"
+        },
         buttons: [
             { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
             { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
@@ -12,10 +15,10 @@ $(document).ready(function () {
         ]
     });
 
-    // Place buttons in custom div
+    // Move buttons to custom container
     table.buttons().container().appendTo('#tableButtons');
 
-    // Custom search input
+    // Custom search
     $('#itemSearch').on('keyup', function () {
         table.search(this.value).draw();
     });
@@ -25,7 +28,6 @@ $(document).ready(function () {
         e.preventDefault();
 
         let formData = new FormData(this);
-
         $('#importStatus').html('<span class="text-info">Importing...</span>');
 
         $.ajax({
@@ -37,8 +39,6 @@ $(document).ready(function () {
             success: function () {
                 $('#importStatus').html('<span class="text-success">Import successful</span>');
                 $('#importModal').modal('hide');
-
-                // safest approach for now
                 location.reload();
             },
             error: function (xhr) {
@@ -49,18 +49,4 @@ $(document).ready(function () {
         });
     });
 
-});
-$('#itemTable').DataTable({
-    pageLength: 10,
-    lengthChange: true,
-    dom: 'Bfrtip',
-    language: {
-        emptyTable: "No items found"
-    },
-    buttons: [
-        { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
-        { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
-        { extend: 'csv', className: 'btn btn-sm btn-outline-secondary' },
-        { extend: 'colvis', className: 'btn btn-sm btn-outline-secondary' }
-    ]
 });
