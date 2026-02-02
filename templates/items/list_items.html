@@ -14,9 +14,11 @@
         <a href="#" class="btn btn-primary btn-sm">Add New Item</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Bulk Update</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Print Multiple Barcodes</a>
-        <a href="#" class="btn btn-outline-secondary btn-sm"
-           data-bs-toggle="modal" data-bs-target="#importModal">
-           Import Page
+        <a href="#"
+           class="btn btn-outline-secondary btn-sm"
+           data-bs-toggle="modal"
+           data-bs-target="#importModal">
+          Import Page
         </a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Export Items Data</a>
       </div>
@@ -27,15 +29,22 @@
   <div class="card">
     <div class="card-body">
 
-      <!-- EXPORT BUTTONS -->
+      <!-- BUTTONS + SEARCH -->
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div id="tableButtons"></div>
-        <input type="text" id="itemSearch" class="form-control form-control-sm w-25"
-               placeholder="Search...">
+        <input
+          type="text"
+          id="itemSearch"
+          class="form-control form-control-sm w-25"
+          placeholder="Search..."
+        >
       </div>
 
       <div class="table-responsive">
-        <table class="table table-bordered table-hover table-sm align-middle" id="itemTable">
+        <table
+          class="table table-bordered table-hover table-sm align-middle"
+          id="itemTable"
+        >
           <thead class="table-light">
             <tr>
               <th>ID</th>
@@ -54,49 +63,30 @@
           </thead>
 
           <tbody>
-          {% for item in items %}
+            {% for item in items %}
             <tr>
               <td>{{ item.id }}</td>
               <td>{{ item.sku|default:"-" }}</td>
               <td>{{ item.name }}</td>
-
               <td>-</td>
-
-              <td>
-                {{ item.category.name|default:"-" }}
-              </td>
-
-              <td>
-                {{ item.sub_category.name|default:"-" }}
-              </td>
-
+              <td>{{ item.category.name|default:"-" }}</td>
+              <td>{{ item.sub_category.name|default:"-" }}</td>
               <td>0.00</td>
-
               <td>{{ item.price }}</td>
-
               <td>
                 <span class="badge bg-success">Active</span>
               </td>
-
               <td>
                 <a href="#" class="text-primary">Print</a>
               </td>
-
               <td>
                 <a href="#" class="text-info">Edit</a>
               </td>
-
               <td>
                 <button class="btn btn-danger btn-sm">Delete</button>
               </td>
             </tr>
-          {% empty %}
-            <tr>
-              <td colspan="12" class="text-center text-muted">
-                No items found
-              </td>
-            </tr>
-          {% endfor %}
+            {% endfor %}
           </tbody>
 
         </table>
@@ -128,10 +118,16 @@
 
       <form id="importForm" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="modal-body">
 
+        <div class="modal-body">
           <label class="form-label">Select File (CSV / Excel)</label>
-          <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
+          <input
+            type="file"
+            name="file"
+            class="form-control"
+            accept=".csv,.xlsx"
+            required
+          >
 
           <div class="form-text text-muted mt-2">
             • Duplicate items will be merged by SKU<br>
@@ -139,12 +135,12 @@
           </div>
 
           <div id="importStatus" class="mt-2"></div>
-
         </div>
 
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Import</button>
         </div>
+
       </form>
 
     </div>
