@@ -5,10 +5,15 @@ from ZH_pos.models import Product
 
 @login_required
 def list_items(request):
-    Product = Product.objects.all().order_by('id')
-    return render(request, "items/list_items.html", {
-        "Product": Product
-    })
+    products = Product.objects.all().order_by("id")
+    return render(
+        request,
+        "items/list_items.html",
+        {
+            "items": products  # keep template unchanged
+        }
+    )
+
 
 @login_required
 def add_item(request):
