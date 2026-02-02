@@ -1,76 +1,93 @@
-{% load static %}
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Items</title>
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="{% static 'pos/css/items.css' %}">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<div class="container-fluid">
 
-</head>
-<body>
+  <!-- PAGE HEADER -->
+  <div class="card mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="mb-0">Items</h5>
 
-<div class="page-wrapper">
-
-    <!-- Header -->
-    <div class="page-header">
-        <h2>Item</h2>
-        <div class="actions">
-            <button class="btn primary">Add new Item</button>
-            <button class="btn">Bulk Update</button>
-            <button class="btn">Print Multiple Barcodes</button>
-            <button class="btn">Import Page</button>
-            <button class="btn">Export Items Data</button>
-        </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="#" class="btn btn-primary btn-sm">Add New Item</a>
+        <a href="#" class="btn btn-outline-secondary btn-sm">Bulk Update</a>
+        <a href="#" class="btn btn-outline-secondary btn-sm">Print Multiple Barcodes</a>
+        <a href="#" class="btn btn-outline-secondary btn-sm">Import Page</a>
+        <a href="#" class="btn btn-outline-secondary btn-sm">Export Items Data</a>
+      </div>
     </div>
+  </div>
 
-    <!-- Table -->
-    <div class="table-wrapper">
-        <table id="itemTable" class="display">
-            <thead>
+  <!-- TABLE CARD -->
+  <div class="card">
+    <div class="card-body">
+
+      <!-- EXPORT BUTTONS (Datatable will hook here) -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div id="tableButtons"></div>
+        <input type="text" id="itemSearch" class="form-control form-control-sm w-25"
+               placeholder="Search...">
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle" id="itemTable">
+          <thead class="table-light">
             <tr>
-                <th>ID</th>
-                <th>BarCode</th>
-                <th>Name</th>
-                <th>Unit</th>
-                <th>Category</th>
-                <th>SubCategory</th>
-                <th>Purchase Rate</th>
-                <th>Sales Rate</th>
-                <th>Status</th>
-                <th>Print Barcode</th>
-                <th>Edit</th>
-                <th>Delete</th>
+              <th>ID</th>
+              <th>Barcode</th>
+              <th>Name</th>
+              <th>Unit</th>
+              <th>Category</th>
+              <th>Sub Category</th>
+              <th>Purchase Rate</th>
+              <th>Sale Rate</th>
+              <th>Status</th>
+              <th>Print</th>
+              <th>Edit</th>
+              <th>Delete</th>
             </tr>
-            </thead>
+          </thead>
 
-            <tbody>
+          <tbody>
             {% for item in items %}
             <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.barcode }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.unit }}</td>
-                <td>{{ item.category }}</td>
-                <td>{{ item.subcategory }}</td>
-                <td>{{ item.purchase_rate }}</td>
-                <td>{{ item.sale_rate }}</td>
-                <td>
-                    <span class="status active">Active</span>
-                </td>
-                <td><a href="#" class="link">Print Barcode</a></td>
-                <td><a href="#" class="link edit">Edit</a></td>
-                <td><button class="btn danger">Delete</button></td>
+              <td>{{ item.id }}</td>
+              <td>{{ item.barcode }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.unit }}</td>
+              <td>{{ item.category }}</td>
+              <td>{{ item.subcategory }}</td>
+              <td>{{ item.purchase_rate|default:"0.00" }}</td>
+              <td>{{ item.sale_rate }}</td>
+              <td>
+                <span class="badge bg-success">Active</span>
+              </td>
+              <td>
+                <a href="#" class="text-primary">Print</a>
+              </td>
+              <td>
+                <a href="#" class="text-info">Edit</a>
+              </td>
+              <td>
+                <button class="btn btn-danger btn-sm">Delete</button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="12" class="text-center text-muted">
+                No items found
+              </td>
             </tr>
             {% endfor %}
-            </tbody>
+          </tbody>
+
         </table>
+      </div>
+
     </div>
+  </div>
 
 </div>
 
@@ -80,7 +97,7 @@
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-<script src="{% static 'pos/js/items.js' %}"></script>
 
-</body>
-</html>
+<script src="{% static 'js/item_list.js' %}"></script>
+
+{% endblock %}
