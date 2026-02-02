@@ -1,4 +1,5 @@
 $(document).ready(function () {
+
     const table = $('#itemTable').DataTable({
         pageLength: 10,
         lengthChange: true,
@@ -11,27 +12,15 @@ $(document).ready(function () {
         ]
     });
 
+    // Place buttons in custom div
     table.buttons().container().appendTo('#tableButtons');
 
-    $('#itemSearch').on('keyup', function () {
-        table.search(this.value).draw();
-    });
-});
-$(document).ready(function () {
-
-    const table = $('#itemTable').DataTable({
-        pageLength: 10,
-        dom: 'Bfrtip',
-        buttons: ['excel', 'csv', 'pdf', 'colvis']
-    });
-
-    table.buttons().container().appendTo('#tableButtons');
-
+    // Custom search input
     $('#itemSearch').on('keyup', function () {
         table.search(this.value).draw();
     });
 
-    // IMPORT FORM
+    // IMPORT FORM (AJAX)
     $('#importForm').on('submit', function (e) {
         e.preventDefault();
 
@@ -49,7 +38,7 @@ $(document).ready(function () {
                 $('#importStatus').html('<span class="text-success">Import successful</span>');
                 $('#importModal').modal('hide');
 
-                // Reload page to refresh items
+                // safest approach for now
                 location.reload();
             },
             error: function (xhr) {
