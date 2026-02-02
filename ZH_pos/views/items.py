@@ -5,7 +5,6 @@ import csv
 import openpyxl
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Product
 
 
 @login_required
@@ -18,6 +17,57 @@ def list_items(request):
             "items": products  # keep template unchanged
         }
     )
+@csrf_exempt
+def import_items(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=400)
+
+    file = request.FILES.get("file")
+    if not file:
+        return JsonResponse({"error": "No file uploaded"}, status=400)
+
+    ext = file.name.split('.')[-1].lower()
+
+    if ext == "csv":
+        rows = csv.DictReader(file.read().decode("utf-8").splitlines())
+
+    elif ext == "xlsx":
+        wb = openpyxl.load_workbook(file)
+        sheet = wb.active
+        rows = []
+        headers = [cell.value for cell in sheet[1]]
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            rows.append(dict(zip(headers, row)))
+
+    else:
+        return JsonResponse({"error": "Unsupported file type"}, status=400)
+
+    for row in rows:
+        sku = str(row.get("sku")).strip()
+        name = row.get("name")
+        price = row.get("price") or 0
+        stock = row.get("stock") or 0
+
+        if not sku or not name:
+            continue
+
+        product, created = Product.objects.get_or_create(
+            sku=sku,
+            defaults={
+                "name": name,
+                "price": price,
+                "stock": stock,
+            }
+        )
+
+        if not created:
+            # MERGE duplicate
+            product.name = name
+            product.price = price
+            product.stock += int(stock)
+            product.save()
+
+    return JsonResponse({"success": True})
 
 
 @login_required
