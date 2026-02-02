@@ -17,7 +17,8 @@ def list_items(request):
         {
             "items": products  # keep template unchanged
         }
-    )@csrf_exempt
+    )
+@csrf_exempt
 @login_required
 def import_items(request):
     if request.method != "POST":
