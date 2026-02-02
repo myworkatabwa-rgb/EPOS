@@ -87,4 +87,40 @@
 
 <script src="{% static 'js/item_list.js' %}"></script>
 
+<!-- IMPORT MODAL -->
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Import Items</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form id="importForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+
+          <label class="form-label">Select File (CSV / Excel)</label>
+          <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
+
+          <div class="form-text text-muted mt-2">
+            • Duplicate items will be merged by SKU<br>
+            • Required columns: sku, name, price, stock
+          </div>
+
+          <div id="importStatus" class="mt-2"></div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Import</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+
 {% endblock %}
