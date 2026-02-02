@@ -19,6 +19,7 @@ def list_items(request):
         }
     )
 @csrf_exempt
+@login_required
 def import_items(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request"}, status=400)
