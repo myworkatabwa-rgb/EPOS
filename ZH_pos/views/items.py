@@ -1,11 +1,14 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from ZH_POS.models import Product
 
 
 @login_required
 def list_items(request):
-    return render(request, "items/list_items.html")
-
+    items = Item.objects.all().order_by('id')
+    return render(request, "items/list_items.html", {
+        "items": items
+    })
 
 @login_required
 def add_item(request):
