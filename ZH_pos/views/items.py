@@ -32,7 +32,9 @@ def import_items(request):
     # ---------- READ FILE ----------
     if ext == "csv":
         content = file.read().decode("utf-8-sig")
-        rows = csv.DictReader(content.splitlines())
+        raw_rows = csv.DictReader(content.splitlines())
+        rows = [{k.lower().strip(): v for k, v in row.items()} for row in raw_rows]
+
 
     elif ext == "xlsx":
         wb = openpyxl.load_workbook(file)
