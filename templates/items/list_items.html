@@ -53,24 +53,27 @@
             </tr>
           </thead>
 
-          <tbody>
-  {% for item in items %}
-  <tr>
+         <tbody>
+{% for item in items %}
+<tr>
     <td>{{ item.id }}</td>
-    <td>{{ item.barcode }}</td>
+    <td>{{ item.sku }}</td>
     <td>{{ item.name }}</td>
-    <td>{{ item.unit }}</td>
-    <td>{{ item.category }}</td>
-    <td>{{ item.subcategory }}</td>
-    <td>{{ item.purchase_rate|default:"0.00" }}</td>
-    <td>{{ item.sale_rate }}</td>
-    <td><span class="badge bg-success">Active</span></td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>0.00</td>
+    <td>{{ item.price }}</td>
+    <td>
+        <span class="badge bg-success">Active</span>
+    </td>
     <td><a href="#" class="text-primary">Print</a></td>
     <td><a href="#" class="text-info">Edit</a></td>
     <td><button class="btn btn-danger btn-sm">Delete</button></td>
-  </tr>
-  {% endfor %}
+</tr>
+{% endfor %}
 </tbody>
+
 
 
         </table>
