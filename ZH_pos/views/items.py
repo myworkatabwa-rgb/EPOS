@@ -5,9 +5,9 @@ from ZH_pos.models import Product
 
 @login_required
 def list_items(request):
-    items = Item.objects.all().order_by('id')
+    Product = Product.objects.all().order_by('id')
     return render(request, "items/list_items.html", {
-        "items": items
+        "Product": Product
     })
 
 @login_required
