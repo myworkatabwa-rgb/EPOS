@@ -28,14 +28,13 @@ def import_items(request):
     if not file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
-    ext = file.name.split('.')[-1].lower()
+    ext = file.name.split(".")[-1].lower()
 
     # ---------- READ FILE ----------
     if ext == "csv":
         content = file.read().decode("utf-8-sig")
-        raw_rows = csv.DictReader(content.splitlines())
-        rows = [{k.lower().strip(): v for k, v in row.items()} for row in raw_rows]
-
+        reader = csv.DictReader(content.splitlines())
+        rows = [{k.lower().strip(): v for k, v in row.items()} for row in reader]
 
     elif ext == "xlsx":
         wb = openpyxl.load_workbook(file)
@@ -48,18 +47,35 @@ def import_items(request):
     else:
         return JsonResponse({"error": "Unsupported file type"}, status=400)
 
+    created = 0
+    updated = 0
+
     # ---------- PROCESS ROWS ----------
     for row in rows:
+        print("IMPORT ROW:", row)  # DEBUG (watch terminal)
+
         sku = str(row.get("sku", "")).strip()
         name = str(row.get("name", "")).strip()
 
         if not sku or not name:
+            print("SKIPPED: missing sku/name")
             continue
 
-        price = Decimal(row.get("price") or 0)
-        stock = int(row.get("stock") or 0)
+        # SAFE price
+        try:
+            price = Decimal(str(row.get("price", "0")).strip())
+        except Exception as e:
+            print("BAD PRICE:", e)
+            price = Decimal("0.00")
 
-        product, created = Product.objects.get_or_create(
+        # SAFE stock
+        try:
+            stock = int(str(row.get("stock", "0")).strip())
+        except Exception as e:
+            print("BAD STOCK:", e)
+            stock = 0
+
+        product, was_created = Product.objects.update_or_create(
             sku=sku,
             defaults={
                 "name": name,
@@ -68,14 +84,17 @@ def import_items(request):
             }
         )
 
-        if not created:
-            # MERGE DUPLICATES
-            product.name = name
-            product.price = price
-            product.stock += stock
-            product.save()
+        if was_created:
+            created += 1
+        else:
+            updated += 1
 
-    return JsonResponse({"success": True})
+    return JsonResponse({
+        "success": True,
+        "created": created,
+        "updated": updated
+    })
+
 
 @login_required
 def add_item(request):
