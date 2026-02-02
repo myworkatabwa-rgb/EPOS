@@ -1,13 +1,84 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Items</title>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static 'pos/css/items.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
 </head>
 <body>
-    <p>
-        Hi here you can view the sales history of all time yet 
-    </p>
+
+<div class="page-wrapper">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h2>Item</h2>
+        <div class="actions">
+            <button class="btn primary">Add new Item</button>
+            <button class="btn">Bulk Update</button>
+            <button class="btn">Print Multiple Barcodes</button>
+            <button class="btn">Import Page</button>
+            <button class="btn">Export Items Data</button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table id="itemTable" class="display">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>BarCode</th>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Category</th>
+                <th>SubCategory</th>
+                <th>Purchase Rate</th>
+                <th>Sales Rate</th>
+                <th>Status</th>
+                <th>Print Barcode</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.barcode }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.unit }}</td>
+                <td>{{ item.category }}</td>
+                <td>{{ item.subcategory }}</td>
+                <td>{{ item.purchase_rate }}</td>
+                <td>{{ item.sale_rate }}</td>
+                <td>
+                    <span class="status active">Active</span>
+                </td>
+                <td><a href="#" class="link">Print Barcode</a></td>
+                <td><a href="#" class="link edit">Edit</a></td>
+                <td><button class="btn danger">Delete</button></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="{% static 'pos/js/items.js' %}"></script>
+
 </body>
 </html>
