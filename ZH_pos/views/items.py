@@ -5,6 +5,7 @@ import csv
 import openpyxl
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from decimal import Decimal
 
 
 @login_required
