@@ -15,9 +15,9 @@
         <a href="#" class="btn btn-outline-secondary btn-sm">Bulk Update</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Print Multiple Barcodes</a>
         <a href="#" class="btn btn-outline-secondary btn-sm"
-   data-bs-toggle="modal" data-bs-target="#importModal">
-   Import Page
-</a>
+           data-bs-toggle="modal" data-bs-target="#importModal">
+           Import Page
+        </a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Export Items Data</a>
       </div>
     </div>
@@ -27,7 +27,7 @@
   <div class="card">
     <div class="card-body">
 
-      <!-- EXPORT BUTTONS (Datatable will hook here) -->
+      <!-- EXPORT BUTTONS -->
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div id="tableButtons"></div>
         <input type="text" id="itemSearch" class="form-control form-control-sm w-25"
@@ -53,28 +53,51 @@
             </tr>
           </thead>
 
-         <tbody>
-{% for item in items %}
-<tr>
-    <td>{{ item.id }}</td>
-    <td>{{ item.sku }}</td>
-    <td>{{ item.name }}</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-    <td>0.00</td>
-    <td>{{ item.price }}</td>
-    <td>
-        <span class="badge bg-success">Active</span>
-    </td>
-    <td><a href="#" class="text-primary">Print</a></td>
-    <td><a href="#" class="text-info">Edit</a></td>
-    <td><button class="btn btn-danger btn-sm">Delete</button></td>
-</tr>
-{% endfor %}
-</tbody>
+          <tbody>
+          {% for item in items %}
+            <tr>
+              <td>{{ item.id }}</td>
+              <td>{{ item.sku|default:"-" }}</td>
+              <td>{{ item.name }}</td>
 
+              <td>-</td>
 
+              <td>
+                {{ item.category.name|default:"-" }}
+              </td>
+
+              <td>
+                {{ item.sub_category.name|default:"-" }}
+              </td>
+
+              <td>0.00</td>
+
+              <td>{{ item.price }}</td>
+
+              <td>
+                <span class="badge bg-success">Active</span>
+              </td>
+
+              <td>
+                <a href="#" class="text-primary">Print</a>
+              </td>
+
+              <td>
+                <a href="#" class="text-info">Edit</a>
+              </td>
+
+              <td>
+                <button class="btn btn-danger btn-sm">Delete</button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="12" class="text-center text-muted">
+                No items found
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
 
         </table>
       </div>
@@ -127,6 +150,5 @@
     </div>
   </div>
 </div>
-
 
 {% endblock %}
