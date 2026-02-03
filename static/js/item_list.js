@@ -6,8 +6,12 @@ $(document).ready(function () {
         table = $('#itemTable').DataTable();
     } else {
         table = $('#itemTable').DataTable({
-            pageLength: 10,
+            pageLength: 10, // default 10 products per page
             lengthChange: true,
+            lengthMenu: [
+                [10, 25, 50, 100, -1],
+                [10, 25, 50, 100, "All"]
+            ],
             dom: 'Bfrtip',
             language: {
                 emptyTable: "No items found"
@@ -44,7 +48,7 @@ $(document).ready(function () {
             success: function () {
                 $('#importStatus').html('<span class="text-success">Import successful</span>');
                 $('#importModal').modal('hide');
-                location.reload(); // SAFE now
+                location.reload();
             },
             error: function (xhr) {
                 $('#importStatus').html(
