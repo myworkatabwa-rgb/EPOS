@@ -8,7 +8,7 @@ $(document).ready(function () {
             [10, 50, 100, 500],
             [10, 50, 100, 500]
         ],
-        dom: 'lBfrtip',
+        dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6 text-end'B>>rtip",
         language: {
             emptyTable: "No items found"
         },
