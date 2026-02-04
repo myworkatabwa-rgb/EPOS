@@ -127,6 +127,7 @@ urlpatterns = [
     # ITEMS ✅ (NOW CORRECT)
     path("items/", list_items, name="list_items"),
     path("items/import/", import_items, name="import_items"),
+    path('items/delete/', views.delete_items, name='delete_items'),
     path("items/add/", add_item, name="add_item"),
     path("items/modifiers/", item_modifiers, name="item_modifiers"),
     path("items/suppliers/", suppliers, name="suppliers"),
