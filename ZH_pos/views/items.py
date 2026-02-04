@@ -21,45 +21,22 @@ def list_items(request):
     )
 @csrf_exempt
 @login_required
+import csv
+from decimal import Decimal
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import Product
+
+
+@require_POST
 def import_items(request):
-    if request.method != "POST":
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    file = request.FILES.get("file")
-    if not file:
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    ext = file.name.split(".")[-1].lower()
-    rows = []
-
-    # ---------- READ FILE ----------
-    if ext == "csv":
-        content = file.read().decode("utf-8-sig")
-        reader = csv.DictReader(content.splitlines())
-
-        for row in reader:
-            clean = {}
-            for k, v in row.items():
-                if k:
-                    clean[
-                        k.strip()
-                        .lower()
-                        .replace(" ", "_")
-                        .replace("-", "_")
-                    ] = v
-            rows.append(clean)
-
-    elif ext == "xlsx":
-        wb = opendef import_items(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid request"}, status=400)
-
     uploaded_file = request.FILES.get("file")
+
     if not uploaded_file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
     try:
-        decoded_file = uploaded_file.read().decode("utf-8").splitlines()
+        decoded_file = uploaded_file.read().decode("utf-8-sig").splitlines()
         reader = csv.DictReader(decoded_file)
     except Exception as e:
         return JsonResponse({"error": f"File read error: {str(e)}"}, status=400)
@@ -89,7 +66,7 @@ def import_items(request):
                 "price": price,
                 "stock": stock,
                 "source": "csv",
-                "woo_id": None,  # 🔥 THIS LINE FIXES EVERYTHING
+                "woo_id": None,
             }
         )
 
@@ -100,6 +77,7 @@ def import_items(request):
         "imported": imported,
         "skipped": skipped
     })
+
 
 
 @require_POST
