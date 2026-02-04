@@ -6,14 +6,17 @@ $(document).ready(function () {
         table = $('#itemTable').DataTable();
     } else {
         table = $('#itemTable').DataTable({
-            pageLength: 10, // ✅ default 10 items per page
+            pageLength: 10, // default 10 items
             lengthChange: true,
-            paging: true, // ✅ ensure pagination is ON
+            paging: true,
             lengthMenu: [
                 [10, 50, 100, 500],
                 [10, 50, 100, 500]
             ],
-            dom: 'Bfrtip',
+
+            // ✅ FIXED DOM (length menu ENABLED)
+            dom: 'lBfrtip',
+
             language: {
                 emptyTable: "No items found"
             },
