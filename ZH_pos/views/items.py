@@ -23,11 +23,11 @@ def list_items(request):
 @login_required
 def import_items(request):
     if request.method != "POST":
-        return JsonResponse({"error": "Invalid request"}, status=400)
+        return redirect(request.META.get('HTTP_REFERER', '/'))
 
     file = request.FILES.get("file")
     if not file:
-        return JsonResponse({"error": "No file uploaded"}, status=400)
+        return redirect(request.META.get('HTTP_REFERER', '/'))
 
     ext = file.name.split(".")[-1].lower()
     rows = []
@@ -41,35 +41,52 @@ def import_items(request):
             clean = {}
             for k, v in row.items():
                 if k:
-                    clean[k.strip().lower().replace(" ", "_")] = v
+                    clean[
+                        k.strip()
+                        .lower()
+                        .replace(" ", "_")
+                        .replace("-", "_")
+                    ] = v
             rows.append(clean)
 
     elif ext == "xlsx":
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
+
         headers = [
-            str(cell.value).strip().lower().replace(" ", "_")
+            str(cell.value)
+            .strip()
+            .lower()
+            .replace(" ", "_")
+            .replace("-", "_")
             for cell in sheet[1]
         ]
+
         for r in sheet.iter_rows(min_row=2, values_only=True):
             rows.append(dict(zip(headers, r)))
 
     else:
-        return JsonResponse({"error": "Unsupported file type"}, status=400)
-
-    saved = 0
-    skipped = 0
+        return redirect(request.META.get('HTTP_REFERER', '/'))
 
     # ---------- PROCESS ----------
     for row in rows:
-        sku = str(row.get("sku", "")).strip()
-        name = str(row.get("name", "")).strip()
+        sku = str(
+            row.get("barcode")
+            or row.get("sku")
+            or ""
+        ).strip()
+
+        name = str(row.get("name") or "").strip()
 
         if not sku or not name:
-            skipped += 1
             continue
 
-        price = Decimal(row.get("price") or 0)
+        price = Decimal(
+            row.get("sale_rate")
+            or row.get("price")
+            or 0
+        )
+
         stock = int(row.get("stock") or 0)
 
         Product.objects.update_or_create(
@@ -82,7 +99,6 @@ def import_items(request):
                 "woo_id": None,
             }
         )
-        saved += 1
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
