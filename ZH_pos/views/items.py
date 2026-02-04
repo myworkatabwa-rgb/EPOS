@@ -97,7 +97,10 @@ def delete_items(request):
     ids = request.POST.getlist('ids')
     if ids:
         Product.objects.filter(id__in=ids).delete()
-    return redirect('items')
+
+    # Redirect back to the page that submitted the form
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
 
 
 @login_required
