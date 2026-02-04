@@ -147,30 +147,47 @@ $(document).ready(function () {
         order: [[1, 'asc']]
     });
 
-    // Select all
+    // =========================
+    // SELECT ALL CHECKBOX
+    // =========================
     $('#selectAll').on('change', function () {
         $('.rowCheckbox').prop('checked', this.checked);
     });
 
-    // Bulk delete
-    $('#bulkDeleteBtn').on('click', function () {
-        if ($('.rowCheckbox:checked').length === 0) {
-            alert('Select at least one item');
+    // =========================
+    // BULK DELETE
+    // =========================
+    $('#bulkDeleteBtn').on('click', function (e) {
+        e.preventDefault();
+
+        const checked = $('.rowCheckbox:checked').length;
+
+        if (checked === 0) {
+            alert('⚠️ Please select at least one item to delete.');
             return;
         }
 
-        if (confirm('Delete selected items?')) {
+        if (confirm(`❌ Delete ${checked} selected item(s)? This cannot be undone.`)) {
             $('#bulkDeleteForm').submit();
         }
     });
 
-    // Single delete
-    $('.single-delete').on('click', function () {
+    // =========================
+    // SINGLE DELETE
+    // =========================
+    $('.single-delete').on('click', function (e) {
+        e.preventDefault();
+
         const id = $(this).data('id');
 
-        if (!confirm('Delete this item?')) return;
+        if (!confirm('❌ Delete this item? This action cannot be undone.')) {
+            return;
+        }
 
-        $('<input>').attr({
+        // Remove previous hidden inputs to avoid duplicates
+        $('#bulkDeleteForm input[name="ids"]').remove();
+
+        $('<input>', {
             type: 'hidden',
             name: 'ids',
             value: id
@@ -178,6 +195,13 @@ $(document).ready(function () {
 
         $('#bulkDeleteForm').submit();
     });
+
+    // =========================
+    // DELETE SUCCESS MESSAGE
+    // =========================
+    if (window.location.search.includes('deleted=1')) {
+        alert('✅ Item(s) deleted successfully');
+    }
 
 });
 </script>
