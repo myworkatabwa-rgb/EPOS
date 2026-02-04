@@ -3,6 +3,10 @@
 
 {% block content %}
 
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
 <div class="container-fluid">
 
   <!-- PAGE HEADER -->
@@ -14,12 +18,7 @@
         <a href="#" class="btn btn-primary btn-sm">Add New Item</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Bulk Update</a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Print Multiple Barcodes</a>
-        <a
-          href="#"
-          class="btn btn-outline-secondary btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#importModal"
-        >
+        <a href="#" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
           Import Page
         </a>
         <a href="#" class="btn btn-outline-secondary btn-sm">Export Items Data</a>
@@ -31,21 +30,10 @@
   <div class="card">
     <div class="card-body">
 
-      <!-- BUTTONS + SEARCH -->
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <div id="tableButtons"></div>
-        <input
-          type="text"
-          id="itemSearch"
-          class="form-control form-control-sm w-25"
-          placeholder="Search..."
-        >
-      </div>
-
       <div class="table-responsive">
         <table
-          class="table table-bordered table-hover table-sm align-middle"
           id="itemTable"
+          class="table table-bordered table-hover table-sm align-middle"
         >
           <thead class="table-light">
             <tr>
@@ -75,22 +63,17 @@
               <td>{{ item.sub_category.name|default:"-" }}</td>
               <td>0.00</td>
               <td>{{ item.price }}</td>
-              <td>
-                <span class="badge bg-success">Active</span>
-              </td>
+              <td><span class="badge bg-success">Active</span></td>
               <td><a href="#" class="text-primary">Print</a></td>
               <td><a href="#" class="text-info">Edit</a></td>
               <td><button class="btn btn-danger btn-sm">Delete</button></td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="12" class="text-center text-muted">
-                No items found
-              </td>
+              <td colspan="12" class="text-center text-muted">No items found</td>
             </tr>
             {% endfor %}
           </tbody>
-
         </table>
       </div>
 
@@ -109,50 +92,55 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <!-- ✅ FIXED FORM -->
-      <form
-        id="importForm"
-        method="post"
-        action="{% url 'import_items' %}"
-        enctype="multipart/form-data"
-      >
+      <form method="post" action="{% url 'import_items' %}" enctype="multipart/form-data">
         {% csrf_token %}
-
         <div class="modal-body">
           <label class="form-label">Select File (CSV / Excel)</label>
-          <input
-            type="file"
-            name="file"
-            class="form-control"
-            accept=".csv,.xlsx"
-            required
-          >
+          <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
 
           <div class="form-text text-muted mt-2">
             • Duplicate items will be merged by SKU<br>
             • Required columns: sku, name, price, stock
           </div>
-
-          <div id="importStatus" class="mt-2"></div>
         </div>
 
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Import</button>
         </div>
-
       </form>
 
     </div>
   </div>
 </div>
 
-<!-- JS (ORDER MATTERS) -->
+<!-- JS -->
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- REQUIRED BUTTON DEPENDENCIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
 
-<script src="{% static 'js/item_list.js' %}"></script>
+<script>
+$(document).ready(function () {
+    $('#itemTable').DataTable({
+        pageLength: 10,
+        lengthMenu: [[10, 50, 100, 500], [10, 50, 100, 500]],
+        dom: 'lBfrtip',
+        buttons: [
+            'excel',
+            'pdf',
+            'csv',
+            'colvis'
+        ]
+    });
+});
+</script>
 
 {% endblock %}
