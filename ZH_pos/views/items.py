@@ -90,6 +90,13 @@ def import_items(request):
     })
 
 
+@require_POST
+@logi_required
+def delete_items(request):
+    ids = request.POST.getlist('ids')
+    if ids:
+        Product.objects.filter(id__in=ids).delete()
+    return redirect('items_list')
 
 @login_required
 def add_item(request):
