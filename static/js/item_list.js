@@ -6,11 +6,12 @@ $(document).ready(function () {
         table = $('#itemTable').DataTable();
     } else {
         table = $('#itemTable').DataTable({
-            pageLength: 10, // default 10 products per page
+            pageLength: 10, // ✅ default 10 items per page
             lengthChange: true,
+            paging: true, // ✅ ensure pagination is ON
             lengthMenu: [
-                [10, 25, 50, 100, -1],
-                [10, 25, 50, 100, "All"]
+                [10, 50, 100, 500],
+                [10, 50, 100, 500]
             ],
             dom: 'Bfrtip',
             language: {
