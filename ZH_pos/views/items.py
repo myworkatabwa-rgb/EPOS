@@ -84,11 +84,8 @@ def import_items(request):
         )
         saved += 1
 
-    return JsonResponse({
-        "success": True,
-        "saved": saved,
-        "skipped": skipped
-    })
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
 
 
 @require_POST
