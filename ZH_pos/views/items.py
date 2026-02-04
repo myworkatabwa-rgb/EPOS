@@ -21,13 +21,6 @@ def list_items(request):
     )
 @csrf_exempt
 @login_required
-import csv
-from decimal import Decimal
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from .models import Product
-
-
 @require_POST
 def import_items(request):
     uploaded_file = request.FILES.get("file")
