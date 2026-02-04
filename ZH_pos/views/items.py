@@ -1,10 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from ZH_pos.models import Product
 import csv
 import openpyxl
-from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
