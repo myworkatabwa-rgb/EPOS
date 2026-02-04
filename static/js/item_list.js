@@ -1,35 +1,26 @@
 $(document).ready(function () {
 
-    let table;
+    let table = $('#itemTable').DataTable({
+        pageLength: 10,
+        lengthChange: true,
+        paging: true,
+        lengthMenu: [
+            [10, 50, 100, 500],
+            [10, 50, 100, 500]
+        ],
+        dom: 'lBfrtip',
+        language: {
+            emptyTable: "No items found"
+        },
+        buttons: [
+            { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
+            { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
+            { extend: 'csv', className: 'btn btn-sm btn-outline-secondary' },
+            { extend: 'colvis', className: 'btn btn-sm btn-outline-secondary' }
+        ]
+    });
 
-    if ($.fn.DataTable.isDataTable('#itemTable')) {
-        table = $('#itemTable').DataTable();
-    } else {
-        table = $('#itemTable').DataTable({
-            pageLength: 10, // default 10 items
-            lengthChange: true,
-            paging: true,
-            lengthMenu: [
-                [10, 50, 100, 500],
-                [10, 50, 100, 500]
-            ],
-
-            // ✅ FIXED DOM (length menu ENABLED)
-            dom: 'lBfrtip',
-
-            language: {
-                emptyTable: "No items found"
-            },
-            buttons: [
-                { extend: 'excel', className: 'btn btn-sm btn-outline-secondary' },
-                { extend: 'pdf', className: 'btn btn-sm btn-outline-secondary' },
-                { extend: 'csv', className: 'btn btn-sm btn-outline-secondary' },
-                { extend: 'colvis', className: 'btn btn-sm btn-outline-secondary' }
-            ]
-        });
-
-        table.buttons().container().appendTo('#tableButtons');
-    }
+    table.buttons().container().appendTo('#tableButtons');
 
     // Custom search
     $('#itemSearch').on('keyup', function () {
