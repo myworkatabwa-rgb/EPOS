@@ -92,7 +92,7 @@ def import_items(request):
 
 
 @require_POST
-@logi_required
+@login_required
 def delete_items(request):
     ids = request.POST.getlist('ids')
     if ids:
