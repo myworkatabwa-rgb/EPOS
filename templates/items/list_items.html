@@ -55,39 +55,28 @@
             </thead>
 
             <tbody>
-              {% for item in items %}
-              <tr>
-                <td>
-                  <input type="checkbox" name="ids" value="{{ item.id }}" class="rowCheckbox">
-                </td>
-                <td>{{ item.id }}</td>
-                <td>{{ item.sku|default:"-" }}</td>
-                <td>{{ item.name }}</td>
-                <td>-</td>
-                <td>{{ item.category.name|default:"-" }}</td>
-                <td>{{ item.sub_category.name|default:"-" }}</td>
-                <td>0.00</td>
-                <td>{{ item.price }}</td>
-                <td><span class="badge bg-success">Active</span></td>
-                <td>
-                  <a href="#" class="text-info">Edit</a>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    class="btn btn-danger btn-sm single-delete"
-                    data-id="{{ item.id }}"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="12" class="text-center text-muted">No items found</td>
-              </tr>
-              {% endfor %}
-            </tbody>
+{% for item in items %}
+<tr>
+  <td>{{ item.id }}</td>
+  <td>{{ item.sku|default:"-" }}</td>
+  <td>{{ item.name }}</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>0.00</td>
+  <td>{{ item.price }}</td>
+  <td>
+    <span class="badge bg-success">Active</span>
+  </td>
+  <td><a href="#">Print</a></td>
+  <td><a href="#">Edit</a></td>
+  <td>
+    <button class="btn btn-danger btn-sm">Delete</button>
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+
           </table>
         </div>
       </form>
