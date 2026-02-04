@@ -50,44 +50,37 @@ def import_items(request):
             rows.append(clean)
 
     elif ext == "xlsx":
-        wb = openpyxl.load_workbook(file)
-        sheet = wb.active
+        wb = opendef import_items(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=400)
 
-        headers = [
-            str(cell.value)
-            .strip()
-            .lower()
-            .replace(" ", "_")
-            .replace("-", "_")
-            for cell in sheet[1]
-        ]
+    uploaded_file = request.FILES.get("file")
+    if not uploaded_file:
+        return JsonResponse({"error": "No file uploaded"}, status=400)
 
-        for r in sheet.iter_rows(min_row=2, values_only=True):
-            rows.append(dict(zip(headers, r)))
+    try:
+        decoded_file = uploaded_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded_file)
+    except Exception as e:
+        return JsonResponse({"error": f"File read error: {str(e)}"}, status=400)
 
-    else:
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+    imported = 0
+    skipped = 0
 
-    # ---------- PROCESS ----------
-    for row in rows:
-        sku = str(
-            row.get("barcode")
-            or row.get("sku")
-            or ""
-        ).strip()
-
-        name = str(row.get("name") or "").strip()
+    for row in reader:
+        sku = row.get("sku")
+        name = row.get("name")
 
         if not sku or not name:
+            skipped += 1
             continue
 
-        price = Decimal(
-            row.get("sale_rate")
-            or row.get("price")
-            or 0
-        )
-
-        stock = int(row.get("stock") or 0)
+        try:
+            price = Decimal(row.get("price", "0"))
+            stock = int(row.get("stock", 0))
+        except Exception:
+            skipped += 1
+            continue
 
         Product.objects.update_or_create(
             sku=sku,
@@ -95,13 +88,18 @@ def import_items(request):
                 "name": name,
                 "price": price,
                 "stock": stock,
-                "source": "import",
-                "woo_id": None,
+                "source": "csv",
+                "woo_id": None,  # 🔥 THIS LINE FIXES EVERYTHING
             }
         )
 
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+        imported += 1
 
+    return JsonResponse({
+        "success": True,
+        "imported": imported,
+        "skipped": skipped
+    })
 
 
 @require_POST
