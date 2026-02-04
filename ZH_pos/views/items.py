@@ -23,31 +23,61 @@ def list_items(request):
 @login_required
 @require_POST
 def import_items(request):
-    uploaded_file = request.FILES.get("file")
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=400)
 
-    if not uploaded_file:
+    file = request.FILES.get("file")
+    if not file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
-    try:
-        decoded_file = uploaded_file.read().decode("utf-8-sig").splitlines()
-        reader = csv.DictReader(decoded_file)
-    except Exception as e:
-        return JsonResponse({"error": f"File read error: {str(e)}"}, status=400)
+    ext = file.name.split('.')[-1].lower()
+    rows = []
+
+    # ---------- READ FILE ----------
+    if ext == "csv":
+        content = file.read().decode("utf-8-sig")
+        reader = csv.DictReader(content.splitlines())
+        rows = [
+            {k.strip().lower(): (v.strip() if isinstance(v, str) else v) for k, v in row.items()}
+            for row in reader
+        ]
+
+    elif ext == "xlsx":
+        wb = openpyxl.load_workbook(file)
+        sheet = wb.active
+        headers = [str(cell.value).strip().lower() for cell in sheet[1]]
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            rows.append(dict(zip(headers, row)))
+
+    else:
+        return JsonResponse({"error": "Unsupported file type"}, status=400)
 
     imported = 0
     skipped = 0
 
-    for row in reader:
-        sku = row.get("sku")
-        name = row.get("name")
+    for row in rows:
+        # accept multiple possible column names
+        sku = str(
+            row.get("sku")
+            or row.get("barcode")
+            or row.get("product_code")
+            or ""
+        ).strip()
+
+        name = str(
+            row.get("name")
+            or row.get("product")
+            or row.get("item_name")
+            or ""
+        ).strip()
 
         if not sku or not name:
             skipped += 1
             continue
 
         try:
-            price = Decimal(row.get("price", "0"))
-            stock = int(row.get("stock", 0))
+            price = Decimal(row.get("price") or row.get("sale_price") or 0)
+            stock = int(row.get("stock") or row.get("qty") or 0)
         except Exception:
             skipped += 1
             continue
@@ -58,8 +88,8 @@ def import_items(request):
                 "name": name,
                 "price": price,
                 "stock": stock,
-                "source": "csv",
-                "woo_id": None,
+                "source": "import",
+                "woo_id": None,  # IMPORTANT (unique constraint)
             }
         )
 
@@ -68,7 +98,8 @@ def import_items(request):
     return JsonResponse({
         "success": True,
         "imported": imported,
-        "skipped": skipped
+        "skipped": skipped,
+        "total": len(rows),
     })
 
 
