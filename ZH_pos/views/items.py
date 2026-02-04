@@ -97,7 +97,8 @@ def delete_items(request):
     ids = request.POST.getlist('ids')
     if ids:
         Product.objects.filter(id__in=ids).delete()
-    return redirect('items_list')
+    return redirect('items')
+
 
 @login_required
 def add_item(request):
