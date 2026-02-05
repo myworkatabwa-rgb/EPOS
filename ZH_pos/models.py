@@ -1,7 +1,8 @@
 from django.db import models
 from decimal import Decimal
 from django.contrib.auth.models import User
-
+import pandas as pd  # For CSV/Excel handling
+import datetime
 
 # =========================
 # PRODUCT
@@ -17,10 +18,82 @@ class Product(models.Model):
     source = models.CharField(max_length=50, default="woocommerce")
     woo_id = models.IntegerField(null=True, blank=True, unique=True)
 
+    # Extra fields for CSV/Excel import
+    gtin = models.CharField(max_length=50, blank=True, null=True)
+    upc = models.CharField(max_length=50, blank=True, null=True)
+    ean = models.CharField(max_length=50, blank=True, null=True)
+    isbn = models.CharField(max_length=50, blank=True, null=True)
+    published = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    visibility_in_catalog = models.CharField(max_length=50, blank=True, null=True)
+    short_description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    regular_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    categories = models.TextField(blank=True, null=True)
+    tags = models.TextField(blank=True, null=True)
+    weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    width = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    height = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    allow_customer_reviews = models.BooleanField(default=True)
+    purchase_note = models.TextField(blank=True, null=True)
+    shipping_class = models.CharField(max_length=100, blank=True, null=True)
+    swatches_attributes = models.TextField(blank=True, null=True)
+    brands = models.CharField(max_length=255, blank=True, null=True)
+
     def __str__(self):
         return self.name
-# =========================
 
+    @classmethod
+    def import_from_file(cls, file_path):
+        """
+        Import products from CSV or Excel.
+        Updates existing products by SKU if found, else creates new.
+        """
+        if file_path.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path)
+
+        for _, row in df.iterrows():
+            product_data = {
+                "sku": row.get("SKU"),
+                "name": row.get("Name"),
+                "price": row.get("Regular price") or row.get("Sale price") or 0,
+                "stock": row.get("Stock") or 0,
+                "gtin": row.get("GTIN"),
+                "upc": row.get("UPC"),
+                "ean": row.get("EAN"),
+                "isbn": row.get("ISBN"),
+                "published": row.get("Published") == "yes",
+                "is_featured": row.get("Is featured?") == "yes",
+                "visibility_in_catalog": row.get("Visibility in catalog"),
+                "short_description": row.get("Short description"),
+                "description": row.get("Description"),
+                "sale_price": row.get("Sale price"),
+                "regular_price": row.get("Regular price"),
+                "categories": row.get("Categories"),
+                "tags": row.get("Tags"),
+                "weight": row.get("Weight (kg)"),
+                "length": row.get("Length (cm)"),
+                "width": row.get("Width (cm)"),
+                "height": row.get("Height (cm)"),
+                "allow_customer_reviews": row.get("Allow customer reviews?") == "yes",
+                "purchase_note": row.get("Purchase note"),
+                "shipping_class": row.get("Shipping class"),
+                "swatches_attributes": row.get("Swatches Attributes"),
+                "brands": row.get("Brands"),
+            }
+
+            if product_data["sku"]:
+                obj, created = cls.objects.update_or_create(
+                    sku=product_data["sku"],
+                    defaults=product_data
+                )
+            else:
+                # Create product without SKU
+                obj = cls.objects.create(**product_data)
 
 # =========================
 # CUSTOMER
@@ -63,6 +136,7 @@ class Order(models.Model):
     def __str__(self):
         return self.order_id
 
+# =========================
 # PACKING
 # =========================
 class Packing(models.Model):
