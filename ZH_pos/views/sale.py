@@ -12,11 +12,7 @@ from ZH_pos.models import Order
 
 @login_required(login_url="/login/")
 def sell(request):
-    products = (
-        Product.objects
-        .filter(source="woocommerce")
-        .order_by("name")
-    )
+    products = Product.objects.all().order_by("name")
 
     return render(request, "sales/sell.html", {
         "products": products
