@@ -53,20 +53,20 @@
               </tr>
             </thead>
             <tbody id="product-table-body">
-              {% for items in items %}
+              {% for item in item %}
               <tr>
-                <td>{{ product.sku }}</td>
-                <td>{{ product.id }}</td>
+                <td>{{ item.sku }}</td>
+                <td>{{ item.id }}</td>
                 <td>
                   <button
                     class="btn btn-link p-0 add-to-cart"
                     style="color: green; font-weight: 500;"
-                    data-id="{{ product.id }}"
-                    data-name="{{ product.name }}"
-                    data-price="{{ product.price }}"
-                    data-sku="{{ product.sku }}"
+                    data-id="{{ item.id }}"
+                    data-name="{{ item.name }}"
+                    data-price="{{ item.price }}"
+                    data-sku="{{ item.sku }}"
                   >
-                    {{ product.name }}
+                    {{ item.name }}
                   </button>
                 </td>
               </tr>
