@@ -93,6 +93,7 @@ def advance_booking(request):
                  
 @login_required(login_url="/login/")
 def packing_slip(request):
+    products = Product.objects.all().order_by("name")
     orders = (
         Order.objects
         .select_related("customer")
