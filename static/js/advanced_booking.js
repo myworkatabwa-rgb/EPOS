@@ -1,231 +1,177 @@
-// =======================
-// ADVANCED BOOKING SCRIPT
-// =======================
+document.addEventListener("DOMContentLoaded", function () {
 
-let cart = {};
-let discount = 0;
-let totalAmount = 0;
+  /* ===============================
+     STATE
+  =============================== */
+  let cart = [];
 
-// =======================
-// DOM READY
-// =======================
-document.addEventListener("DOMContentLoaded", () => {
+  /* ===============================
+     DOM ELEMENTS (SAFE)
+  =============================== */
+  const cartItemsEl = document.getElementById("cart-items");
+  const totalItemsEl = document.getElementById("total-items");
+  const totalQtyEl = document.getElementById("total-qty");
+  const subTotalEl = document.getElementById("sub-total");
+  const totalEl = document.getElementById("total");
+  const discountEl = document.getElementById("discount");
+  const clearCartBtn = document.getElementById("clearCartBtn");
+  const saveBookingBtn = document.getElementById("saveBookingBtn");
+  const itemSearch = document.getElementById("itemSearch");
 
-    // ADD TO CART
-    document.querySelectorAll(".add-to-cart").forEach(btn => {
-        btn.addEventListener("click", () => {
-            addToCart(
-                btn.dataset.id,
-                btn.dataset.name,
-                btn.dataset.price,
-                btn.dataset.sku || "-"
-            );
+  /* ===============================
+     ADD TO CART
+  =============================== */
+  document.querySelectorAll(".add-to-cart").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const id = this.dataset.id;
+      const name = this.dataset.name;
+      const price = parseFloat(this.dataset.price);
+      const sku = this.dataset.sku;
+
+      const existing = cart.find(item => item.id === id);
+
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({
+          id,
+          sku,
+          name,
+          price,
+          qty: 1
         });
+      }
+
+      renderCart();
     });
+  });
 
-    // SAVE BOOKING
-    document.getElementById("saveBookingBtn")
-        ?.addEventListener("click", saveBooking);
+  /* ===============================
+     RENDER CART
+  =============================== */
+  function renderCart() {
+    if (!cartItemsEl) return;
 
-    // CLEAR CART
-    document.getElementById("clearCartBtn")
-        ?.addEventListener("click", clearCart);
-
-    // DISCOUNT
-    document.getElementById("discount")
-        ?.addEventListener("input", renderCart);
-
-    // RECEIPT OK
-    document.getElementById("receiptOkBtn")
-        ?.addEventListener("click", () => {
-            bootstrap.Modal.getInstance(
-                document.getElementById("receiptModal")
-            )?.hide();
-        });
-
-    // PRINT
-    document.getElementById("receiptPrintBtn")
-        ?.addEventListener("click", () => window.print());
-});
-
-// =======================
-// ADD TO CART
-// =======================
-function addToCart(id, name, price, sku) {
-    price = Number(price);
-
-    if (cart[id]) {
-        cart[id].qty++;
-    } else {
-        cart[id] = {
-            id,
-            name,
-            price,
-            sku,
-            qty: 1
-        };
+    if (cart.length === 0) {
+      cartItemsEl.innerHTML = `<p class="text-muted">No items added</p>`;
+      updateTotals();
+      return;
     }
 
-    renderCart();
-}
+    cartItemsEl.innerHTML = "";
 
-// =======================
-// RENDER CART
-// =======================
-function renderCart() {
-    const cartDiv = document.getElementById("cart-items");
-    cartDiv.innerHTML = "";
-
-    let subTotal = 0;
-    let totalQty = 0;
-
-    Object.values(cart).forEach(item => {
-        const total = item.price * item.qty;
-        subTotal += total;
-        totalQty += item.qty;
-
-        cartDiv.innerHTML += `
-            <div class="d-flex justify-content-between">
-                <span>${item.name} x ${item.qty}</span>
-                <span>PKR ${total.toFixed(2)}</span>
-            </div>
-        `;
-    });
-
-    discount = Number(
-        document.getElementById("discount").value || 0
-    );
-
-    totalAmount = Math.max(subTotal - discount, 0);
-
-    document.getElementById("sub-total").innerText = subTotal.toFixed(2);
-    document.getElementById("total").innerText = totalAmount.toFixed(2);
-    document.getElementById("total-qty").innerText = totalQty;
-    document.getElementById("total-items").innerText =
-        Object.keys(cart).length;
-
-    if (!Object.keys(cart).length) {
-        cartDiv.innerHTML = `<p class="text-muted">No items added</p>`;
-    }
-}
-
-// =======================
-// SAVE BOOKING (WITH RECEIPT UI)
-// =======================
-function saveBooking() {
-    if (Object.keys(cart).length === 0) {
-        alert("Please add items before saving booking");
-        return;
-    }
-
-    const now = new Date();
-    const pad = n => (n < 10 ? "0" + n : n);
-
-    const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
-    const bookingNo = "BK-" + Date.now();
-    let totalQty = 0;
-    let html = `
-        <div style="font-family: monospace; font-size:12px; padding:10px;">
-
-            <div style="text-align:right; font-weight:bold; color:green;">
-                Booking Saved ✅
-            </div>
-
-            <div style="text-align:center; margin-bottom:10px;">
-                <div>Contact : 0313-6330101</div>
-                <h5>Booking Receipt</h5>
-            </div>
-
+    cart.forEach((item, index) => {
+      cartItemsEl.innerHTML += `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+          <div>
+            <strong>${item.name}</strong><br>
+            <small>SKU: ${item.sku}</small>
+          </div>
+          <div class="text-end">
             <div>
-                Booking No : ${bookingNo}<br>
-                Date & Time : ${dateStr} ${timeStr}<br>
+              <button class="btn btn-sm btn-light minus-btn" data-index="${index}">−</button>
+              <span class="mx-2">${item.qty}</span>
+              <button class="btn btn-sm btn-light plus-btn" data-index="${index}">+</button>
             </div>
-
-            <hr>
-
-            <table style="width:100%; font-size:12px;">
-                <thead>
-                    <tr>
-                        <th align="left">Description</th>
-                        <th align="center">Qty</th>
-                        <th align="center">SKU</th>
-                        <th align="right">Rate</th>
-                        <th align="right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    Object.values(cart).forEach(item => {
-        const itemTotal = item.price * item.qty;
-        totalQty += item.qty;
-
-        html += `
-            <tr>
-                <td>${item.name}</td>
-                <td align="center">${item.qty}</td>
-                <td align="center">${item.sku}</td>
-                <td align="right">${item.price.toFixed(2)}</td>
-                <td align="right">${itemTotal.toFixed(2)}</td>
-            </tr>
-        `;
+            <small>PKR ${item.price * item.qty}</small>
+          </div>
+        </div>
+      `;
     });
 
-    html += `
-                </tbody>
-            </table>
+    attachQtyEvents();
+    updateTotals();
+  }
 
-            <hr>
+  /* ===============================
+     QTY BUTTONS
+  =============================== */
+  function attachQtyEvents() {
+    document.querySelectorAll(".plus-btn").forEach(btn => {
+      btn.addEventListener("click", function () {
+        cart[this.dataset.index].qty++;
+        renderCart();
+      });
+    });
 
-            <div style="display:flex; justify-content:space-between;">
-                <span>No Of Items: ${Object.keys(cart).length}</span>
-                <span>Total Qty: ${totalQty}</span>
-                <span><b>${totalAmount.toFixed(2)}</b></span>
-            </div>
+    document.querySelectorAll(".minus-btn").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const i = this.dataset.index;
+        cart[i].qty--;
+        if (cart[i].qty <= 0) cart.splice(i, 1);
+        renderCart();
+      });
+    });
+  }
 
-            <div style="display:flex; justify-content:space-between;">
-                <span>Total Booking Amount:</span>
-                <span>${totalAmount.toFixed(2)}</span>
-            </div>
+  /* ===============================
+     TOTALS
+  =============================== */
+  function updateTotals() {
+    let totalItems = cart.length;
+    let totalQty = 0;
+    let subTotal = 0;
 
-            <div style="text-align:center; margin-top:10px;">
-                <svg id="barcode"></svg>
-                <div>${bookingNo}</div>
-            </div>
+    cart.forEach(item => {
+      totalQty += item.qty;
+      subTotal += item.qty * item.price;
+    });
 
-            <div style="text-align:center; font-size:10px;">
-                Powered by: ZHePOS
-            </div>
-        </div>
-    `;
+    const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
+    const total = Math.max(subTotal - discount, 0);
 
-    document.getElementById("receipt-body").innerHTML = html;
+    if (totalItemsEl) totalItemsEl.innerText = totalItems;
+    if (totalQtyEl) totalQtyEl.innerText = totalQty;
+    if (subTotalEl) subTotalEl.innerText = subTotal.toFixed(0);
+    if (totalEl) totalEl.innerText = total.toFixed(0);
+  }
 
-    if (typeof JsBarcode !== "undefined") {
-        JsBarcode("#barcode", bookingNo, {
-            format: "CODE128",
-            width: 2,
-            height: 40,
-            displayValue: false
-        });
-    }
+  if (discountEl) {
+    discountEl.addEventListener("input", updateTotals);
+  }
 
-    new bootstrap.Modal(
-        document.getElementById("receiptModal"),
-        { backdrop: "static", keyboard: true }
-    ).show();
+  /* ===============================
+     CLEAR CART
+  =============================== */
+  if (clearCartBtn) {
+    clearCartBtn.addEventListener("click", function () {
+      if (!confirm("Discard booking?")) return;
+      cart = [];
+      renderCart();
+    });
+  }
 
-    clearCart();
-}
+  /* ===============================
+     SAVE BOOKING (DEMO)
+  =============================== */
+  if (saveBookingBtn) {
+    saveBookingBtn.addEventListener("click", function () {
+      if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+      }
 
-// =======================
-// CLEAR CART
-// =======================
-function clearCart() {
-    cart = {};
-    discount = 0;
-    document.getElementById("discount").value = 0;
-    renderCart();
-}
+      console.log("BOOKING DATA:", cart);
+
+      const receiptModal = document.getElementById("receiptModal");
+      if (receiptModal && window.bootstrap) {
+        new bootstrap.Modal(receiptModal).show();
+      }
+    });
+  }
+
+  /* ===============================
+     SEARCH ITEMS
+  =============================== */
+  if (itemSearch) {
+    itemSearch.addEventListener("keyup", function () {
+      const value = this.value.toLowerCase();
+      document.querySelectorAll("#product-table-body tr").forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(value)
+          ? ""
+          : "none";
+      });
+    });
+  }
+
+});
