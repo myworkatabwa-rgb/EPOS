@@ -81,12 +81,7 @@ def ecommerce_orders(request):
 
 @login_required(login_url="/login/")
 def advance_booking(request):
-     products = Product.objects.all().order_by("name")
-
-    return render(request, "sales/sell.html", {
-        "products": products
-    })
-
+    products = Product.objects.all().order_by("name")
 
     return render(request, "sales/advance_booking.html", {
 
@@ -94,7 +89,6 @@ def advance_booking(request):
         "bill_no": "Auto",
         "today": date.today()
     })
-
     
                  
 @login_required(login_url="/login/")
