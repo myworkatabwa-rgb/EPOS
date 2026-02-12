@@ -34,6 +34,7 @@ from .views.items import (
     save_modifiers,
     modifiers_list,
     suppliers,
+    supplier_list
     brands,
     search_item,
     print_multiple_barcodes,
@@ -138,6 +139,7 @@ urlpatterns = [
     path("items/modifiers/save/", save_modifiers, name="save_modifiers"),
     path("items/modifiers/list/", modifiers_list, name="modifiers_list"),
     path("items/suppliers/", suppliers, name="suppliers"),
+    path("items/suppliers/", supplier_list, name="supplier_list"),
     path("items/brands/", brands, name="brands"),
     path("items/search/", search_item, name="search_item"),
     path("items/print-barcodes/", print_multiple_barcodes, name="print_multiple_barcodes"),
