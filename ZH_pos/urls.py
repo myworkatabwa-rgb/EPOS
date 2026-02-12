@@ -30,6 +30,7 @@ from .views.items import (
     add_item,
     delete_items,
     item_modifiers,
+    search,
     suppliers,
     brands,
     search_item,
