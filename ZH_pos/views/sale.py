@@ -104,8 +104,9 @@ def packing_slip(request):
         request,
         "sales/packing_slip.html",
         {
+            "products": products,
             "orders": orders
-            "products": products
+            
         }
     )
 
