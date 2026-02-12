@@ -31,6 +31,8 @@ from .views.items import (
     delete_items,
     item_modifiers,
     search_products,
+    save_modifier,
+    modifier_list,
     suppliers,
     brands,
     search_item,
