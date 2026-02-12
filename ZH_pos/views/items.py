@@ -150,7 +150,7 @@ def search_products(request):
     return JsonResponse([], safe=False)
 
 @login_required
-def save_modifier(request):
+def save_modifiers(request):
 
     if request.method == "POST":
         data = json.loads(request.body)
