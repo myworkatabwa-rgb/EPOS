@@ -129,6 +129,27 @@ def item_modifiers(request):
 
 
 @login_required
+def search_products(request):
+    query = request.GET.get("q", "")
+
+    if len(query) >= 3:
+        items = Product.objects.filter(name__icontains=query).order_by("id")[:20]
+
+        data = []
+        for item in items:
+            data.append({
+                "id": item.id,
+                "name": item.name,
+                "sku": item.sku,
+                "price": str(item.price),
+            })
+
+        return JsonResponse(data, safe=False)
+
+    return JsonResponse([], safe=False)
+
+
+@login_required
 def suppliers(request):
     return render(request, "items/suppliers.html")
 
