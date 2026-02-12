@@ -60,17 +60,20 @@
 
             <!-- Search + Add -->
             <div class="row mb-4">
-                <div class="col-md-6">
-                    <select class="form-select">
-                        <option selected>Type at least 3 characters to search...</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary w-100">
-                        Add Item
-                    </button>
-                </div>
-            </div>
+    <div class="col-md-6 position-relative">
+
+        <input type="text"
+               id="productSearch"
+               class="form-control"
+               placeholder="Type at least 3 characters to search...">
+
+        <div id="searchResults"
+             class="list-group position-absolute w-100"
+             style="z-index:1000;"></div>
+
+    </div>
+</div>
+
 
             <!-- TABLE -->
             <div class="table-responsive mb-4">
