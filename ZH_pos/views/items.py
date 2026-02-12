@@ -179,10 +179,11 @@ def modifiers_list(request):
         "modifiers": modifiers
     })
 
+
 @login_required
 def suppliers(request):
     if request.method == "POST":
-        suppliers.objects.create(
+        Supplier.objects.create(
             supplier_code=request.POST.get("supplier_code"),
             supplier_name=request.POST.get("supplier_name"),
             phone=request.POST.get("phone"),
@@ -200,10 +201,15 @@ def suppliers(request):
         return redirect("supplier_list")
 
     return render(request, "items/suppliers.html")
+
+
 @login_required
 def supplier_list(request):
-    suppliers = suppliers.objects.all().order_by("-id")
-    return render(request, "supplier_list.html", {"suppliers": suppliers})
+    suppliers = Supplier.objects.all().order_by("-id")
+    return render(request, "items/supplier_list.html", {
+        "suppliers": suppliers
+    })
+
     
 
 
