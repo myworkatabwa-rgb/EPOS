@@ -173,9 +173,9 @@ def save_modifiers(request):
 
     return JsonResponse({"success": False})
 @login_required
-def modifier_list(request):
+def modifiers_list(request):
     modifiers = ModifierGroup.objects.all().order_by("-id")
-    return render(request, "items/modifier_list.html", {
+    return render(request, "items/modifiers_list.html", {
         "modifiers": modifiers
     })
 
