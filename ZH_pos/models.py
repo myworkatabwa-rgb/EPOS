@@ -54,6 +54,24 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
 
+class ModifierGroup(models.Model):
+    name = models.CharField(max_length=200)
+    is_count = models.BooleanField(default=False)
+    count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
+class ModifierItem(models.Model):
+    modifier = models.ForeignKey(
+        ModifierGroup,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    get_rate_from_modifier = models.BooleanField(default=False)
 
 # =========================
 # ORDER (SALE)
