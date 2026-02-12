@@ -181,7 +181,30 @@ def modifiers_list(request):
 
 @login_required
 def suppliers(request):
+    if request.method == "POST":
+        Supplier.objects.create(
+            supplier_code=request.POST.get("supplier_code"),
+            supplier_name=request.POST.get("supplier_name"),
+            phone=request.POST.get("phone"),
+            fax=request.POST.get("fax"),
+            mobile=request.POST.get("mobile"),
+            city=request.POST.get("city"),
+            country=request.POST.get("country"),
+            status=request.POST.get("status"),
+            email=request.POST.get("email"),
+            ntn=request.POST.get("ntn"),
+            strn=request.POST.get("strn"),
+            cnic=request.POST.get("cnic"),
+            address=request.POST.get("address"),
+        )
+        return redirect("supplier_list")
+
     return render(request, "items/suppliers.html")
+@login_required
+def supplier_list(request):
+    suppliers = Supplier.objects.all().order_by("-id")
+    return render(request, "supplier_list.html", {"suppliers": suppliers})
+    
 
 
 @login_required
