@@ -131,6 +131,7 @@ urlpatterns = [
     path('items/delete/', delete_items, name='delete_items'),
     path("items/add/", add_item, name="add_item"),
     path("items/modifiers/", item_modifiers, name="item_modifiers"),
+    path("item/modifiers/search/", search, name="search_products"),
     path("items/suppliers/", suppliers, name="suppliers"),
     path("items/brands/", brands, name="brands"),
     path("items/search/", search_item, name="search_item"),
