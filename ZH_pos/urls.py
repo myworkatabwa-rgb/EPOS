@@ -34,7 +34,7 @@ from .views.items import (
     save_modifiers,
     modifiers_list,
     suppliers,
-    supplier_list
+    supplier_list,
     brands,
     search_item,
     print_multiple_barcodes,
