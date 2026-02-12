@@ -121,7 +121,7 @@ searchInput.addEventListener("keyup", function() {
         return;
     }
 
-    fetch(`/item-modifiers/search/?q=${query}`)
+    fetch("{% url 'search_products' %}?q=" + query)
         .then(response => response.json())
         .then(data => {
 
