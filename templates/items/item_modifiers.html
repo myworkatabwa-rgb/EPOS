@@ -104,3 +104,72 @@
 </div>
 
 {% endblock %}
+<script>
+const searchInput = document.getElementById("productSearch");
+const resultsBox = document.getElementById("searchResults");
+const tableBody = document.getElementById("modifierTableBody");
+
+
+// 🔎 SEARCH WHEN TYPING
+searchInput.addEventListener("keyup", function() {
+
+    let query = this.value;
+
+    if (query.length < 3) {
+        resultsBox.innerHTML = "";
+        return;
+    }
+
+    fetch(`/item-modifiers/search/?q=${query}`)
+        .then(response => response.json())
+        .then(data => {
+
+            resultsBox.innerHTML = "";
+
+            data.forEach(product => {
+
+                let item = document.createElement("a");
+                item.classList.add("list-group-item", "list-group-item-action");
+                item.innerText = product.name + " (" + product.sku + ")";
+
+                item.addEventListener("click", function() {
+                    addProductToTable(product);
+                    resultsBox.innerHTML = "";
+                    searchInput.value = "";
+                });
+
+                resultsBox.appendChild(item);
+            });
+        });
+});
+
+
+// ➕ ADD PRODUCT TO TABLE
+function addProductToTable(product) {
+
+    let row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>${product.name} - ${product.sku}</td>
+
+        <td>
+            <input type="number" value="0"
+                   class="form-control form-control-sm"
+                   style="width:100px;">
+        </td>
+
+        <td class="text-center">
+            <button class="btn btn-danger btn-sm deleteRow">
+                Delete
+            </button>
+        </td>
+    `;
+
+    tableBody.appendChild(row);
+
+    // 🗑 Delete Function
+    row.querySelector(".deleteRow").addEventListener("click", function() {
+        row.remove();
+    });
+}
+</script>
