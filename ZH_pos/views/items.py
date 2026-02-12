@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
-from ZH_pos.models import Product
+from ZH_pos.models import Product, ModifierGroup, ModifierItem
 import csv
+import json
 import openpyxl
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -148,6 +149,35 @@ def search_products(request):
 
     return JsonResponse([], safe=False)
 
+@login_required
+def save_modifier(request):
+
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+        modifier = ModifierGroup.objects.create(
+            name=data["name"],
+            is_count=data["is_count"],
+            count=data["count"] or 0
+        )
+
+        for item in data["items"]:
+            ModifierItem.objects.create(
+                modifier=modifier,
+                product_id=item["product_id"],
+                amount=item["amount"],
+                get_rate_from_modifier=item["get_rate"]
+            )
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False})
+@login_required
+def modifier_list(request):
+    modifiers = ModifierGroup.objects.all().order_by("-id")
+    return render(request, "items/modifier_list.html", {
+        "modifiers": modifiers
+    })
 
 @login_required
 def suppliers(request):
