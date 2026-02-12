@@ -92,8 +92,9 @@
                             <th style="width:15%">DELETE</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Dynamic rows will appear here -->
+                   
+                        <tbody id="modifierTableBody">
+
                     </tbody>
                 </table>
             </div>
@@ -152,19 +153,35 @@ searchInput.addEventListener("keyup", function() {
 // ➕ ADD PRODUCT TO TABLE
 function addProductToTable(product) {
 
+    // Prevent duplicate products
+    const existingRows = tableBody.querySelectorAll("tr");
+    for (let row of existingRows) {
+        if (row.dataset.productId == product.id) {
+            alert("Product already added!");
+            return;
+        }
+    }
+
     let row = document.createElement("tr");
+    row.dataset.productId = product.id;
 
     row.innerHTML = `
         <td>${product.name} - ${product.sku}</td>
 
         <td>
-            <input type="number" value="0"
+            <input type="number"
+                   value="0"
                    class="form-control form-control-sm"
                    style="width:100px;">
         </td>
 
         <td class="text-center">
-            <button class="btn btn-danger btn-sm deleteRow">
+            <input type="checkbox" class="form-check-input">
+        </td>
+
+        <td class="text-center">
+            <button type="button"
+                    class="btn btn-danger btn-sm deleteRow">
                 Delete
             </button>
         </td>
@@ -172,7 +189,7 @@ function addProductToTable(product) {
 
     tableBody.appendChild(row);
 
-    // 🗑 Delete Function
+    // Delete row
     row.querySelector(".deleteRow").addEventListener("click", function() {
         row.remove();
     });
