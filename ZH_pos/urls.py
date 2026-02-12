@@ -32,7 +32,7 @@ from .views.items import (
     item_modifiers,
     search_products,
     save_modifier,
-    modifier_list,
+    modifiers_list,
     suppliers,
     brands,
     search_item,
