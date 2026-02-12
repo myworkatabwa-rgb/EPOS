@@ -60,16 +60,20 @@
 
             <!-- Search + Add -->
             <div class="row mb-4">
-    <div class="col-md-6 position-relative">
+    <div class="col-md-6 position-relative d-flex gap-2">
 
         <input type="text"
                id="productSearch"
                class="form-control"
                placeholder="Type at least 3 characters to search...">
 
+        <button class="btn btn-primary" id="searchBtn">
+            Search
+        </button>
+
         <div id="searchResults"
              class="list-group position-absolute w-100"
-             style="z-index:1000;"></div>
+             style="z-index:1000; top:100%;"></div>
 
     </div>
 </div>
