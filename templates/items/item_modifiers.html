@@ -101,9 +101,10 @@
 
             <!-- Bottom Add Button -->
             <div class="text-start">
-                <button class="btn btn-primary px-5">
-                    Add
-                </button>
+                <button type="button" class="btn btn-primary px-5" id="saveModifier">
+    Add
+</button>
+
             </div>
 
         </div>
@@ -194,6 +195,50 @@ function addProductToTable(product) {
         row.remove();
     });
 }
+document.getElementById("saveModifier").addEventListener("click", function() {
+
+    let modifierName = document.querySelector("input[placeholder='Modifier']").value;
+    let isCount = document.getElementById("isCount").checked;
+    let countValue = document.querySelector("input[placeholder='Count']").value;
+
+    if (!modifierName) {
+        alert("Modifier name required");
+        return;
+    }
+
+    let rows = document.querySelectorAll("#modifierTableBody tr");
+    let items = [];
+
+    rows.forEach(row => {
+        items.push({
+            product_id: row.dataset.productId,
+            amount: row.querySelector("input[type='number']").value,
+            get_rate: row.querySelector("input[type='checkbox']").checked
+        });
+    });
+
+    fetch("{% url 'save_modifier' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            name: modifierName,
+            is_count: isCount,
+            count: countValue,
+            items: items
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{% url 'modifier_list' %}";
+        }
+    });
+
+});
+
 </script>
 {% endblock %}
 
