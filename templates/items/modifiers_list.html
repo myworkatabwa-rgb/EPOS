@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid mt-3">
+
+    <div class="mb-3">
+        <a href="{% url 'item_modifiers' %}" class="btn btn-primary">
+            Add new Modifier
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Modifier Header</th>
+                        <th>IsCount</th>
+                        <th>Count</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in modifiers %}
+                    <tr>
+                        <td>{{ m.id }}</td>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.is_count }}</td>
+                        <td>{{ m.count }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-info">Edit</a>
+                        </td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            No modifiers found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
