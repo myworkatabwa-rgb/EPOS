@@ -1,17 +1,51 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/barcode_labels.css' %}">
+{% endblock %}
+
 {% block content %}
 
-<div class="container-fluid">
+<div class="barcode-container">
 
-    <div class="card">
-        <div class="card-body">
+    <button onclick="window.print()" class="btn btn-primary print-btn no-print">
+        Print Labels
+    </button>
 
-            <h4>Barcode Preview</h4>
+    <div style="clear:both;"></div>
 
-            <p>Barcodes will show here</p>
+    {% for item in items %}
 
+    <div class="label">
+
+        <div class="store">
+            {{ store_name }}
         </div>
+
+        <div class="price">
+            Regular Price: <s>{{ item.price }}</s>
+        </div>
+
+        <div class="price">
+            Discount Price: {{ item.price }}
+        </div>
+
+        <div class="barcode">
+            <img src="data:image/png;base64,{{ item.barcode }}">
+        </div>
+
+        <div class="name">
+            {{ item.name }}
+        </div>
+
+        <div class="sku">
+            *{{ item.sku }}*
+        </div>
+
     </div>
+
+    {% endfor %}
 
 </div>
 
