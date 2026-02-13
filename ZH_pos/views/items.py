@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
-from ZH_pos.models import Product, ModifierGroup, ModifierItem
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier
 import csv
 import json
 import openpyxl
@@ -209,7 +209,6 @@ def supplier_list(request):
     return render(request, "items/supplier_list.html", {
         "suppliers": suppliers
     })
-
     
 
 
