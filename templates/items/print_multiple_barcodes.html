@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="card">
+    <div class="card-body">
+
+      <h4>Print Multiple Barcodes</h4>
+
+      <hr>
+
+      <!-- SCAN INPUT -->
+      <div class="mb-3">
+
+        <label>Scan Barcode</label>
+
+        <input type="text"
+               id="barcodeInput"
+               class="form-control"
+               placeholder="Scan barcode here"
+               autofocus>
+
+      </div>
+
+
+      <!-- TABLE -->
+      <div class="table-responsive">
+
+        <table class="table table-bordered table-sm">
+
+          <thead>
+            <tr>
+              <th>BarCode</th>
+              <th>Item</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+
+          <tbody id="barcodeTable">
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <button class="btn btn-success">
+        Generate Barcodes
+      </button>
+
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+let input = document.getElementById("barcodeInput")
+
+input.addEventListener("keypress", function(e){
+
+    if(e.key === "Enter"){
+
+        e.preventDefault()
+
+        let barcode = input.value
+
+        fetch(`/api/barcode-search/?barcode=${barcode}`)
+
+        .then(res => res.json())
+
+        .then(data => {
+
+            if(data.success){
+
+                addRow(data)
+
+                input.value = ""
+
+            }else{
+
+                alert("Product not found")
+
+            }
+
+        })
+
+    }
+
+})
+
+
+function addRow(product){
+
+    let table = document.getElementById("barcodeTable")
+
+    let row = document.createElement("tr")
+
+    row.innerHTML = `
+
+        <td>${product.barcode}</td>
+
+        <td>${product.name}</td>
+
+        <td>${product.price}</td>
+
+        <td>
+            <input type="number" value="1" class="form-control">
+        </td>
+
+        <td>
+            <button onclick="this.parentElement.parentElement.remove()"
+                    class="btn btn-danger btn-sm">
+                X
+            </button>
+        </td>
+
+    `
+
+    table.appendChild(row)
+
+}
+
+</script>
+
+{% endblock %}
