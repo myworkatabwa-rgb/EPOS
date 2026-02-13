@@ -244,8 +244,14 @@ def brand_list(request):
     return render(request, "items/brand_list.html", {
         "brands": brands
     })
+@login_required
+def delete_brand(request, id):
 
+    brand = get_object_or_404(Brand, id=id)
 
+    brand.delete()
+
+    return redirect("brand_list")
 @login_required
 def search_item(request):
     return render(request, "items/search_item.html")
