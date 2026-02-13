@@ -365,6 +365,9 @@ def barcode_preview(request):
         "items": items,
         "store_name": "Orh WEAR"
     })
+@login_required
+def discount(request):
+    return render(request, "items/discount.html")
 
 @login_required
 def colors(request):
