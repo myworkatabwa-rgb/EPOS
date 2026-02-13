@@ -253,6 +253,23 @@ def delete_brand(request, id):
 
     return redirect("brand_list")
 @login_required
+def edit_brand(request, id):
+
+    brand = get_object_or_404(Brand, id=id)
+
+    if request.method == "POST":
+
+        brand.brand_code = request.POST.get("brand_code")
+        brand.brand_name = request.POST.get("brand_name")
+
+        brand.save()
+
+        return redirect("brand_list")
+
+    return render(request, "items/edit_brand.html", {
+        "brand": brand
+    })
+@login_required
 def search_item(request):
     return render(request, "items/search_item.html")
 
