@@ -338,11 +338,11 @@ def generate_barcodes(request):
 
         return JsonResponse({
             "success": True,
-            "url": "/items/barcode-preview/"
+            "url": "/items/barcode_preview/"
         })
 @login_required
 def barcode_preview(request):
-    return render(request, "items/barcode-preview.html")
+    return render(request, "items/barcode_preview.html")
 
 @login_required
 def discount(request):
