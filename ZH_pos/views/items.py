@@ -330,14 +330,18 @@ def barcode_search_api(request):
 def generate_barcodes(request):
 
     data = json.loads(request.body)
+    items = data.get("items", [])
 
-    barcodes = data.get("barcodes", [])
+    barcode_list = []
 
-    request.session["barcode_list"] = barcodes
+    for item in items:
+        barcode_list.extend([item["barcode"]] * int(item["qty"]))
+
+    request.session["barcode_list"] = barcode_list
 
     return JsonResponse({
         "success": True,
-        "url": "/items/barcode_preview/"
+        "url": "/items/barcode-preview/"
     })
 
 
