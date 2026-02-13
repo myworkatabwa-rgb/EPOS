@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, brands
 import csv
 import json
 import openpyxl
@@ -213,8 +213,37 @@ def supplier_list(request):
 
 
 @login_required
-def brands(request):
-    return render(request, "items/brands.html")
+def add_brand(request):
+
+    if request.method == "POST":
+
+        Brand.objects.create(
+            brand_code=request.POST.get("brand_code"),
+            brand_name=request.POST.get("brand_name"),
+        )
+
+        return redirect("brand_list")
+
+    # Auto generate next code
+    last = Brand.objects.order_by("-id").first()
+
+    if last:
+        next_code = str(int(last.brand_code) + 1).zfill(4)
+    else:
+        next_code = "0001"
+
+    return render(request, "items/add_brand.html", {
+        "next_code": next_code
+    })
+
+
+def brand_list(request):
+
+    brands = Brand.objects.all().order_by("-id")
+
+    return render(request, "items/brand_list.html", {
+        "brands": brands
+    })
 
 
 @login_required
