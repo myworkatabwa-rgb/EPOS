@@ -5,7 +5,7 @@ from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand
 import csv
 import json
 import openpyxl
-from .utils.barcode import generate_barcode_base64
+from ZH_pos.utils.barcode import generate_barcode_base64
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
