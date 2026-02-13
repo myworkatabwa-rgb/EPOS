@@ -8,46 +8,65 @@
 {% block content %}
 
 <div class="no-print">
-    <button onclick="window.print()" class="btn btn-primary print-btn">
+    <button onclick="window.print()" class="btn btn-primary">
         Print Labels
     </button>
 </div>
 
-<!-- PRINT AREA -->
 <div id="print-area" class="barcode-container">
 
-    {% for product in products %}
+{% for product in products %}
 
-    <div class="label">
+<div class="label">
 
-        <div class="store">
-            {{ store_name }}
-        </div>
-
-        <div class="price">
-            Regular Price: <s>{{ product.price }}</s>
-        </div>
-
-        <div class="price">
-            Discount Price: {{product.price }}
-        </div>
-
-        <div class="barcode">
-            <img src="data:image/png;base64,{{ product.barcode }}">
-        </div>
-
-        <div class="name">
-            {{ product.name }}
-        </div>
-
-        <div class="sku">
-            *{{ product.sku }}*
-        </div>
-
+    <div class="store">
+        {{ store_name }}
     </div>
 
-    {% endfor %}
+    <div class="price">
+        Regular Price: <s>{{ product.price }}</s>
+    </div>
+
+    <div class="price">
+        Discount Price: {{ product.price }}
+    </div>
+
+    <div class="barcode">
+        <svg class="barcode-svg"
+             data-sku="{{ product.sku }}"></svg>
+    </div>
+
+    <div class="name">
+        {{ product.name }}
+    </div>
+
+    <div class="sku">
+        {{ product.sku }}
+    </div>
 
 </div>
+
+{% endfor %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    document.querySelectorAll(".barcode-svg").forEach(function(el){
+
+        JsBarcode(el, el.dataset.sku, {
+            format: "CODE128",
+            width: 2,
+            height: 50,
+            displayValue: true
+        });
+
+    });
+
+});
+</script>
 
 {% endblock %}
