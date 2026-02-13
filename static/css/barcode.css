@@ -1,58 +1,77 @@
-/* SCREEN VIEW */
-.barcode-container{
-    display:grid;
-    grid-template-columns: repeat(auto-fill, 250px);
-    gap:10px;
-}
-
-/* LABEL */
-.label{
-    width:250px;
-    height:150px;
-    border:1px solid black;
-    padding:5px;
-    text-align:center;
+body{
+    margin:0;
+    padding:0;
     background:white;
 }
 
-/* PRINT VIEW */
-@media print{
+/* Container */
+.barcode-container{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
 
-    body *{
-        visibility:hidden;
-    }
+/* Each label */
+.label{
+    width:90%;
+    max-width:400px;
 
-    #print-area,
-    #print-area *{
-        visibility:visible;
-    }
+    /* ❌ REMOVE BORDER */
+    border:none;
 
-    #print-area{
-        position:absolute;
-        left:0;
-        top:0;
-        width:100%;
+    /* spacing */
+    padding:10px;
+    margin:10px 0;
 
-        display:grid;
-        grid-template-columns: repeat(3, 70mm);
-        gap:5mm;
+    text-align:center;
+}
+
+/* Store name */
+.store{
+    font-size:18px;
+    font-weight:bold;
+}
+
+/* Price */
+.price{
+    font-size:16px;
+    margin:4px 0;
+}
+
+/* Product name */
+.name{
+    font-size:14px;
+}
+
+/* SKU */
+.sku{
+    font-size:13px;
+}
+
+
+/* ✅ PRINT SETTINGS */
+@media print {
+
+    body{
+        margin:0;
+        padding:0;
     }
 
     .label{
-        width:70mm;
-        height:40mm;
-        border:1px solid black;
-        padding:2mm;
-        page-break-inside:avoid;
+
+        height:48vh;   /* half page height */
+        page-break-after:always;
+
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+
     }
 
-    .barcode img{
-        width:100%;
-        height:18mm;
-    }
-
-    .no-print{
-        display:none;
+    .label:nth-child(2n){
+        page-break-after:always;
     }
 
 }
