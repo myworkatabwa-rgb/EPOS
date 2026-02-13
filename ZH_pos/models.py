@@ -109,6 +109,15 @@ class Brand(models.Model):
 
     def __str__(self):
         return self.brand_name
+class Color(models.Model):
+
+    Color_code = models.CharField(max_length=50, unique=True)
+    Color_name = models.CharField(max_length=255)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.Color_name
 # =========================
 # ORDER (SALE)
 # =========================
