@@ -7,9 +7,20 @@
   <div class="card">
     <div class="card-body">
 
-      <h4 class="mb-4">Discount List</h4>
+      <div class="d-flex justify-content-between align-items-center mb-3">
 
-      <table class="table table-bordered">
+        <h4>Discount List</h4>
+
+        <a href="https://epos-production-3026.up.railway.app/items/discount/"
+           class="btn btn-primary">
+
+           + Add New Discount
+
+        </a>
+
+      </div>
+
+      <table class="table table-bordered table-striped">
 
         <thead>
           <tr>
@@ -27,27 +38,12 @@
         {% for d in discounts %}
 
           <tr>
-
             <td>{{ d.id }}</td>
-
             <td>{{ d.name }}</td>
-
             <td>{{ d.value }}</td>
-
             <td>{{ d.type }}</td>
-
-            <td>
-
-                {% if d.status == "active" %}
-                    <span class="badge bg-success">Active</span>
-                {% else %}
-                    <span class="badge bg-danger">Inactive</span>
-                {% endif %}
-
-            </td>
-
+            <td>{{ d.status }}</td>
             <td>{{ d.created_at }}</td>
-
           </tr>
 
         {% endfor %}
