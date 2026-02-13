@@ -138,7 +138,30 @@ class Order(models.Model):
     def __str__(self):
         return self.order_id
 
+class Discount(models.Model):
 
+    TYPE_CHOICES = (
+        ("flat", "Flat"),
+        ("percent", "Percent"),
+    )
+
+    STATUS_CHOICES = (
+        ("active", "Active"),
+        ("inactive", "Inactive"),
+    )
+
+    name = models.CharField(max_length=100)
+
+    value = models.DecimalField(max_digits=10, decimal_places=2)
+
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 # =========================
 # ORDER ITEM
 # =========================
