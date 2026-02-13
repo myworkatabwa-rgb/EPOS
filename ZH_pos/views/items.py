@@ -392,7 +392,7 @@ def discount_list(request):
 
     discounts = Discount.objects.all().order_by("-id")
 
-    return render(request, "discount/discount_list.html", {
+    return render(request, "items/discount_list.html", {
         "discounts": discounts
     })
 
