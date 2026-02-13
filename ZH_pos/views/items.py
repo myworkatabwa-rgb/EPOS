@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, brand
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand
 import csv
 import json
 import openpyxl
