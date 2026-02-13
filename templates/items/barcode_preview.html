@@ -15,7 +15,7 @@
 
 <div id="print-area" class="barcode-container">
 
-{% for product in products %}
+{% for product in items %}
 
 <div class="label">
 
@@ -24,11 +24,7 @@
     </div>
 
     <div class="price">
-        Regular Price: <s>{{ product.price }}</s>
-    </div>
-
-    <div class="price">
-        Discount Price: {{ product.price }}
+        Rs {{ product.price }}
     </div>
 
     <div class="barcode">
@@ -53,15 +49,17 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function(){
 
     document.querySelectorAll(".barcode-svg").forEach(function(el){
 
         JsBarcode(el, el.dataset.sku, {
             format: "CODE128",
             width: 2,
-            height: 50,
-            displayValue: true
+            height: 60,
+            displayValue: true,
+            fontSize: 14,
+            margin: 0
         });
 
     });
