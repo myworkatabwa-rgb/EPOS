@@ -7,13 +7,14 @@
 
 {% block content %}
 
-<div class="barcode-container">
-
-    <button onclick="window.print()" class="btn btn-primary print-btn no-print">
+<div class="no-print">
+    <button onclick="window.print()" class="btn btn-primary print-btn">
         Print Labels
     </button>
+</div>
 
-    <div style="clear:both;"></div>
+<!-- PRINT AREA -->
+<div id="print-area" class="barcode-container">
 
     {% for item in items %}
 
