@@ -361,7 +361,7 @@ def barcode_preview(request):
         items.append({
             "name": product.name,
             "sku": product.sku,
-            "price": product.price,
+            "price": product.sale_price,
             "barcode": barcode_image
         })
 
