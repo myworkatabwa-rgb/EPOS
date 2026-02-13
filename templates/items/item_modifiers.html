@@ -233,7 +233,7 @@ document.getElementById("saveModifier").addEventListener("click", function() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            window.location.href = "{% url 'modifier_list' %}";
+            window.location.href = "{% url 'modifiers_list' %}";
         }
     });
 
