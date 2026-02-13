@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount
 import csv
 import json
 import openpyxl
@@ -371,7 +371,30 @@ def barcode_preview(request):
     })
 @login_required
 def discount(request):
+    if request.method == "POST":
+
+        name = request.POST.get("name")
+        value = request.POST.get("value")
+        type = request.POST.get("type")
+        status = request.POST.get("status")
+
+        Discount.objects.create(
+            name=name,
+            value=value,
+            type=type,
+            status=status
+        )
+
+        return redirect("discount_list")
     return render(request, "items/discount.html")
+@login_required
+def discount_list(request):
+
+    discounts = Discount.objects.all().order_by("-id")
+
+    return render(request, "discount/discount_list.html", {
+        "discounts": discounts
+    })
 
 @login_required
 def colors(request):
