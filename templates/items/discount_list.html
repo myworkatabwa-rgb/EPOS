@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="card">
+    <div class="card-body">
+
+      <h4 class="mb-4">Discount List</h4>
+
+      <table class="table table-bordered">
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+        {% for d in discounts %}
+
+          <tr>
+
+            <td>{{ d.id }}</td>
+
+            <td>{{ d.name }}</td>
+
+            <td>{{ d.value }}</td>
+
+            <td>{{ d.type }}</td>
+
+            <td>
+
+                {% if d.status == "active" %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                {% endif %}
+
+            </td>
+
+            <td>{{ d.created_at }}</td>
+
+          </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
