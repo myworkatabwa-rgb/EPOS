@@ -302,6 +302,29 @@ def search_items(request):
 @login_required
 def print_multiple_barcodes(request):
     return render(request, "items/print_multiple_barcodes.html")
+@login_required
+def barcode_search_api(request):
+
+    barcode = request.GET.get("barcode")
+
+    try:
+        product = Product.objects.get(sku=barcode)
+
+        data = {
+            "success": True,
+            "id": product.id,
+            "barcode": product.sku,
+            "name": product.name,
+            "price": str(product.sale_price or product.price or 0),
+        }
+
+    except Product.DoesNotExist:
+
+        data = {
+            "success": False
+        }
+
+    return JsonResponse(data)
 
 
 @login_required
