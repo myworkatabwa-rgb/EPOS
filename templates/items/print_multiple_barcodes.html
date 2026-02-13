@@ -181,9 +181,10 @@
         Add More
       </button>
 
-      <button class="btn btn-success mt-2">
-        Generate Barcodes
-      </button>
+      <button class="btn btn-success mt-2" onclick="generateBarcodes()">
+    Generate Barcodes
+</button>
+
 
 
     </div>
@@ -250,6 +251,55 @@ function addRow(product){
     `
 
     table.appendChild(row)
+
+}
+function generateBarcodes(){
+
+    let rows = document.querySelectorAll("#barcodeTable tr")
+
+    if(rows.length === 0){
+        alert("No items added")
+        return
+    }
+
+    let items = []
+
+    rows.forEach(row => {
+
+        let barcode = row.children[0].innerText
+        let qty = row.children[2].querySelector("input").value
+
+        items.push({
+            barcode: barcode,
+            qty: qty
+        })
+
+    })
+
+    fetch("/items/generate-barcodes/", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+
+        body: JSON.stringify({
+            items: items
+        })
+
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+
+            window.open(data.url, "_blank")
+
+        }
+
+    })
 
 }
 
