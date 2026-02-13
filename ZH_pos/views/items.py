@@ -325,6 +325,21 @@ def barcode_search_api(request):
         }
 
     return JsonResponse(data)
+@login_required
+def generate_barcodes(request):
+
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+
+        items = data.get("items")
+
+        print(items)  # debug
+
+        return JsonResponse({
+            "success": True,
+            "url": "/items/barcode-preview/"
+        })
 
 
 @login_required
