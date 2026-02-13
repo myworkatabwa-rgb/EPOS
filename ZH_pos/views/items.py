@@ -5,6 +5,7 @@ from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand
 import csv
 import json
 import openpyxl
+from .utils.barcode import generate_barcode_base64
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
@@ -345,9 +346,29 @@ def barcode_preview(request):
     return render(request, "items/barcode_preview.html")
 
 @login_required
-def discount(request):
-    return render(request, "items/discount.html")
+def barcode_preview(request):
 
+    barcode_list = request.session.get("barcode_list", [])
+
+    products = Product.objects.filter(sku__in=barcode_list)
+
+    items = []
+
+    for product in products:
+
+        barcode_image = generate_barcode_base64(product.sku)
+
+        items.append({
+            "name": product.name,
+            "sku": product.sku,
+            "price": product.price,
+            "barcode": barcode_image
+        })
+
+    return render(request, "items/barcode_preview.html", {
+        "items": items,
+        "store_name": "Orh WEAR"
+    })
 
 @login_required
 def colors(request):
