@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <!-- SEARCH CARD -->
+  <div class="card mb-3">
+    <div class="card-body">
+
+      <form method="get">
+
+        <div class="row g-2">
+
+          <div class="col-md-3">
+            <input type="text"
+                   name="barcode"
+                   class="form-control"
+                   placeholder="Barcode"
+                   value="{{ request.GET.barcode }}">
+          </div>
+
+          <div class="col-md-3">
+            <input type="text"
+                   name="name"
+                   class="form-control"
+                   placeholder="Item name"
+                   value="{{ request.GET.name }}">
+          </div>
+
+          <div class="col-md-3">
+            <select name="category" class="form-control">
+              <option value="All">All</option>
+              <option value="General">General</option>
+              <option value="Food">Food</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">
+              Filter
+            </button>
+          </div>
+
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- TABLE CARD -->
+  <div class="card">
+    <div class="card-body">
+
+      <div class="table-responsive">
+
+        <table id="itemTable"
+               class="table table-bordered table-hover table-sm align-middle">
+
+          <thead class="table-light">
+            <tr>
+
+              <th>ID</th>
+              <th>Branch</th>
+              <th>BarCode</th>
+              <th>Item</th>
+              <th>Stock</th>
+              <th>Category</th>
+              <th>Sales Rate</th>
+
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for item in items %}
+
+            <tr>
+
+              <td>{{ item.id }}</td>
+
+              <td>Main</td>
+
+              <td>{{ item.sku }}</td>
+
+              <td>{{ item.name }}</td>
+
+              <td>{{ item.stock|default:"0" }}</td>
+
+              <td>{{ item.categories|default:"-" }}</td>
+
+              <td>
+                {{ item.sale_price|default:item.price|default:"0.00" }}
+              </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+              <td colspan="7" class="text-center">
+                No data available
+              </td>
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
