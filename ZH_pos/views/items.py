@@ -342,7 +342,7 @@ def generate_barcodes(request):
         })
 @login_required
 def barcode_preview(request):
-    return render(request, "items/barcode_preview.html")
+    return render(request, "items/barcode-preview.html")
 
 @login_required
 def discount(request):
