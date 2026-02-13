@@ -6,22 +6,150 @@
   <div class="card">
     <div class="card-body">
 
-      <h4>Print Multiple Barcodes</h4>
+      <h4 class="mb-3">Print Multiple Barcodes</h4>
+
+      <!-- LABEL SETTINGS -->
+      <div class="row">
+
+        <div class="col-md-4">
+
+          <label>Label type</label>
+
+          <select class="form-control" id="label_type">
+            <option value="2x1">Continuous dual (2x1)</option>
+            <option value="3x1">Continuous dual (3x1)</option>
+            <option value="4x1">Continuous dual (4x1)</option>
+          </select>
+
+        </div>
+
+      </div>
 
       <hr>
 
-      <!-- SCAN INPUT -->
-      <div class="mb-3">
 
-        <label>Scan Barcode</label>
+      <!-- PRICE -->
+      <div class="form-check">
+        <input type="checkbox" id="show_price" checked>
+        <label>Show price</label>
+      </div>
 
-        <input type="text"
-               id="barcodeInput"
-               class="form-control"
-               placeholder="Scan barcode here"
-               autofocus>
+      <div class="row mb-2">
+
+        <div class="col-md-2">
+          price font size
+          <input type="text" id="price_font_size" class="form-control" value="0.6">
+        </div>
+
+        <div class="col-md-2">
+          price font weight
+          <input type="text" id="price_font_weight" class="form-control" value="400">
+        </div>
 
       </div>
+
+
+      <!-- NAME -->
+      <div class="form-check">
+        <input type="checkbox" id="show_name" checked>
+        <label>Show name</label>
+      </div>
+
+      <div class="row mb-2">
+
+        <div class="col-md-2">
+          name font size
+          <input type="text" id="name_font_size" class="form-control" value="0.6">
+        </div>
+
+        <div class="col-md-2">
+          name font weight
+          <input type="text" id="name_font_weight" class="form-control" value="400">
+        </div>
+
+      </div>
+
+
+      <!-- BARCODE -->
+      <div class="form-check">
+        <input type="checkbox" id="show_barcode" checked>
+        <label>Show barcode</label>
+      </div>
+
+      <div class="row mb-2">
+
+        <div class="col-md-2">
+          barcode font size
+          <input type="text" id="barcode_font_size" class="form-control" value="30">
+        </div>
+
+      </div>
+
+
+      <!-- COMPANY -->
+      <div class="form-check">
+        <input type="checkbox" id="show_company" checked>
+        <label>Show Company Name</label>
+      </div>
+
+      <div class="row mb-2">
+
+        <div class="col-md-2">
+          storename font size
+          <input type="text" id="store_font_size" class="form-control" value="0.6">
+        </div>
+
+        <div class="col-md-2">
+          storename font weight
+          <input type="text" id="store_font_weight" class="form-control" value="400">
+        </div>
+
+      </div>
+
+
+      <!-- MFG DATE -->
+      <div class="form-check">
+        <input type="checkbox" id="show_mfg">
+        <label>Show MFG Date</label>
+      </div>
+
+      <div class="row mb-2">
+
+        <div class="col-md-2">
+          manufacturing date
+          <input type="date" id="mfg_date" class="form-control">
+        </div>
+
+      </div>
+
+
+      <!-- BEST BEFORE -->
+      <div class="form-check">
+        <input type="checkbox" id="show_best">
+        <label>Show Best Before Date</label>
+      </div>
+
+      <div class="row mb-3">
+
+        <div class="col-md-2">
+          Best Before
+          <input type="date" id="best_date" class="form-control">
+        </div>
+
+      </div>
+
+
+      <hr>
+
+
+      <!-- BARCODE SCAN -->
+      <label>Add by barcode scan</label>
+
+      <input type="text"
+             id="barcodeInput"
+             class="form-control mb-3"
+             placeholder="place cursor here for Barcode Scan"
+             autofocus>
 
 
       <!-- TABLE -->
@@ -30,13 +158,14 @@
         <table class="table table-bordered table-sm">
 
           <thead>
+
             <tr>
               <th>BarCode</th>
               <th>Item</th>
-              <th>Price</th>
               <th>Quantity</th>
-              <th>Remove</th>
+              <th>Rem</th>
             </tr>
+
           </thead>
 
           <tbody id="barcodeTable">
@@ -48,7 +177,11 @@
       </div>
 
 
-      <button class="btn btn-success">
+      <button class="btn btn-primary mt-2">
+        Add More
+      </button>
+
+      <button class="btn btn-success mt-2">
         Generate Barcodes
       </button>
 
@@ -57,6 +190,7 @@
   </div>
 
 </div>
+
 
 <script>
 
@@ -80,7 +214,7 @@ input.addEventListener("keypress", function(e){
 
                 addRow(data)
 
-                input.value = ""
+                input.value=""
 
             }else{
 
@@ -102,24 +236,17 @@ function addRow(product){
     let row = document.createElement("tr")
 
     row.innerHTML = `
-
         <td>${product.barcode}</td>
-
         <td>${product.name}</td>
-
-        <td>${product.price}</td>
-
         <td>
             <input type="number" value="1" class="form-control">
         </td>
-
         <td>
             <button onclick="this.parentElement.parentElement.remove()"
                     class="btn btn-danger btn-sm">
                 X
             </button>
         </td>
-
     `
 
     table.appendChild(row)
