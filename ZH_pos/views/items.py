@@ -270,8 +270,31 @@ def edit_brand(request, id):
         "brand": brand
     })
 @login_required
-def search_item(request):
-    return render(request, "items/search_item.html")
+def search_items(request):
+
+    barcode = request.GET.get("barcode", "")
+    name = request.GET.get("name", "")
+    category = request.GET.get("category", "")
+
+    items = Product.objects.all()
+
+    # Filter barcode
+    if barcode:
+        items = items.filter(sku__icontains=barcode)
+
+    # Filter name
+    if name:
+        items = items.filter(name__icontains=name)
+
+    # Filter category
+    if category and category != "All":
+        items = items.filter(categories__icontains=category)
+
+    context = {
+        "items": items
+    }
+
+    return render(request, "items/search_items.html", context)
 
 
 @login_required
