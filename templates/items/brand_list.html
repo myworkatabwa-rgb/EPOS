@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h4 class="mb-3">Brand</h4>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <a href="{% url 'add_brand' %}" class="btn btn-primary mb-3">
+                Add new Brand
+            </a>
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-hover">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Brand Code</th>
+                            <th>Brand Name</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for brand in brands %}
+
+                        <tr>
+                            <td>{{ brand.id }}</td>
+                            <td>{{ brand.brand_code }}</td>
+                            <td>{{ brand.brand_name }}</td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
