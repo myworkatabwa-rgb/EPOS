@@ -272,23 +272,25 @@ def edit_brand(request, id):
 @login_required
 def search_items(request):
 
-    barcode = request.GET.get("barcode", "")
-    name = request.GET.get("name", "")
-    category = request.GET.get("category", "")
+    barcode = request.GET.get("barcode")
+    name = request.GET.get("name")
+    category = request.GET.get("category")
 
-    items = Product.objects.all()
+    items = Product.objects.none()  # show nothing by default
 
-    # Filter barcode
-    if barcode:
-        items = items.filter(sku__icontains=barcode)
+    # only search if any filter used
+    if barcode or name or (category and category != "All"):
 
-    # Filter name
-    if name:
-        items = items.filter(name__icontains=name)
+        items = Product.objects.all()
 
-    # Filter category
-    if category and category != "All":
-        items = items.filter(categories__icontains=category)
+        if barcode:
+            items = items.filter(sku__icontains=barcode)
+
+        if name:
+            items = items.filter(name__icontains=name)
+
+        if category and category != "All":
+            items = items.filter(categories__icontains=category)
 
     context = {
         "items": items
