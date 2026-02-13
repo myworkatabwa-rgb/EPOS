@@ -337,7 +337,7 @@ def generate_barcodes(request):
 
     return JsonResponse({
         "success": True,
-        "url": "/items/barcode-preview/"
+        "url": "/items/barcode_preview/"
     })
 
 
