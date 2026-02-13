@@ -36,12 +36,20 @@
                             <td>{{ brand.brand_name }}</td>
 
                             <td>
-                                <button 
-                                    class="btn btn-danger btn-sm"
-                                    onclick="deleteBrand({{ brand.id }}, '{{ brand.brand_name }}')">
-                                    Delete
-                                </button>
-                            </td>
+
+                            <a href="{% url 'edit_brand' brand.id %}"
+                               class="btn btn-warning btn-sm">
+                               Edit
+                            </a>
+                        
+                            <button 
+                                class="btn btn-danger btn-sm"
+                                onclick="deleteBrand({{ brand.id }}, '{{ brand.brand_name }}')">
+                                Delete
+                            </button>
+                        
+                        </td>    
+
 
                         </tr>
 
