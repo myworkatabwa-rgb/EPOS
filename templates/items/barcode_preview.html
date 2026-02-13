@@ -16,7 +16,7 @@
 <!-- PRINT AREA -->
 <div id="print-area" class="barcode-container">
 
-    {% for item in items %}
+    {% for item in product %}
 
     <div class="label">
 
@@ -25,23 +25,23 @@
         </div>
 
         <div class="price">
-            Regular Price: <s>{{ item.price }}</s>
+            Regular Price: <s>{{ product.price }}</s>
         </div>
 
         <div class="price">
-            Discount Price: {{ item.price }}
+            Discount Price: {{product.price }}
         </div>
 
         <div class="barcode">
-            <img src="data:image/png;base64,{{ item.barcode }}">
+            <img src="data:image/png;base64,{{ product.barcode }}">
         </div>
 
         <div class="name">
-            {{ item.name }}
+            {{ product.name }}
         </div>
 
         <div class="sku">
-            *{{ item.sku }}*
+            *{{ product.sku }}*
         </div>
 
     </div>
