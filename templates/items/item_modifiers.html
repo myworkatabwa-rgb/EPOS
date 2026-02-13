@@ -217,7 +217,7 @@ document.getElementById("saveModifier").addEventListener("click", function() {
         });
     });
 
-    fetch("{% url 'save_modifier' %}", {
+    fetch("{% url 'save_modifiers' %}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
