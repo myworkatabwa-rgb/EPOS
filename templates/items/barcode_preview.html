@@ -1,16 +1,22 @@
-{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Print Barcodes</title>
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/barcode.css' %}">
-{% endblock %}
+    {% load static %}
 
-{% block content %}
+    <link rel="stylesheet" href="{% static 'css/barcode.css' %}">
 
-<div class="no-print">
-    <button onclick="window.print()" class="btn btn-primary">
-        Print Labels
-    </button>
-</div>
+    <style>
+        body{
+            margin:0;
+            padding:10px;
+            background:white;
+        }
+    </style>
+
+</head>
+<body>
 
 <div id="print-area" class="barcode-container">
 
@@ -45,9 +51,11 @@
 
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script>
+
 document.addEventListener("DOMContentLoaded", function(){
 
     document.querySelectorAll(".barcode-svg").forEach(function(el){
@@ -63,12 +71,20 @@ document.addEventListener("DOMContentLoaded", function(){
 
     });
 
-    // ✅ AUTO PRINT POPUP
+    // Auto print
     setTimeout(function(){
         window.print();
-    }, 500);
+    }, 300);
 
 });
+
+// Auto close after print
+window.onafterprint = function(){
+    window.close();
+};
+
 </script>
 
-{% endblock %}
+
+</body>
+</html>
