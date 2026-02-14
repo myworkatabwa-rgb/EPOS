@@ -21,6 +21,43 @@
 <div id="print-area" class="barcode-container">
 
 {% for product in items %}
+{% if settings.show_company %}
+<div class="store">
+    {{ store_name }}
+</div>
+{% endif %}
+
+{% if settings.show_price %}
+<div class="price">
+    Rs {{ product.price }}
+</div>
+{% endif %}
+
+{% if settings.show_barcode %}
+<div class="barcode">
+    <svg class="barcode-svg"
+         data-sku="{{ product.sku }}"></svg>
+</div>
+{% endif %}
+
+{% if settings.show_name %}
+<div class="name">
+    {{ product.name }}
+</div>
+{% endif %}
+
+{% if settings.show_mfg %}
+<div class="mfg">
+    MFG: {{ settings.mfg_date }}
+</div>
+{% endif %}
+
+{% if settings.show_best %}
+<div class="best">
+    Best Before: {{ settings.best_date }}
+</div>
+{% endif %}
+
 
 <div class="label">
 
