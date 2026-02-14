@@ -190,6 +190,7 @@ urlpatterns = [
     path("items/price-list/", views.items.price_list, name='price_list'),
     path("items/ajax/get-item/", views.items.get_item_by_barcode, name='get_item_by_barcode'),
     path("items/price-list/save/", views.items.save_price_list, name='save_price_list'),
+    path("items/search-products/", views.items.search_products, name="search_products"),
     path("items/bulk-update/", bulk_update, name="bulk_update"),
     path("items/price-checker/", price_checker, name="price_checker"),
     path("items/courier/", courier, name="courier"),
