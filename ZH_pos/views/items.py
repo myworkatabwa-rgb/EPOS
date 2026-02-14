@@ -399,7 +399,7 @@ def colors(request):
         )
         return redirect("Color_list")
 
-    last = colors.objects.order_by("-id").first()
+    last = Color.objects.order_by("-id").first()
 
     if last:
         next_code = str(int(last.Color_code) + 1).zfill(4)
