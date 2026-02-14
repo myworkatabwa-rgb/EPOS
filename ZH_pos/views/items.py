@@ -612,7 +612,7 @@ def promotion_edit(request, id):
 def price_list(request):
     taxes = Tax.objects.all()
     units = Unit.objects.all()
-    return render(request, "items/price_list.html", {
+    return render(request, "items/price-list.html", {
         "taxes": taxes,
         "units": units
     })
