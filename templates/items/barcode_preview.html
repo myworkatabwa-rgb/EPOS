@@ -10,9 +10,37 @@
     <style>
         body{
             margin:0;
-            padding:10px;
+            padding:5px;
             background:white;
         }
+
+        .barcode-container{
+            display:flex;
+            flex-wrap:wrap;
+        }
+
+        .label{
+            border:1px solid #000;
+            padding:5px;
+            margin:4px;
+            text-align:center;
+            box-sizing:border-box;
+        }
+
+        /* LABEL SIZES */
+        {% if settings.label_type == "2x1" %}
+            .label{ width:2in; height:1in; }
+        {% elif settings.label_type == "3x1" %}
+            .label{ width:3in; height:1in; }
+        {% elif settings.label_type == "4x1" %}
+            .label{ width:4in; height:1in; }
+        {% endif %}
+
+        @media print{
+            body{ margin:0; }
+            .label{ page-break-inside: avoid; }
+        }
+
     </style>
 
 </head>
@@ -24,26 +52,56 @@
 
 <div class="label">
 
-    <div class="store">
+    {% if settings.show_company %}
+    <div class="store"
+         style="font-size:{{ settings.store_font_size }}rem;
+                font-weight:{{ settings.store_font_weight }};">
         {{ store_name }}
     </div>
+    {% endif %}
 
-    <div class="price">
+    {% if settings.show_price %}
+    <div class="price"
+         style="font-size:{{ settings.price_font_size }}rem;
+                font-weight:{{ settings.price_font_weight }};">
         Rs {{ product.price }}
     </div>
+    {% endif %}
 
+    {% if settings.show_barcode %}
     <div class="barcode">
         <svg class="barcode-svg"
-             data-sku="{{ product.sku }}"></svg>
+             data-sku="{{ product.sku }}"
+             data-height="{{ settings.barcode_font_size }}">
+        </svg>
     </div>
+    {% endif %}
 
-    <div class="name">
+    {% if settings.show_name %}
+    <div class="name"
+         style="font-size:{{ settings.name_font_size }}rem;
+                font-weight:{{ settings.name_font_weight }};">
         {{ product.name }}
     </div>
+    {% endif %}
 
+    {% if settings.show_mfg %}
+    <div class="mfg">
+        MFG: {{ settings.mfg_date }}
+    </div>
+    {% endif %}
+
+    {% if settings.show_best %}
+    <div class="exp">
+        EXP: {{ settings.best_date }}
+    </div>
+    {% endif %}
+
+    {% if settings.show_barcode %}
     <div class="sku">
         {{ product.sku }}
     </div>
+    {% endif %}
 
 </div>
 
@@ -60,10 +118,12 @@ document.addEventListener("DOMContentLoaded", function(){
 
     document.querySelectorAll(".barcode-svg").forEach(function(el){
 
+        let height = el.dataset.height || 60
+
         JsBarcode(el, el.dataset.sku, {
             format: "CODE128",
             width: 2,
-            height: 60,
+            height: parseInt(height),
             displayValue: true,
             fontSize: 14,
             margin: 0
@@ -71,20 +131,17 @@ document.addEventListener("DOMContentLoaded", function(){
 
     });
 
-    // Auto print
     setTimeout(function(){
         window.print();
     }, 300);
 
 });
 
-// Auto close after print
 window.onafterprint = function(){
     window.close();
 };
 
 </script>
-
 
 </body>
 </html>
