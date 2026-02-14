@@ -462,6 +462,30 @@ def sizes(request):
             return redirect("Size_list")
 
     return render(request, "items/sizes.html", {"next_code": next_code})
+@login_required
+def Size_list(request):
+    sizes = Size.objects.all().order_by("-id")
+    return render(request, "items/sizes_list.html", {"sizes": sizes})
+
+
+@login_required
+def delete_Size(request, id):
+    size = get_object_or_404(Size, id=id)
+    size.delete()
+    return redirect("Size_list")
+
+
+@login_required
+def edit_Size(request, id):
+    size = get_object_or_404(Size, id=id)
+
+    if request.method == "POST":
+        size.Size_code = request.POST.get("Size_code")
+        size.Size_name = request.POST.get("Size_name")
+        size.save()
+        return redirect("Size_list")
+
+    return render(request, "items/edit_size.html", {"size": size})
 
 
 
