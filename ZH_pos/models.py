@@ -127,6 +127,16 @@ class Size(models.Model):
 
     def __str__(self):
         return self.Size_name
+class Unit(models.Model):
+
+    Unit_code = models.CharField(max_length=50, unique=True)
+    Unit_name = models.CharField(max_length=255)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.Unit_name
+
 
 # =========================
 # ORDER (SALE)
