@@ -393,33 +393,32 @@ def discount_list(request):
 @login_required
 def colors(request):
 
+    # generate next code
     last = Color.objects.order_by("-id").first()
     next_code = f"{(last.id + 1) if last else 1:04d}"
 
     if request.method == "POST":
 
-        color_name = request.POST.get("color_name")
+        color_name = request.POST.get("color_name")   # <-- lowercase
 
-        # generate again for safety
-        last = Color.objects.order_by("-id").first()
-        next_code = f"{(last.id + 1) if last else 1:04d}"
+        if color_name:  # safety check
+            last = Color.objects.order_by("-id").first()
+            next_code = f"{(last.id + 1) if last else 1:04d}"
 
-        Color.objects.create(
-            Color_code=next_code,
-            Color_name=color_name
-        )
+            Color.objects.create(
+                Color_code=next_code,
+                Color_name=color_name
+            )
+
+            return redirect("Color_list")
 
     return render(request, "items/colors.html", {"next_code": next_code})
 
 
-
-
+@login_required
 def Color_list(request):
     colors = Color.objects.all().order_by("-id")
-
-    return render(request, "items/colors_list.html", {
-        "colors": colors
-    })
+    return render(request, "items/colors_list.html", {"colors": colors})
 
 
 @login_required
@@ -434,14 +433,12 @@ def edit_Color(request, id):
     color = get_object_or_404(Color, id=id)
 
     if request.method == "POST":
-        color.Color_code = request.POST.get("Color_code")
-        color.Color_name = request.POST.get("Color_name")
+        color.Color_code = request.POST.get("color_code")
+        color.Color_name = request.POST.get("color_name")
         color.save()
         return redirect("Color_list")
 
-    return render(request, "items/edit_color.html", {
-        "color": color
-    })
+    return render(request, "items/edit_color.html", {"color": color})
 
 
 @login_required
