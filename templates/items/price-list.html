@@ -242,6 +242,67 @@ document.addEventListener("click", function(e){
         e.target.closest("tr").remove();
     }
 });
+// ================= SAVE PRICE LIST =================
+document.getElementById("saveBtn").addEventListener("click", function(){
+
+    const name = document.getElementById("plist_name").value.trim();
+
+    if(!name){
+        alert("Please enter price list name");
+        return;
+    }
+
+    const rows = document.querySelectorAll("#priceTable tbody tr");
+    let items = [];
+
+    rows.forEach(row => {
+
+        const item_id = row.querySelector(".item_id").value;
+        if(!item_id) return; // skip empty row
+
+        items.push({
+            item_id: item_id,
+            unit: row.querySelector(".unit").value,
+            price: row.querySelector(".price").value || 0,
+            tax: row.querySelector(".tax").value,
+            price_inclusive: row.querySelector(".price_inclusive").value || 0
+        });
+    });
+
+    if(items.length === 0){
+        alert("Add at least one item");
+        return;
+    }
+
+    fetch("{% url 'save_price_list' %}", {
+        method: "POST",
+        headers:{
+            "Content-Type":"application/json",
+            "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify({
+            name: name,
+            items: items
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+            alert("Price List Saved Successfully");
+            location.reload();
+        }else{
+            alert("Error saving price list");
+        }
+
+    })
+    .catch(err=>{
+        console.error(err);
+        alert("Server error — check console");
+    });
+
+});
+
 </script>
 
 {% endblock %}
