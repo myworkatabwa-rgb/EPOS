@@ -118,6 +118,16 @@ class Color(models.Model):
 
     def __str__(self):
         return self.Color_name
+class Size(models.Model):
+
+    Size_code = models.CharField(max_length=50, unique=True)
+    Size_name = models.CharField(max_length=255)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.Size_name
+
 # =========================
 # ORDER (SALE)
 # =========================
