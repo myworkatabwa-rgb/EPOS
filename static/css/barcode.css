@@ -1,45 +1,56 @@
 body{
     margin:0;
-    padding:5px;
+    padding:0;
     background:white;
 }
 
 /* Container */
 .barcode-container{
+    width:100%;
     display:flex;
-    flex-wrap:wrap;
-    justify-content:flex-start;
+    flex-direction:column;
+    align-items:center;
 }
 
 /* Each label */
 .label{
-    box-sizing:border-box;
-    padding:5px;
-    margin:4px;
+    width:90%;
+    max-width:400px;
+
+    /* ❌ REMOVE BORDER */
+    border:none;
+
+    /* spacing */
+    padding:10px;
+    margin:10px 0;
+
     text-align:center;
 }
 
 /* Store name */
 .store{
-    margin-bottom:2px;
+    font-size:18px;
+    font-weight:bold;
 }
 
 /* Price */
 .price{
-    margin:2px 0;
+    font-size:16px;
+    margin:4px 0;
 }
 
 /* Product name */
 .name{
-    margin-top:2px;
+    font-size:14px;
 }
 
 /* SKU */
 .sku{
-    font-size:12px;
+    font-size:13px;
 }
 
-/* Print Settings */
+
+/* ✅ PRINT SETTINGS */
 @media print {
 
     body{
@@ -48,7 +59,19 @@ body{
     }
 
     .label{
-        page-break-inside:avoid;
+
+        height:48vh;   /* half page height */
+        page-break-after:always;
+
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+
+    }
+
+    .label:nth-child(2n){
+        page-break-after:always;
     }
 
 }
