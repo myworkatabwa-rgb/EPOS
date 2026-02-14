@@ -621,17 +621,35 @@ def price_list(request):
 
 # REAL TIME BARCODE SEARCH
 def get_item_by_barcode(request):
-    barcode = request.GET.get('barcode')
+    barcode = request.GET.get("barcode", "")
 
-    try:
-        item = Item.objects.get(barcode=barcode)
+    # clean scanner input
+    barcode = (
+        barcode.strip()          # remove spaces
+        .replace("\n", "")       # remove enter
+        .replace("\r", "")       # remove carriage return
+        .replace("\t", "")       # remove tab
+    )
+
+    if not barcode:
+        return JsonResponse({"status": "not_found"})
+
+    # try exact match first
+    item = Item.objects.filter(barcode__iexact=barcode).first()
+
+    # if scanner sends leading zeros (very common)
+    if not item:
+        item = Item.objects.filter(barcode__icontains=barcode.lstrip("0")).first()
+
+    if item:
         return JsonResponse({
             "status": "found",
+            "id": item.id,
             "name": item.name,
-            "id": item.id
+            "barcode": item.barcode,
         })
-    except Item.DoesNotExist:
-        return JsonResponse({"status": "not_found"})
+
+    return JsonResponse({"status": "not_found"})
 
 
 # SAVE PRICE LIST
