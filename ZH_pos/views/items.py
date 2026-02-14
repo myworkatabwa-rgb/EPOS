@@ -352,10 +352,10 @@ def generate_barcodes(request):
 
     return JsonResponse({"success": False})
 
-@login_required
 def barcode_preview(request):
 
     barcode_list = request.session.get("barcode_list", [])
+    settings = request.session.get("barcode_settings", {})
 
     products = Product.objects.filter(sku__in=barcode_list)
 
@@ -374,8 +374,10 @@ def barcode_preview(request):
 
     return render(request, "items/barcode_preview.html", {
         "items": items,
-        "store_name": "Orh WEAR"
+        "store_name": "Orh WEAR",
+        "settings": settings
     })
+    
 @login_required
 def discount(request):
     if request.method == "POST":
