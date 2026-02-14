@@ -620,36 +620,21 @@ def price_list(request):
 
 
 # REAL TIME BARCODE SEARCH
+# REAL TIME BARCODE SEARCH
 def get_item_by_barcode(request):
-    barcode = request.GET.get("barcode", "")
+    barcode = request.GET.get('barcode')
 
-    # clean scanner input
-    barcode = (
-        barcode.strip()          # remove spaces
-        .replace("\n", "")       # remove enter
-        .replace("\r", "")       # remove carriage return
-        .replace("\t", "")       # remove tab
-    )
+    try:
+        product = Product.objects.get(barcode__iexact=barcode.strip())
 
-    if not barcode:
-        return JsonResponse({"status": "not_found"})
-
-    # try exact match first
-    item = Item.objects.filter(barcode__iexact=barcode).first()
-
-    # if scanner sends leading zeros (very common)
-    if not item:
-        item = Item.objects.filter(barcode__icontains=barcode.lstrip("0")).first()
-
-    if item:
         return JsonResponse({
             "status": "found",
-            "id": item.id,
-            "name": item.name,
-            "barcode": item.barcode,
+            "name": product.name,
+            "id": product.id
         })
 
-    return JsonResponse({"status": "not_found"})
+    except Product.DoesNotExist:
+        return JsonResponse({"status": "not_found"})
 
 
 # SAVE PRICE LIST
@@ -660,7 +645,7 @@ def save_price_list(request):
         pricelist = PriceList.objects.create(name=data["name"])
 
         for row in data["items"]:
-            item = Item.objects.get(id=row["item_id"])
+            item = Product.objects.get(id=row["item_id"])
             unit = Unit.objects.get(id=row["unit"])
             tax = Tax.objects.get(id=row["tax"])
 
