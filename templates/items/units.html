@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3">Add Unit</h4>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="row">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Unit Code</label>
+                        <input type="text" name="unit_code" value="{{ next_code }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Unit Name</label>
+                        <input type="text" name="unit_name" class="form-control" placeholder="Enter unit" required>
+                    </div>
+
+                </div>
+
+                <br>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-5">Save Unit</button>
+                    <a href="{% url 'Unit_list' %}" class="btn btn-secondary px-5">View Units</a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
