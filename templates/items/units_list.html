@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3">Units</h4>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <a href="{% url 'units' %}" class="btn btn-primary mb-3">Add New Unit</a>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Unit Code</th>
+                            <th>Unit Name</th>
+                            <th width="150">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for unit in units %}
+                        <tr>
+                            <td>{{ unit.id }}</td>
+                            <td>{{ unit.Unit_code }}</td>
+                            <td>{{ unit.Unit_name }}</td>
+
+                            <td>
+                                <a href="{% url 'edit_Unit' unit.id %}" class="btn btn-warning btn-sm">Edit</a>
+
+                                <button class="btn btn-danger btn-sm"
+                                    onclick="deleteUnit({{ unit.id }}, '{{ unit.Unit_name }}')">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No units added yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+function deleteUnit(id, name)
+{
+    if(confirm("Are you sure you want to delete unit: " + name + " ?"))
+    {
+        window.location.href = "/items/units/delete/" + id + "/";
+    }
+}
+</script>
+
+{% endblock %}
