@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+<h4 class="mb-3">Price List</h4>
+
+<div class="card shadow-sm">
+<div class="card-body">
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label>Name</label>
+        <input type="text" id="plist_name" class="form-control">
+    </div>
+</div>
+
+<table class="table table-bordered align-middle" id="priceTable">
+    <thead class="table-light">
+        <tr>
+            <th style="width:160px">Barcode</th>
+            <th>Item Name</th>
+            <th style="width:150px">Unit</th>
+            <th style="width:120px">Price</th>
+            <th style="width:150px">Tax</th>
+            <th style="width:160px">Price (Tax Inclusive)</th>
+            <th style="width:80px">Remove</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div class="mt-3">
+    <button class="btn btn-primary" id="addRowBtn">Add More</button>
+    <button class="btn btn-success" id="saveBtn">Save</button>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// CSRF SAFE
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        document.cookie.split(';').forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+
+// ADD ROW
+function addRow() {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>
+            <input type="text" class="form-control barcode">
+            <input type="hidden" class="item_id">
+        </td>
+
+        <td>
+            <input type="text" class="form-control item_name bg-light" readonly>
+        </td>
+
+        <td>
+            <select class="form-control unit">
+                {% for u in units %}
+                <option value="{{u.id}}">{{u.name}}</option>
+                {% endfor %}
+            </select>
+        </td>
+
+        <td><input type="number" class="form-control price" step="0.01"></td>
+
+        <td>
+            <select class="form-control tax">
+                {% for t in taxes %}
+                <option value="{{t.id}}">{{t.name}}</option>
+                {% endfor %}
+            </select>
+        </td>
+
+        <td><input type="number" class="form-control price_inclusive" step="0.01"></td>
+
+        <td class="text-center">
+            <button class="btn btn-danger btn-sm removeRow">X</button>
+        </td>
+    `;
+
+    document.querySelector("#priceTable tbody").appendChild(row);
+    row.querySelector(".barcode").focus();
+}
+
+document.getElementById("addRowBtn").addEventListener("click", addRow);
+addRow();
+
+
+// REALTIME BARCODE SEARCH (DEBOUNCE)
+let timer = null;
+
+document.addEventListener("input", function(e){
+    if(!e.target.classList.contains("barcode")) return;
+
+    clearTimeout(timer);
+
+    timer = setTimeout(()=>{
+        const barcode = e.target.value.trim();
+        if(barcode.length < 2) return;
+
+        fetch("{% url 'get_item_by_barcode' %}?barcode=" + barcode)
+        .then(res=>res.json())
+        .then(data=>{
+            const row = e.target.closest("tr");
+
+            if(data.status === "found"){
+                row.querySelector(".item_name").value = data.name;
+                row.querySelector(".item_id").value = data.id;
+                row.querySelector(".item_name").classList.remove("text-danger");
+            }else{
+                row.querySelector(".item_name").value = "Item not found";
+                row.querySelector(".item_id").value = "";
+                row.querySelector(".item_name").classList.add("text-danger");
+            }
+        });
+
+    }, 350);
+});
+
+
+// REMOVE ROW
+document.addEventListener("click", function(e){
+    if(e.target.classList.contains("removeRow")){
+        e.target.closest("tr").remove();
+    }
+});
+
+
+// SAVE DATA
+document.getElementById("saveBtn").addEventListener("click", function(){
+
+    const rows = document.querySelectorAll("#priceTable tbody tr");
+    let items = [];
+
+    rows.forEach(row=>{
+        const item_id = row.querySelector(".item_id").value;
+        if(!item_id) return; // skip empty rows
+
+        items.push({
+            item_id: item_id,
+            unit: row.querySelector(".unit").value,
+            price: row.querySelector(".price").value || 0,
+            tax: row.querySelector(".tax").value,
+            price_inclusive: row.querySelector(".price_inclusive").value || 0
+        });
+    });
+
+    if(items.length === 0){
+        alert("No valid items to save");
+        return;
+    }
+
+    fetch("{% url 'save_price_list' %}",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "X-CSRFToken":csrftoken
+        },
+        body:JSON.stringify({
+            name:document.getElementById("plist_name").value,
+            items:items
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        alert("Price List Saved Successfully");
+        location.reload();
+    });
+
+});
+
+</script>
+
+{% endblock %}
