@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block content %}
 
@@ -9,37 +8,39 @@
     <div class="card shadow-sm">
         <div class="card-body">
 
-           <form method="POST">
-    {% csrf_token %}
+            <form method="POST">
+                {% csrf_token %}
 
-    <div class="row">
+                <div class="row">
 
-        <div class="col-md-6">
-            <label class="form-label">Color Code</label>
-            <input type="text"
-                   value="{{ next_code }}"
-                   class="form-control"
-                   readonly>
-        </div>
+                    <!-- COLOR CODE (DISPLAY ONLY) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Color Code</label>
+                        <input type="text"
+                               value="{{ next_code }}"
+                               class="form-control"
+                               readonly>
+                    </div>
 
-        <div class="col-md-6">
-            <label class="form-label">Color Name</label>
-            <input type="text"
-                   name="Color_name"
-                   class="form-control"
-                   placeholder="Enter color name"
-                   required>
-        </div>
+                    <!-- COLOR NAME (THIS IS THE IMPORTANT ONE) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Color Name</label>
+                        <input type="text"
+                               name="Color_name"
+                               class="form-control"
+                               placeholder="Enter color name"
+                               required>
+                    </div>
 
-    </div>
+                </div>
 
-    <br>
+                <br>
 
-    <button type="submit" class="btn btn-primary px-5">
-        Add
-    </button>
+                <button type="submit" class="btn btn-primary px-5">
+                    Save Color
+                </button>
 
-</form>
+            </form>
 
         </div>
     </div>
