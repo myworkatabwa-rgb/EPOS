@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit, Promotion
 import csv
 import json
 import openpyxl
@@ -542,8 +542,67 @@ def edit_Unit(request, id):
 
 
 @login_required
-def promotions(request):
-    return render(request, "items/promotions.html")
+def promotion_add(request):
+
+    if request.method == "POST":
+
+        Promotion.objects.create(
+            name=request.POST.get("name"),
+            promo_code=request.POST.get("promo_code"),
+            branch=request.POST.get("branch"),
+            enable=request.POST.get("enable") == "Yes",
+            from_date=request.POST.get("from_date") or None,
+            to_date=request.POST.get("to_date") or None,
+            days_applicable=request.POST.get("days"),
+            priority=request.POST.get("priority") or 1,
+            discount_type=request.POST.get("discount_type"),
+            discount_value=request.POST.get("discount"),
+            application=request.POST.get("application"),
+        )
+
+        return redirect("promotion_list")
+
+    return render(request, "items/promotion_add.html")
+
+
+# LIST
+@login_required
+def promotion_list(request):
+    promos = Promotion.objects.all().order_by("-id")
+    return render(request, "items/promotion_list.html", {"promos": promos})
+
+
+# DELETE
+@login_required
+def promotion_delete(request, id):
+    promo = get_object_or_404(Promotion, id=id)
+    promo.delete()
+    return redirect("promotion_list")
+
+
+# EDIT
+@login_required
+def promotion_edit(request, id):
+
+    promo = get_object_or_404(Promotion, id=id)
+
+    if request.method == "POST":
+        promo.name = request.POST.get("name")
+        promo.promo_code = request.POST.get("promo_code")
+        promo.branch = request.POST.get("branch")
+        promo.enable = request.POST.get("enable") == "Yes"
+        promo.from_date = request.POST.get("from_date") or None
+        promo.to_date = request.POST.get("to_date") or None
+        promo.days_applicable = request.POST.get("days")
+        promo.priority = request.POST.get("priority") or 1
+        promo.discount_type = request.POST.get("discount_type")
+        promo.discount_value = request.POST.get("discount")
+        promo.application = request.POST.get("application")
+        promo.save()
+
+        return redirect("promotion_list")
+
+    return render(request, "items/promotion_edit.html", {"promo": promo})
 
 
 @login_required
