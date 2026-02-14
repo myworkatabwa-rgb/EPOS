@@ -3,81 +3,77 @@
 
 <div class="container-fluid">
 
-    <h4 class="mb-3">color</h4>
+    <h4 class="mb-3">Colors</h4>
 
     <div class="card shadow-sm">
-
         <div class="card-body">
 
-            <a href="{% url 'add_brand' %}" class="btn btn-primary mb-3">
-                Add new color
+            <!-- ADD BUTTON -->
+            <a href="{% url 'colors' %}" class="btn btn-primary mb-3">
+                Add New Color
             </a>
 
             <div class="table-responsive">
-
                 <table class="table table-bordered table-hover">
 
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
-                            <th>color Code</th>
-                            <th>color Name</th>
-                            <th width="120">Action</th>
+                            <th>Color Code</th>
+                            <th>Color Name</th>
+                            <th width="150">Action</th>
                         </tr>
                     </thead>
 
                     <tbody>
 
-                        {% for color in brands %}
-
+                        {% for color in colors %}
                         <tr>
                             <td>{{ color.id }}</td>
                             <td>{{ color.Color_code }}</td>
                             <td>{{ color.Color_name }}</td>
 
                             <td>
+                                <!-- EDIT -->
+                                <a href="{% url 'edit_Color' color.id %}"
+                                   class="btn btn-warning btn-sm">
+                                   Edit
+                                </a>
 
-                            <a href="{% url 'edit_color' color.id %}"
-                               class="btn btn-warning btn-sm">
-                               Edit
-                            </a>
-                        
-                            <button 
-                                class="btn btn-danger btn-sm"
-                                onclick="deleteBrand({{ color.id }}, '{{ brand.Color_name }}')">
-                                Delete
-                            </button>
-                        
-                        </td>    
-
-
+                                <!-- DELETE -->
+                                <button
+                                    class="btn btn-danger btn-sm"
+                                    onclick="deleteColor({{ color.id }}, '{{ color.Color_name }}')">
+                                    Delete
+                                </button>
+                            </td>
                         </tr>
-
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                No colors added yet
+                            </td>
+                        </tr>
                         {% endfor %}
 
                     </tbody>
 
                 </table>
-
             </div>
 
         </div>
-
     </div>
 
 </div>
 
-
 <script>
-
-function deleteBrand(id, name)
+function deleteColor(id, name)
 {
     if(confirm("Are you sure you want to delete color: " + name + " ?"))
     {
-        window.location.href = "/items/brands/delete/" + id + "/";
+        window.location.href = "/items/colors/delete/" + id + "/";
     }
 }
-
 </script>
 
 {% endblock %}
