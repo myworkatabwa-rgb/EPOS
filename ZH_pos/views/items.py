@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size
 import csv
 import json
 import openpyxl
@@ -443,7 +443,26 @@ def edit_Color(request, id):
 
 @login_required
 def sizes(request):
-    return render(request, "items/sizes.html")
+
+    last = Size.objects.order_by("-id").first()
+    next_code = f"{(last.id + 1) if last else 1:04d}"
+
+    if request.method == "POST":
+        size_name = request.POST.get("size_name")
+
+        if size_name:  # prevent null error
+            last = Size.objects.order_by("-id").first()
+            next_code = f"{(last.id + 1) if last else 1:04d}"
+
+            Size.objects.create(
+                Size_code=next_code,
+                Size_name=size_name
+            )
+
+            return redirect("Size_list")
+
+    return render(request, "items/sizes.html", {"next_code": next_code})
+
 
 
 @login_required
