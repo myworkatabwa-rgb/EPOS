@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+<h4 class="mb-3">Add Promotion</h4>
+
+<div class="card">
+<div class="card-body">
+
+<form method="POST">
+{% csrf_token %}
+
+<div class="row g-3">
+
+<div class="col-md-6">
+<label>Promotion Name</label>
+<input type="text" name="name" class="form-control" required>
+</div>
+
+<div class="col-md-6">
+<label>Promo Code</label>
+<input type="text" name="promo_code" class="form-control" required>
+</div>
+
+<div class="col-md-6">
+<label>Branches to Apply</label>
+<input type="text" name="branch" class="form-control">
+</div>
+
+<div class="col-md-6">
+<label>Enable</label>
+<select name="enable" class="form-control">
+<option>Yes</option>
+<option>No</option>
+</select>
+</div>
+
+<div class="col-md-6">
+<label>From Date</label>
+<input type="date" name="from_date" class="form-control">
+</div>
+
+<div class="col-md-6">
+<label>To Date</label>
+<input type="date" name="to_date" class="form-control">
+</div>
+
+<div class="col-md-6">
+<label>Days Applicable</label>
+<input type="text" name="days" class="form-control">
+</div>
+
+<div class="col-md-6">
+<label>Priority</label>
+<input type="number" name="priority" class="form-control" value="1">
+</div>
+
+<div class="col-md-6">
+<label>Discount Type</label>
+<select name="discount_type" class="form-control">
+<option value="amount">Amount Discount</option>
+<option value="percent">Percent Discount</option>
+</select>
+</div>
+
+<div class="col-md-6">
+<label>Discount</label>
+<input type="number" step="0.01" name="discount" class="form-control" required>
+</div>
+
+<div class="col-md-6">
+<label>Applicable On</label>
+<select name="application" class="form-control">
+<option>All orders</option>
+<option>Products</option>
+<option>Categories</option>
+</select>
+</div>
+
+</div>
+
+<br>
+<button class="btn btn-primary px-5">Add</button>
+
+</form>
+</div>
+</div>
+</div>
+
+{% endblock %}
