@@ -392,19 +392,25 @@ def discount_list(request):
 
 @login_required
 def colors(request):
+
     if request.method == "POST":
+
+        name = request.POST.get("Color_name")
+
+        # Always auto generate code
+        last = Color.objects.order_by("-id").first()
+        code = str(int(last.Color_code) + 1).zfill(4) if last else "0001"
+
         Color.objects.create(
-            Color_code=request.POST.get("Color_code"),
-            Color_name=request.POST.get("Color_name"),
+            Color_code=code,
+            Color_name=name,
         )
+
         return redirect("Color_list")
 
+    # show next code in form
     last = Color.objects.order_by("-id").first()
-
-    if last:
-        next_code = str(int(last.Color_code) + 1).zfill(4)
-    else:
-        next_code = "0001"
+    next_code = str(int(last.Color_code) + 1).zfill(4) if last else "0001"
 
     return render(request, "items/colors.html", {
         "next_code": next_code
