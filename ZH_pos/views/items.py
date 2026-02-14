@@ -329,21 +329,28 @@ def barcode_search_api(request):
 @login_required
 def generate_barcodes(request):
 
-    data = json.loads(request.body)
-    items = data.get("items", [])
+    if request.method == "POST":
 
-    barcode_list = []
+        data = json.loads(request.body)
 
-    for item in items:
-        barcode_list.extend([item["barcode"]] * int(item["qty"]))
+        items = data.get("items", [])
+        settings = data.get("settings", {})
 
-    request.session["barcode_list"] = barcode_list
+        barcode_list = []
 
-    return JsonResponse({
-        "success": True,
-        "url": "/items/barcode_preview/"
-    })
+        for item in items:
+            for i in range(int(item["qty"])):
+                barcode_list.append(item["barcode"])
 
+        request.session["barcode_list"] = barcode_list
+        request.session["barcode_settings"] = settings
+
+        return JsonResponse({
+            "success": True,
+            "url": "/items/barcode-preview/"
+        })
+
+    return JsonResponse({"success": False})
 
 @login_required
 def barcode_preview(request):
