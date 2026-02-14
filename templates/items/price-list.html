@@ -40,6 +40,41 @@
 </div>
 
 </div>
+<!-- PRODUCT PICKER MODAL -->
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Select Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <input type="text" id="productSearch" class="form-control mb-3" placeholder="Search name or barcode">
+
+        <div class="table-responsive" style="max-height:450px;">
+          <table class="table table-bordered table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Barcode</th>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Rate</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="productResults"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 
@@ -256,6 +291,64 @@ document.getElementById("saveBtn").addEventListener("click", function(){
 
 });
 
+let activeRow = null;
+
+// open modal when barcode focused
+document.addEventListener("focusin", function(e){
+    if(e.target.classList.contains("barcode")){
+        activeRow = e.target.closest("tr");
+        loadProducts("");
+        new bootstrap.Modal(document.getElementById("productModal")).show();
+    }
+});
+
+// load products
+function loadProducts(query){
+    fetch(`/search-products/?q=${query}`)
+    .then(res=>res.json())
+    .then(products=>{
+        const tbody = document.getElementById("productResults");
+        tbody.innerHTML="";
+
+        products.forEach(p=>{
+            tbody.innerHTML += `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.barcode}</td>
+                    <td>${p.name}</td>
+                    <td>${p.unit}</td>
+                    <td>${p.rate}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm selectProduct"
+                            data-id="${p.id}"
+                            data-name="${p.name}"
+                            data-barcode="${p.barcode}">
+                            Select Item
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    });
+}
+
+// search typing
+document.getElementById("productSearch").addEventListener("input", function(){
+    loadProducts(this.value);
+});
+
+// select product
+document.addEventListener("click", function(e){
+    if(e.target.classList.contains("selectProduct")){
+        const btn = e.target;
+
+        activeRow.querySelector(".barcode").value = btn.dataset.barcode;
+        activeRow.querySelector(".item_name").value = btn.dataset.name;
+        activeRow.querySelector(".item_id").value = btn.dataset.id;
+
+        bootstrap.Modal.getInstance(document.getElementById("productModal")).hide();
+    }
+});
 </script>
 
 
