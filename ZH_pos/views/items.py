@@ -610,7 +610,54 @@ def promotion_edit(request, id):
 
 @login_required
 def price_list(request):
-    return render(request, "items/price_list.html")
+    taxes = Tax.objects.all()
+    units = Unit.objects.all()
+    return render(request, "items/price_list.html", {
+        "taxes": taxes,
+        "units": units
+    })
+
+
+
+# REAL TIME BARCODE SEARCH
+def get_item_by_barcode(request):
+    barcode = request.GET.get('barcode')
+
+    try:
+        item = Item.objects.get(barcode=barcode)
+        return JsonResponse({
+            "status": "found",
+            "name": item.name,
+            "id": item.id
+        })
+    except Item.DoesNotExist:
+        return JsonResponse({"status": "not_found"})
+
+
+# SAVE PRICE LIST
+def save_price_list(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+        pricelist = PriceList.objects.create(name=data["name"])
+
+        for row in data["items"]:
+            item = Item.objects.get(id=row["item_id"])
+            unit = Unit.objects.get(id=row["unit"])
+            tax = Tax.objects.get(id=row["tax"])
+
+            PriceListItem.objects.update_or_create(
+                pricelist=pricelist,
+                item=item,
+                defaults={
+                    "unit": unit,
+                    "price": row["price"],
+                    "tax": tax,
+                    "price_inclusive": row["price_inclusive"]
+                }
+            )
+
+        return JsonResponse({"success": True})
 
 
 @login_required
