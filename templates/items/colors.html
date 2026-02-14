@@ -9,33 +9,37 @@
     <div class="card shadow-sm">
         <div class="card-body">
 
-            <form method="POST">
-                {% csrf_token %}
+           <form method="POST">
+    {% csrf_token %}
 
-                <div class="row">
+    <div class="row">
 
-                    <input type="text"
-       name="Color_code"
-       value="{{ next_code }}"
-       class="form-control"
-       readonly>
+        <div class="col-md-6">
+            <label class="form-label">Color Code</label>
+            <input type="text"
+                   value="{{ next_code }}"
+                   class="form-control"
+                   readonly>
+        </div>
 
-                    </div>
+        <div class="col-md-6">
+            <label class="form-label">Color Name</label>
+            <input type="text"
+                   name="Color_name"
+                   class="form-control"
+                   placeholder="Enter color name"
+                   required>
+        </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Color</label>
-                        <input type="text" value="{{ next_code }}" class="form-control" readonly>
+    </div>
 
+    <br>
 
-                </div>
+    <button type="submit" class="btn btn-primary px-5">
+        Add
+    </button>
 
-                <br>
-
-                <button class="btn btn-primary px-5">
-                    Add
-                </button>
-
-            </form>
+</form>
 
         </div>
     </div>
