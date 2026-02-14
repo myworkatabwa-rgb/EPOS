@@ -389,9 +389,64 @@ def discount_list(request):
         "discounts": discounts
     })
 
+
 @login_required
-def colors(request):
-    return render(request, "items/colors.html")
+def color(request):
+
+    if request.method == "POST":
+
+        Color.objects.create(
+            Color_code=request.POST.get("Color_code"),
+            Color_name=request.POST.get("Color_name"),
+        )
+
+        return redirect("Color_list")
+
+    # Auto generate next code
+    last = Color.objects.order_by("-id").first()
+
+    if last:
+        next_code = str(int(last.Color_code) + 1).zfill(4)
+    else:
+        next_code = "0001"
+
+    return render(request, "items/colors.html", {
+        "next_code": next_code
+    })
+
+
+def Color_list(request):
+
+    Color = Color.objects.all().order_by("-id")
+
+    return render(request, "items/colors_list.html", {
+        "Color": Color
+    })
+@login_required
+def delete_Color(request, id):
+
+    Color = get_object_or_404(Color, id=id)
+
+    Color.delete()
+
+    return redirect("Color_list")
+@login_required
+def edit_Color(request, id):
+
+    Color = get_object_or_404(Color, id=id)
+
+    if request.method == "POST":
+
+        Color.Color_code = request.POST.get("Color_code")
+        Color.Color_name = request.POST.get("Color_name")
+
+        Color.save()
+
+        return redirect("Color_list")
+
+    return render(request, "items/edit_color.html", {
+        "brand": brand
+    })
 
 
 @login_required
