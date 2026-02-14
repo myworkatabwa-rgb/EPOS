@@ -195,75 +195,129 @@
 
 <script>
 
-let input = document.getElementById("barcodeInput")
+// ===============================
+// CSRF TOKEN FUNCTION (Django)
+// ===============================
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
-input.addEventListener("keypress", function(e){
+// ===============================
+// BARCODE SCAN INPUT
+// ===============================
+let input = document.getElementById("barcodeInput");
 
-    if(e.key === "Enter"){
-        e.preventDefault()
+input.addEventListener("keypress", function(e) {
 
-        let barcode = input.value
+    if (e.key === "Enter") {
+        e.preventDefault();
 
-        fetch(`/api/barcode-search/?barcode=${barcode}`)
-        .then(res => res.json())
+        let barcode = input.value.trim();
+
+        if (!barcode) return;
+
+        fetch(`/api/barcode-search/?barcode=${encodeURIComponent(barcode)}`)
+        .then(res => {
+            if (!res.ok) throw new Error("Server error");
+            return res.json();
+        })
         .then(data => {
-            if(data.success){
-                addRow(data)
-                input.value=""
-            }else{
-                alert("Product not found")
+            if (data.success) {
+                addRow(data);
+                input.value = "";
+                input.focus();
+            } else {
+                alert("Product not found");
             }
         })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Something went wrong while searching product");
+        });
     }
 
-})
+});
 
-function addRow(product){
 
-    let table = document.getElementById("barcodeTable")
+// ===============================
+// ADD ROW FUNCTION
+// ===============================
+function addRow(product) {
 
-    let row = document.createElement("tr")
+    let tbody = document.querySelector("#barcodeTable tbody");
+
+    // Check if product already exists → increase qty
+    let existingRows = tbody.querySelectorAll("tr");
+
+    for (let row of existingRows) {
+        if (row.children[0].innerText === product.barcode) {
+            let qtyInput = row.children[2].querySelector("input");
+            qtyInput.value = parseInt(qtyInput.value) + 1;
+            return;
+        }
+    }
+
+    // Create new row
+    let row = document.createElement("tr");
 
     row.innerHTML = `
         <td>${product.barcode}</td>
         <td>${product.name}</td>
         <td>
-            <input type="number" value="1" class="form-control">
+            <input type="number" value="1" min="1" class="form-control form-control-sm">
         </td>
         <td>
-            <button onclick="this.parentElement.parentElement.remove()"
-                    class="btn btn-danger btn-sm">
+            <button class="btn btn-danger btn-sm remove-btn">
                 X
             </button>
         </td>
-    `
+    `;
 
-    table.appendChild(row)
+    // Remove row button
+    row.querySelector(".remove-btn").addEventListener("click", function() {
+        row.remove();
+    });
+
+    tbody.appendChild(row);
 }
 
 
-function generateBarcodes(){
+// ===============================
+// GENERATE BARCODES
+// ===============================
+function generateBarcodes() {
 
-    let rows = document.querySelectorAll("#barcodeTable tr")
+    let rows = document.querySelectorAll("#barcodeTable tbody tr");
 
-    if(rows.length === 0){
-        alert("No items added")
-        return
+    if (rows.length === 0) {
+        alert("No items added");
+        return;
     }
 
-    let items = []
+    let items = [];
 
     rows.forEach(row => {
 
-        let barcode = row.children[0].innerText
-        let qty = row.children[2].querySelector("input").value
+        let barcode = row.children[0].innerText;
+        let qty = parseInt(row.children[2].querySelector("input").value) || 1;
 
         items.push({
             barcode: barcode,
             qty: qty
-        })
+        });
 
-    })
+    });
 
     let settings = {
         show_price: document.getElementById("show_price").checked,
@@ -274,36 +328,41 @@ function generateBarcodes(){
         show_best: document.getElementById("show_best").checked,
         mfg_date: document.getElementById("mfg_date").value,
         best_date: document.getElementById("best_date").value
-    }
+    };
 
     fetch("/items/generate-barcodes/", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": "{{ csrf_token }}"
-    },
-    body: JSON.stringify({
-        items: items,
-        settings: settings
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+            items: items,
+            settings: settings
+        })
     })
-})
-.then(res => res.json())
-.then(data => {
+    .then(res => {
+        if (!res.ok) throw new Error("Server error");
+        return res.json();
+    })
+    .then(data => {
 
-    if(data.success){
-        window.open(data.url, "_blank")
-    } else {
-        alert("Error generating barcodes")
-    }
+        if (data.success) {
+            window.open(data.url, "_blank");
+        } else {
+            alert("Error generating barcodes");
+        }
 
-})
-.catch(error => {
-    console.error("Error:", error)
-    alert("Something went wrong")
-})
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong while generating barcodes");
+    });
 
+}
 
 </script>
+
 
 
 {% endblock %}
