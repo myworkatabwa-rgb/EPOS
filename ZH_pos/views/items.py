@@ -329,54 +329,38 @@ def barcode_search_api(request):
 @login_required
 def generate_barcodes(request):
 
-    if request.method == "POST":
+    data = json.loads(request.body)
 
-        data = json.loads(request.body)
+    items = data.get("items", [])
+    settings = data.get("settings", {})
 
-        items = data.get("items", [])
-        settings = data.get("settings", {})
+    barcode_list = []
 
-        barcode_list = []
+    for item in items:
+        barcode_list.extend([item["barcode"]] * int(item["qty"]))
 
-        for item in items:
-            for i in range(int(item["qty"])):
-                barcode_list.append(item["barcode"])
+    request.session["barcode_list"] = barcode_list
+    request.session["barcode_settings"] = settings
 
-        request.session["barcode_list"] = barcode_list
-        request.session["barcode_settings"] = settings
+    return JsonResponse({
+        "success": True,
+        "url": "/items/barcode_preview/"
+    })
 
-        return JsonResponse({
-            "success": True,
-            "url": "/items/barcode_preview/"
-        })
-
-    return JsonResponse({"success": False})
-
+@login_required
 def barcode_preview(request):
 
     barcode_list = request.session.get("barcode_list", [])
     settings = request.session.get("barcode_settings", {})
 
-    products = Product.objects.filter(sku__in=barcode_list)
-
-    items = []
-
-    for product in products:
-
-        barcode_image = generate_barcode_base64(product.sku)
-
-        items.append({
-            "name": product.name,
-            "sku": product.sku,
-            "price": product.price,
-            "barcode": barcode_image
-        })
+    products = Product.objects.filter(barcode__in=barcode_list)
 
     return render(request, "items/barcode_preview.html", {
-        "items": items,
-        "store_name": "Orh WEAR",
-        "settings": settings
+        "items": products,
+        "settings": settings,
+        "store_name": "Orh WEAR"
     })
+
     
 @login_required
 def discount(request):
