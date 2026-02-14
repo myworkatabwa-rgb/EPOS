@@ -397,12 +397,20 @@ def colors(request):
     next_code = f"{(last.id + 1) if last else 1:04d}"
 
     if request.method == "POST":
+
+        color_name = request.POST.get("color_name")
+
+        # generate again for safety
+        last = Color.objects.order_by("-id").first()
+        next_code = f"{(last.id + 1) if last else 1:04d}"
+
         Color.objects.create(
-            Color_code=request.POST.get("color_code"),
-            Color_name=request.POST.get("color_name")
+            Color_code=next_code,
+            Color_name=color_name
         )
 
     return render(request, "items/colors.html", {"next_code": next_code})
+
 
 
 
