@@ -162,7 +162,7 @@ class PriceList(models.Model):
 
 class PriceListItem(models.Model):
     pricelist = models.ForeignKey(PriceList, on_delete=models.CASCADE)
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    item = models.ForeignKey(Product, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     tax = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True)
