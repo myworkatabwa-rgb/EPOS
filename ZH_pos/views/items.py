@@ -413,6 +413,28 @@ def colors(request):
             return redirect("Color_list")
 
     return render(request, "items/colors.html", {"next_code": next_code})
+@login_required
+def search_products(request):
+    q = request.GET.get("q", "").strip()
+
+    products = Product.objects.all().order_by("id")[:50]
+
+    if q:
+        products = Product.objects.filter(
+            Q(name__icontains=q) | Q(barcode__icontains=q)
+        )[:50]
+
+    data = []
+    for p in products:
+        data.append({
+            "id": p.id,
+            "name": p.name,
+            "barcode": p.barcode,
+            "unit": getattr(p.unit, "name", ""),
+            "rate": str(getattr(p, "sale_price", 0))
+        })
+
+    return JsonResponse(data, safe=False)
 
 
 @login_required
