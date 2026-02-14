@@ -277,23 +277,31 @@ function generateBarcodes(){
     }
 
     fetch("/items/generate-barcodes/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-            items: items,
-            settings: settings
-        })
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: JSON.stringify({
+        items: items,
+        settings: settings
     })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success){
-            window.open(data.url, "_blank")
-        }
-    })
-}
+})
+.then(res => res.json())
+.then(data => {
+
+    if(data.success){
+        window.open(data.url, "_blank")
+    } else {
+        alert("Error generating barcodes")
+    }
+
+})
+.catch(error => {
+    console.error("Error:", error)
+    alert("Something went wrong")
+})
+
 
 </script>
 
