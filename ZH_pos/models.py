@@ -191,6 +191,35 @@ class Discount(models.Model):
 
     def __str__(self):
         return self.name
+class Promotion(models.Model):
+
+    name = models.CharField(max_length=200)
+    promo_code = models.CharField(max_length=100, unique=True)
+
+    branch = models.CharField(max_length=200, blank=True, null=True)
+    enable = models.BooleanField(default=True)
+
+    from_date = models.DateField(blank=True, null=True)
+    to_date = models.DateField(blank=True, null=True)
+    days_applicable = models.CharField(max_length=100, blank=True, null=True)
+
+    priority = models.IntegerField(default=1)
+
+    DISCOUNT_TYPE = (
+        ("amount", "Amount Discount"),
+        ("percent", "Percent Discount"),
+    )
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE)
+
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+
+    application = models.CharField(max_length=100, default="All orders")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
 # =========================
 # ORDER ITEM
 # =========================
