@@ -665,27 +665,39 @@ def get_item_by_barcode(request):
 # SAVE PRICE LIST
 def save_price_list(request):
     if request.method == "POST":
+
         data = json.loads(request.body)
 
-        pricelist = PriceList.objects.create(name=data["name"])
+        pricelist = PriceList.objects.create(name=data.get("name",""))
 
-        for row in data["items"]:
-            item = Product.objects.get(id=row["item_id"])
-            unit = Unit.objects.get(id=row["unit"])
-            tax = Tax.objects.get(id=row["tax"])
+        for row in data.get("items", []):
+
+            item_id = row.get("item_id")
+            if not item_id:
+                continue  # skip empty rows
+
+            try:
+                item = Product.objects.get(id=item_id)
+                unit = Unit.objects.get(id=row.get("unit"))
+                tax = Tax.objects.get(id=row.get("tax"))
+            except (Product.DoesNotExist, Unit.DoesNotExist, Tax.DoesNotExist):
+                continue
 
             PriceListItem.objects.update_or_create(
                 pricelist=pricelist,
                 item=item,
                 defaults={
                     "unit": unit,
-                    "price": row["price"],
+                    "price": row.get("price") or 0,
                     "tax": tax,
-                    "price_inclusive": row["price_inclusive"]
+                    "price_inclusive": row.get("price_inclusive") or 0
                 }
             )
 
         return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False})
+
 
 
 @login_required
