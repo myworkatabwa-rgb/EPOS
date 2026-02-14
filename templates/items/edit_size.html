@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3">Edit Size</h4>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="row">
+
+                    <div class="col-md-6">
+                        <label>Size Code</label>
+                        <input type="text" name="Size_code" value="{{ size.Size_code }}" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>Size Name</label>
+                        <input type="text" name="Size_name" value="{{ size.Size_name }}" class="form-control">
+                    </div>
+
+                </div>
+
+                <br>
+
+                <button type="submit" class="btn btn-success">Update Size</button>
+                <a href="{% url 'Size_list' %}" class="btn btn-secondary">Back</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
