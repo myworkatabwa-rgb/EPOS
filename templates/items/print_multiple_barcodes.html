@@ -253,6 +253,52 @@ function addRow(product){
     table.appendChild(row)
 
 }
+let input = document.getElementById("barcodeInput")
+
+input.addEventListener("keypress", function(e){
+
+    if(e.key === "Enter"){
+        e.preventDefault()
+        let barcode = input.value
+
+        fetch(`/api/barcode-search/?barcode=${barcode}`)
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                addRow(data)
+                input.value=""
+            }else{
+                alert("Product not found")
+            }
+        })
+    }
+
+})
+
+function addRow(product){
+    let table = document.getElementById("barcodeTable")
+
+    let row = document.createElement("tr")
+
+    row.innerHTML = `
+        <td>${product.barcode}</td>
+        <td>${product.name}</td>
+        <td>
+            <input type="number" value="1" class="form-control">
+        </td>
+        <td>
+            <button onclick="this.parentElement.parentElement.remove()"
+                    class="btn btn-danger btn-sm">
+                X
+            </button>
+        </td>
+    `
+
+    table.appendChild(row)
+}
+
+
+/* 🔥 PUT YOUR NEW FUNCTION HERE */
 function generateBarcodes(){
 
     let rows = document.querySelectorAll("#barcodeTable tr")
@@ -276,32 +322,36 @@ function generateBarcodes(){
 
     })
 
+    let settings = {
+        show_price: document.getElementById("show_price").checked,
+        show_name: document.getElementById("show_name").checked,
+        show_barcode: document.getElementById("show_barcode").checked,
+        show_company: document.getElementById("show_company").checked,
+        show_mfg: document.getElementById("show_mfg").checked,
+        show_best: document.getElementById("show_best").checked,
+        mfg_date: document.getElementById("mfg_date").value,
+        best_date: document.getElementById("best_date").value
+    }
+
     fetch("/items/generate-barcodes/", {
-
         method: "POST",
-
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": "{{ csrf_token }}"
         },
-
         body: JSON.stringify({
-            items: items
+            items: items,
+            settings: settings
         })
-
     })
     .then(res => res.json())
     .then(data => {
-
         if(data.success){
-
             window.open(data.url, "_blank")
-
         }
-
     })
-
 }
+
 
 </script>
 
