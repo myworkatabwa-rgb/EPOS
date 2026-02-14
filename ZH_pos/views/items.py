@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit, Promotion, PriceList,Tax,Item,PriceListItem
 import csv
 import json
+from django.db.models import Q
 import openpyxl
 from ZH_pos.utils import generate_barcode_base64
 from django.http import JsonResponse
@@ -417,24 +418,26 @@ def colors(request):
 def search_products(request):
     q = request.GET.get("q", "").strip()
 
-    products = Product.objects.all().order_by("id")[:50]
+    products = Product.objects.all().order_by("id")
 
     if q:
-        products = Product.objects.filter(
-            Q(name__icontains=q) | Q(barcode__icontains=q)
-        )[:50]
+        products = products.filter(
+            Q(name__icontains=q) | Q(sku__icontains=q)
+        )
+
+    products = products[:50]
 
     data = []
     for p in products:
         data.append({
             "id": p.id,
-            "name": p.name,
-            "barcode": p.barcode,
-            "unit": getattr(p.unit, "name", ""),
-            "rate": str(getattr(p, "sale_price", 0))
+            "name": p.name or "",
+            "barcode": p.sku or "",
+            "unit": "",
+            "rate": str(p.sale_price or p.price or 0)
         })
 
-    return JsonResponse(data, safe=False)
+    return JsonResponse({"data": data})
 
 
 @login_required
