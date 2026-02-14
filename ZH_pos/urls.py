@@ -46,7 +46,7 @@ from .views.items import (
     barcode_preview,
     discount,
     discount_list,
-    color,
+    colors,
     Color_list,
     delete_Color,
     edit_Color,
