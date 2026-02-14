@@ -40,45 +40,8 @@
 </div>
 
 </div>
-<!-- PRODUCT PICKER MODAL -->
-<div class="modal fade" id="productModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">Select Product</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body">
-
-        <input type="text" id="productSearch" class="form-control mb-3" placeholder="Search name or barcode">
-
-        <div class="table-responsive" style="max-height:450px;">
-          <table class="table table-bordered table-sm">
-            <thead class="table-light">
-              <tr>
-                <th>ID</th>
-                <th>Barcode</th>
-                <th>Name</th>
-                <th>Unit</th>
-                <th>Rate</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="productResults"></tbody>
-          </table>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
 
 <script>
-
-// ================= CSRF =================
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -93,10 +56,7 @@ function getCookie(name) {
 }
 const csrftoken = getCookie('csrftoken');
 
-
-// ================= ADD ROW =================
 function addRow(focus=true) {
-
     const row = document.createElement("tr");
 
     row.innerHTML = `
@@ -104,11 +64,9 @@ function addRow(focus=true) {
             <input type="text" class="form-control barcode">
             <input type="hidden" class="item_id">
         </td>
-
         <td>
             <input type="text" class="form-control item_name bg-light" readonly>
         </td>
-
         <td>
             <select class="form-control unit">
                 {% for u in units %}
@@ -116,9 +74,7 @@ function addRow(focus=true) {
                 {% endfor %}
             </select>
         </td>
-
         <td><input type="number" class="form-control price" step="0.01"></td>
-
         <td>
             <select class="form-control tax">
                 {% for t in taxes %}
@@ -126,117 +82,65 @@ function addRow(focus=true) {
                 {% endfor %}
             </select>
         </td>
-
         <td><input type="number" class="form-control price_inclusive" step="0.01"></td>
-
         <td class="text-center">
             <button class="btn btn-danger btn-sm removeRow">X</button>
-        </td>
-    `;
+        </td>`;
 
     document.querySelector("#priceTable tbody").appendChild(row);
-
     if(focus) row.querySelector(".barcode").focus();
 }
 
 document.getElementById("addRowBtn").addEventListener("click", ()=>addRow());
 addRow();
 
+// SAVE PRICE LIST
 
-// ================= TAX CALC =================
-function getTaxPercent(row){
-    const opt = row.querySelector(".tax option:checked");
-    return parseFloat(opt.dataset.rate || 0);
-}
+document.getElementById("saveBtn").addEventListener("click", function(){
 
-document.addEventListener("input", function(e){
+    const name = document.getElementById("plist_name").value.trim();
+    if(!name){ alert("Enter price list name"); return; }
 
-    const row = e.target.closest("tr");
-    if(!row) return;
+    const rows = document.querySelectorAll("#priceTable tbody tr");
+    let items = [];
 
-    const tax = getTaxPercent(row);
-    const price = row.querySelector(".price");
-    const inclusive = row.querySelector(".price_inclusive");
+    rows.forEach(row=>{
+        const item_id = row.querySelector(".item_id").value;
+        if(!item_id) return;
 
-    if(e.target.classList.contains("price")){
-        let p = parseFloat(price.value || 0);
-        let inc = p + (p * tax / 100);
-        inclusive.value = inc.toFixed(2);
-    }
-
-    if(e.target.classList.contains("price_inclusive")){
-        let inc = parseFloat(inclusive.value || 0);
-        let p = inc / (1 + tax/100);
-        price.value = p.toFixed(2);
-    }
-});
-
-
-// ================= PRODUCT MODAL =================
-let activeRow = null;
-
-document.addEventListener("focusin", function(e){
-    if(e.target.classList.contains("barcode")){
-        activeRow = e.target.closest("tr");
-        loadProducts("");
-        new bootstrap.Modal(document.getElementById("productModal")).show();
-    }
-});
-
-function loadProducts(query){
-    fetch("{% url 'search_products' %}?q=" + query)
-    .then(res=>res.json())
-    .then(response=>{
-        const tbody = document.getElementById("productResults");
-        tbody.innerHTML="";
-
-        response.data.forEach(p=>{
-            tbody.innerHTML += `
-                <tr>
-                    <td>${p.id}</td>
-                    <td>${p.barcode}</td>
-                    <td>${p.name}</td>
-                    <td>${p.unit}</td>
-                    <td>${p.rate}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm selectProduct"
-                            data-id="${p.id}"
-                            data-name="${p.name}"
-                            data-barcode="${p.barcode}"
-                            data-rate="${p.rate}">
-                            Select Item
-                        </button>
-                    </td>
-                </tr>
-            `;
+        items.push({
+            item_id: item_id,
+            unit: row.querySelector(".unit").value,
+            price: row.querySelector(".price").value || 0,
+            tax: row.querySelector(".tax").value,
+            price_inclusive: row.querySelector(".price_inclusive").value || 0
         });
     });
-}
 
-document.getElementById("productSearch").addEventListener("input", function(){
-    loadProducts(this.value);
+    if(items.length===0){ alert("No items added"); return; }
+
+    fetch("{% url 'save_price_list' %}",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "X-CSRFToken":csrftoken
+        },
+        body: JSON.stringify({name:name, items:items})
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.success){
+            alert("Price List Saved Successfully");
+            location.reload();
+        }else{
+            alert("Save failed");
+        }
+    })
+    .catch(()=>alert("Server error while saving"));
 });
 
-document.addEventListener("click", function(e){
-    if(e.target.classList.contains("selectProduct")){
-        const btn = e.target;
+// REMOVE ROW
 
-        activeRow.querySelector(".barcode").value = btn.dataset.barcode;
-        activeRow.querySelector(".item_name").value = btn.dataset.name;
-        activeRow.querySelector(".item_id").value = btn.dataset.id;
-        activeRow.querySelector(".price").value = btn.dataset.rate;
-
-        activeRow.querySelector(".price").dispatchEvent(new Event("input"));
-
-        bootstrap.Modal.getInstance(document.getElementById("productModal")).hide();
-
-        addRow(false);
-        activeRow.nextElementSibling.querySelector(".barcode").focus();
-    }
-});
-
-
-// ================= REMOVE =================
 document.addEventListener("click", function(e){
     if(e.target.classList.contains("removeRow")){
         e.target.closest("tr").remove();
@@ -244,6 +148,5 @@ document.addEventListener("click", function(e){
 });
 
 </script>
-
 
 {% endblock %}
