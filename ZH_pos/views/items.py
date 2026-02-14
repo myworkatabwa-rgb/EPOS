@@ -353,7 +353,7 @@ def barcode_preview(request):
     barcode_list = request.session.get("barcode_list", [])
     settings = request.session.get("barcode_settings", {})
 
-    products = Product.objects.filter(barcode__in=barcode_list)
+    products = Product.objects.filter(sku__in=barcode_list)
 
     return render(request, "items/barcode_preview.html", {
         "items": products,
