@@ -391,18 +391,14 @@ def discount_list(request):
 
 
 @login_required
-def color(request):
-
+def colors(request):
     if request.method == "POST":
-
         Color.objects.create(
             Color_code=request.POST.get("Color_code"),
             Color_name=request.POST.get("Color_name"),
         )
-
         return redirect("Color_list")
 
-    # Auto generate next code
     last = Color.objects.order_by("-id").first()
 
     if last:
@@ -416,36 +412,32 @@ def color(request):
 
 
 def Color_list(request):
-
-    Color = Color.objects.all().order_by("-id")
+    colors = Color.objects.all().order_by("-id")
 
     return render(request, "items/colors_list.html", {
-        "Color": Color
+        "colors": colors
     })
+
+
 @login_required
 def delete_Color(request, id):
-
-    Color = get_object_or_404(Color, id=id)
-
-    Color.delete()
-
+    color = get_object_or_404(Color, id=id)
+    color.delete()
     return redirect("Color_list")
+
+
 @login_required
 def edit_Color(request, id):
-
-    Color = get_object_or_404(Color, id=id)
+    color = get_object_or_404(Color, id=id)
 
     if request.method == "POST":
-
-        Color.Color_code = request.POST.get("Color_code")
-        Color.Color_name = request.POST.get("Color_name")
-
-        Color.save()
-
+        color.Color_code = request.POST.get("Color_code")
+        color.Color_name = request.POST.get("Color_name")
+        color.save()
         return redirect("Color_list")
 
     return render(request, "items/edit_color.html", {
-        "brand": brand
+        "color": color
     })
 
 
