@@ -43,7 +43,7 @@
 
 <script>
 
-// CSRF SAFE
+// ================= CSRF =================
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -59,8 +59,9 @@ function getCookie(name) {
 const csrftoken = getCookie('csrftoken');
 
 
-// ADD ROW
-function addRow() {
+// ================= ADD ROW =================
+function addRow(focus=true) {
+
     const row = document.createElement("tr");
 
     row.innerHTML = `
@@ -86,7 +87,7 @@ function addRow() {
         <td>
             <select class="form-control tax">
                 {% for t in taxes %}
-                <option value="{{t.id}}">{{t.name}}</option>
+                <option value="{{t.id}}" data-rate="{{t.rate}}">{{t.name}}</option>
                 {% endfor %}
             </select>
         </td>
@@ -99,14 +100,49 @@ function addRow() {
     `;
 
     document.querySelector("#priceTable tbody").appendChild(row);
-    row.querySelector(".barcode").focus();
+
+    if(focus) row.querySelector(".barcode").focus();
 }
 
-document.getElementById("addRowBtn").addEventListener("click", addRow);
+document.getElementById("addRowBtn").addEventListener("click", ()=>addRow());
 addRow();
 
 
-// REALTIME BARCODE SEARCH (DEBOUNCE)
+// ================= HELPER TAX =================
+function getTaxPercent(row){
+    const opt = row.querySelector(".tax option:checked");
+    return parseFloat(opt.dataset.rate || 0);
+}
+
+
+// ================= AUTO CALCULATIONS =================
+document.addEventListener("input", function(e){
+
+    const row = e.target.closest("tr");
+    if(!row) return;
+
+    const tax = getTaxPercent(row);
+    const price = row.querySelector(".price");
+    const inclusive = row.querySelector(".price_inclusive");
+
+    // Price -> Inclusive
+    if(e.target.classList.contains("price")){
+        let p = parseFloat(price.value || 0);
+        let inc = p + (p * tax / 100);
+        inclusive.value = inc.toFixed(2);
+    }
+
+    // Inclusive -> Price
+    if(e.target.classList.contains("price_inclusive")){
+        let inc = parseFloat(inclusive.value || 0);
+        let p = inc / (1 + tax/100);
+        price.value = p.toFixed(2);
+    }
+
+});
+
+
+// ================= BARCODE SEARCH =================
 let timer = null;
 
 document.addEventListener("input", function(e){
@@ -118,6 +154,17 @@ document.addEventListener("input", function(e){
         const barcode = e.target.value.trim();
         if(barcode.length < 2) return;
 
+        // prevent duplicate
+        let exists = false;
+        document.querySelectorAll(".item_id").forEach(el=>{
+            if(el.value === barcode) exists = true;
+        });
+        if(exists){
+            alert("Item already added");
+            e.target.value="";
+            return;
+        }
+
         fetch("{% url 'get_item_by_barcode' %}?barcode=" + barcode)
         .then(res=>res.json())
         .then(data=>{
@@ -126,19 +173,39 @@ document.addEventListener("input", function(e){
             if(data.status === "found"){
                 row.querySelector(".item_name").value = data.name;
                 row.querySelector(".item_id").value = data.id;
-                row.querySelector(".item_name").classList.remove("text-danger");
+                row.querySelector(".price").value = data.price || 0;
+
+                // trigger calc
+                row.querySelector(".price").dispatchEvent(new Event("input"));
+
+                // AUTO ADD NEW ROW
+                addRow(false);
+                row.nextElementSibling.querySelector(".barcode").focus();
+
             }else{
                 row.querySelector(".item_name").value = "Item not found";
-                row.querySelector(".item_id").value = "";
                 row.querySelector(".item_name").classList.add("text-danger");
             }
         });
 
-    }, 350);
+    }, 250);
 });
 
 
-// REMOVE ROW
+// ================= ENTER KEY NAVIGATION =================
+document.addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+
+    const inputs = [...document.querySelectorAll("input,select")];
+    const index = inputs.indexOf(document.activeElement);
+    if(index > -1 && index < inputs.length-1){
+        inputs[index+1].focus();
+        e.preventDefault();
+    }
+});
+
+
+// ================= REMOVE ROW =================
 document.addEventListener("click", function(e){
     if(e.target.classList.contains("removeRow")){
         e.target.closest("tr").remove();
@@ -146,7 +213,7 @@ document.addEventListener("click", function(e){
 });
 
 
-// SAVE DATA
+// ================= SAVE =================
 document.getElementById("saveBtn").addEventListener("click", function(){
 
     const rows = document.querySelectorAll("#priceTable tbody tr");
@@ -154,7 +221,7 @@ document.getElementById("saveBtn").addEventListener("click", function(){
 
     rows.forEach(row=>{
         const item_id = row.querySelector(".item_id").value;
-        if(!item_id) return; // skip empty rows
+        if(!item_id) return;
 
         items.push({
             item_id: item_id,
@@ -190,5 +257,6 @@ document.getElementById("saveBtn").addEventListener("click", function(){
 });
 
 </script>
+
 
 {% endblock %}
