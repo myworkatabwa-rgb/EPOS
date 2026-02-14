@@ -491,7 +491,54 @@ def edit_Size(request, id):
 
 @login_required
 def units(request):
-    return render(request, "items/units.html")
+
+    last = Unit.objects.order_by("-id").first()
+    next_code = f"{(last.id + 1) if last else 1:04d}"
+
+    if request.method == "POST":
+        unit_name = request.POST.get("unit_name")
+
+        if unit_name:
+            last = Unit.objects.order_by("-id").first()
+            next_code = f"{(last.id + 1) if last else 1:04d}"
+
+            Unit.objects.create(
+                Unit_code=next_code,
+                Unit_name=unit_name
+            )
+
+            return redirect("Unit_list")
+
+    return render(request, "items/units.html", {"next_code": next_code})
+
+
+# UNIT LIST
+@login_required
+def Unit_list(request):
+    units = Unit.objects.all().order_by("-id")
+    return render(request, "items/units_list.html", {"units": units})
+
+
+# DELETE
+@login_required
+def delete_Unit(request, id):
+    unit = get_object_or_404(Unit, id=id)
+    unit.delete()
+    return redirect("Unit_list")
+
+
+# EDIT
+@login_required
+def edit_Unit(request, id):
+    unit = get_object_or_404(Unit, id=id)
+
+    if request.method == "POST":
+        unit.Unit_code = request.POST.get("Unit_code")
+        unit.Unit_name = request.POST.get("Unit_name")
+        unit.save()
+        return redirect("Unit_list")
+
+    return render(request, "items/edit_unit.html", {"unit": unit})
 
 
 @login_required
