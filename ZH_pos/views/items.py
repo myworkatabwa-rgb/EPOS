@@ -539,6 +539,9 @@ def edit_Unit(request, id):
         return redirect("Unit_list")
 
     return render(request, "items/edit_unit.html", {"unit": unit})
+@login_required
+def promotions(request):
+    return render(request, "items/promotions.html")
 
 
 @login_required
