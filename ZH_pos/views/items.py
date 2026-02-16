@@ -50,8 +50,15 @@ def import_items(request):
         wb = openpyxl.load_workbook(file)
         sheet = wb.active
         headers = [str(cell.value).strip().lower() for cell in sheet[1]]
+
         for row in sheet.iter_rows(min_row=2, values_only=True):
-            rows.append(dict(zip(headers, row)))
+            cleaned_row = {}
+            for key, value in zip(headers, row):
+                if isinstance(value, str):
+                    cleaned_row[key] = value.strip()
+                else:
+                    cleaned_row[key] = value
+            rows.append(cleaned_row)
 
     else:
         return JsonResponse({"error": "Unsupported file type"}, status=400)
@@ -59,8 +66,9 @@ def import_items(request):
     imported = 0
     skipped = 0
 
+    # ---------- PROCESS ROWS ----------
     for row in rows:
-        # accept multiple possible column names
+
         sku = str(
             row.get("sku")
             or row.get("barcode")
@@ -80,9 +88,28 @@ def import_items(request):
             continue
 
         try:
-            price = Decimal(row.get("price") or row.get("sale_price") or 0)
-            stock = int(row.get("stock") or row.get("qty") or 0)
-        except Exception:
+            # WooCommerce compatible mapping
+            regular_price = Decimal(
+                row.get("regular_price")
+                or row.get("regular price")
+                or row.get("price")
+                or 0
+            )
+
+            sale_price = Decimal(
+                row.get("sale_price")
+                or row.get("sale price")
+                or 0
+            )
+
+            stock = int(
+                row.get("stock")
+                or row.get("qty")
+                or row.get("quantity")
+                or 0
+            )
+
+        except (InvalidOperation, ValueError, TypeError):
             skipped += 1
             continue
 
@@ -90,10 +117,12 @@ def import_items(request):
             sku=sku,
             defaults={
                 "name": name,
-                "price": price,
+                "regular_price": regular_price,   # ✅ main price
+                "sale_price": sale_price,         # ✅ sale price
+                "price": regular_price,           # fallback field
                 "stock": stock,
                 "source": "import",
-                "woo_id": None,  # IMPORTANT (unique constraint)
+                "woo_id": None,
             }
         )
 
@@ -105,6 +134,7 @@ def import_items(request):
         "skipped": skipped,
         "total": len(rows),
     })
+
 
 
 
