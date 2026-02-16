@@ -574,9 +574,16 @@ def promotion_add(request):
 
     if request.method == "POST":
 
+        promo_code = request.POST.get("promo_code")
+
+        # ✅ Check duplicate promo code (case-insensitive)
+        if Promotion.objects.filter(promo_code__iexact=promo_code).exists():
+            messages.error(request, "Promo code already exists!")
+            return redirect("items:promotion_add")   # use namespace if needed
+
         Promotion.objects.create(
             name=request.POST.get("name"),
-            promo_code=request.POST.get("promo_code"),
+            promo_code=promo_code,
             branch=request.POST.get("branch"),
             enable=request.POST.get("enable") == "Yes",
             from_date=request.POST.get("from_date") or None,
@@ -588,7 +595,8 @@ def promotion_add(request):
             application=request.POST.get("application"),
         )
 
-        return redirect("promotion_list")
+        messages.success(request, "Promotion added successfully!")
+        return redirect("items:promotion_list")  # ⚠️ adjust if no namespace
 
     return render(request, "items/promotion_add.html")
 
