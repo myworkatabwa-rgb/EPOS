@@ -44,36 +44,46 @@
 <div class="modal fade" id="productModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
+
             <div class="modal-header">
-                <h5 class="modal-title">Select Product</h5>
+                <h5 class="modal-title">Select Products</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
+
                 <input type="text" id="productSearch" class="form-control mb-3" placeholder="Search name or barcode">
 
                 <div class="table-responsive" style="max-height:450px;">
                     <table class="table table-bordered table-sm">
                         <thead class="table-light">
                             <tr>
+                                <th>Select</th>
                                 <th>ID</th>
                                 <th>Barcode</th>
                                 <th>Name</th>
                                 <th>Unit</th>
                                 <th>Rate</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="productResults"></tbody>
                     </table>
                 </div>
 
+                <div class="text-end mt-3">
+                    <button class="btn btn-success" id="addSelectedBtn">
+                        Add Selected Items
+                    </button>
+                </div>
+
             </div>
+
         </div>
     </div>
 </div>
 
 <script>
+
 // ================= CSRF =================
 function getCookie(name) {
     let cookieValue = null;
@@ -97,14 +107,12 @@ function addRow(focus=true) {
 
     row.innerHTML = `
         <td>
-            <input type="text" class="form-control barcode">
+            <input type="text" class="form-control barcode" readonly>
             <input type="hidden" class="item_id">
         </td>
-
         <td>
             <input type="text" class="form-control item_name bg-light" readonly>
         </td>
-
         <td>
             <select class="form-control unit">
                 {% for u in units %}
@@ -112,11 +120,9 @@ function addRow(focus=true) {
                 {% endfor %}
             </select>
         </td>
-
         <td>
             <input type="number" class="form-control price" step="0.01">
         </td>
-
         <td>
             <select class="form-control tax">
                 {% for t in taxes %}
@@ -124,23 +130,21 @@ function addRow(focus=true) {
                 {% endfor %}
             </select>
         </td>
-
         <td>
             <input type="number" class="form-control price_inclusive" step="0.01">
         </td>
-
         <td class="text-center">
             <button class="btn btn-danger btn-sm removeRow">X</button>
         </td>
     `;
 
     document.querySelector("#priceTable tbody").appendChild(row);
-
-    if(focus) row.querySelector(".barcode").focus();
 }
 
-document.getElementById("addRowBtn").addEventListener("click", ()=>addRow());
-addRow();
+document.getElementById("addRowBtn").addEventListener("click", ()=> {
+    loadProducts("");
+    new bootstrap.Modal(document.getElementById("productModal")).show();
+});
 
 
 // ================= TAX CALC =================
@@ -150,6 +154,7 @@ function getTaxPercent(row){
 }
 
 document.addEventListener("input", function(e){
+
     const row = e.target.closest("tr");
     if(!row) return;
 
@@ -159,29 +164,17 @@ document.addEventListener("input", function(e){
 
     if(e.target.classList.contains("price")){
         let p = parseFloat(price.value || 0);
-        let inc = p + (p * tax / 100);
-        inclusive.value = inc.toFixed(2);
+        inclusive.value = (p + (p * tax / 100)).toFixed(2);
     }
 
     if(e.target.classList.contains("price_inclusive")){
         let inc = parseFloat(inclusive.value || 0);
-        let p = inc / (1 + tax/100);
-        price.value = p.toFixed(2);
+        price.value = (inc / (1 + tax/100)).toFixed(2);
     }
 });
 
 
-// ================= PRODUCT MODAL =================
-let activeRow = null;
-
-document.addEventListener("focusin", function(e){
-    if(e.target.classList.contains("barcode")){
-        activeRow = e.target.closest("tr");
-        loadProducts("");
-        new bootstrap.Modal(document.getElementById("productModal")).show();
-    }
-});
-
+// ================= LOAD PRODUCTS =================
 function loadProducts(query){
     fetch("{% url 'search_products' %}?q=" + query)
     .then(res=>res.json())
@@ -192,20 +185,18 @@ function loadProducts(query){
         response.data.forEach(p=>{
             tbody.innerHTML += `
                 <tr>
+                    <td>
+                        <input type="checkbox" class="selectItem"
+                            data-id="${p.id}"
+                            data-name="${p.name}"
+                            data-barcode="${p.barcode}"
+                            data-rate="${p.rate}">
+                    </td>
                     <td>${p.id}</td>
                     <td>${p.barcode}</td>
                     <td>${p.name}</td>
                     <td>${p.unit}</td>
                     <td>${p.rate}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm selectProduct"
-                            data-id="${p.id}"
-                            data-name="${p.name}"
-                            data-barcode="${p.barcode}"
-                            data-rate="${p.rate}">
-                            Select Item
-                        </button>
-                    </td>
                 </tr>
             `;
         });
@@ -216,32 +207,49 @@ document.getElementById("productSearch").addEventListener("input", function(){
     loadProducts(this.value);
 });
 
-document.addEventListener("click", function(e){
-    if(e.target.classList.contains("selectProduct")){
 
-        const btn = e.target;
+// ================= ADD SELECTED PRODUCTS =================
+document.getElementById("addSelectedBtn").addEventListener("click", function(){
 
-        activeRow.querySelector(".barcode").value = btn.dataset.barcode;
-        activeRow.querySelector(".item_name").value = btn.dataset.name;
-        activeRow.querySelector(".item_id").value = btn.dataset.id;
-        activeRow.querySelector(".price").value = btn.dataset.rate;
+    const selected = document.querySelectorAll(".selectItem:checked");
 
-        activeRow.querySelector(".price").dispatchEvent(new Event("input"));
+    if(selected.length === 0){
+        alert("Please select at least one product");
+        return;
+    }
 
-        bootstrap.Modal.getInstance(document.getElementById("productModal")).hide();
+    selected.forEach(cb=>{
+
+        // Prevent duplicate
+        const exists = Array.from(document.querySelectorAll(".item_id"))
+            .some(input => input.value === cb.dataset.id);
+
+        if(exists) return;
 
         addRow(false);
-        activeRow.nextElementSibling.querySelector(".barcode").focus();
-    }
+
+        const row = document.querySelector("#priceTable tbody tr:last-child");
+
+        row.querySelector(".barcode").value = cb.dataset.barcode;
+        row.querySelector(".item_name").value = cb.dataset.name;
+        row.querySelector(".item_id").value = cb.dataset.id;
+        row.querySelector(".price").value = cb.dataset.rate;
+
+        row.querySelector(".price").dispatchEvent(new Event("input"));
+    });
+
+    bootstrap.Modal.getInstance(document.getElementById("productModal")).hide();
 });
 
 
-// ================= REMOVE =================
+// ================= REMOVE ROW =================
 document.addEventListener("click", function(e){
     if(e.target.classList.contains("removeRow")){
         e.target.closest("tr").remove();
     }
 });
+
+
 // ================= SAVE PRICE LIST =================
 document.getElementById("saveBtn").addEventListener("click", function(){
 
@@ -258,7 +266,7 @@ document.getElementById("saveBtn").addEventListener("click", function(){
     rows.forEach(row => {
 
         const item_id = row.querySelector(".item_id").value;
-        if(!item_id) return; // skip empty row
+        if(!item_id) return;
 
         items.push({
             item_id: item_id,
@@ -285,11 +293,7 @@ document.getElementById("saveBtn").addEventListener("click", function(){
             items: items
         })
     })
-    .then(res => {
-    if(!res.ok) throw new Error("Server returned " + res.status);
-    return res.json();
-})
-
+    .then(res => res.json())
     .then(data => {
 
         if(data.success){
@@ -302,7 +306,7 @@ document.getElementById("saveBtn").addEventListener("click", function(){
     })
     .catch(err=>{
         console.error(err);
-        alert("Server error — check console");
+        alert("Server error");
     });
 
 });
@@ -310,4 +314,3 @@ document.getElementById("saveBtn").addEventListener("click", function(){
 </script>
 
 {% endblock %}
-
