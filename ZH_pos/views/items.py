@@ -764,6 +764,16 @@ def save_price_list(request):
         print("SAVE ERROR:", e)
         return JsonResponse({"success": False, "error": str(e)})
 @login_required
+
+def list_price_lists(request):
+
+    price_lists = PriceList.objects.all().order_by("-id")
+
+    return render(request, "price_list/list_price_lists.html", {
+        "price_lists": price_lists
+    })
+
+@login_required
 def price_list_detail(request, pk):
 
     price_list = get_object_or_404(PriceList, pk=pk)
