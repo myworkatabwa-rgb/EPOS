@@ -763,7 +763,21 @@ def save_price_list(request):
     except Exception as e:
         print("SAVE ERROR:", e)
         return JsonResponse({"success": False, "error": str(e)})
+@login_required
+def price_list_detail(request, pk):
 
+    price_list = get_object_or_404(PriceList, pk=pk)
+
+    items = price_list.items.select_related(
+        "product",
+        "unit",
+        "tax"
+    )
+
+    return render(request, "price_list/price_list_detail.html", {
+        "price_list": price_list,
+        "items": items
+    })
 
 @login_required
 def bulk_update(request):
