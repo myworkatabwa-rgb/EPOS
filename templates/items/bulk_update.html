@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Bulk Item Update{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-3">
+
+    <div class="card shadow-sm p-4">
+
+        <h4 class="mb-3">Bulk Item Update</h4>
+
+        <!-- 🔹 CATEGORY / ITEM DROPDOWN -->
+        <div class="mb-3">
+            <label class="form-label">Select Category / Items</label>
+
+            <div class="dropdown">
+                <button class="btn btn-outline-primary w-100 text-start dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        id="mainDropdown">
+                    Please Select Category / Items
+                </button>
+
+                <ul class="dropdown-menu w-100" id="dropdownContent"
+                    style="max-height:400px; overflow-y:auto;">
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 🔹 TABLE AREA -->
+    <div class="card shadow-sm mt-4 p-3">
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="dataTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Barcode</th>
+                        <th>Name</th>
+                        <th>Unit</th>
+                        <th>Category</th>
+                        <th>Sub Category</th>
+                        <th>Purchase Rate</th>
+                        <th>Sale Rate</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="8" class="text-center">No Data</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+
+$(document).ready(function(){
+
+    loadDropdown();
+
+    function loadDropdown(){
+        $.ajax({
+            url: "{% url 'get_categories_items' %}",
+            type: "GET",
+            success: function(response){
+
+                let html = "";
+
+                if(response.categories.length > 0){
+                    html += '<li><h6 class="dropdown-header text-primary fw-bold">Category</h6></li>';
+
+                    response.categories.forEach(function(cat){
+                        html += `
+                        <li>
+                            <a class="dropdown-item select-option"
+                               data-type="category"
+                               data-id="${cat.id}">
+                               ${cat.name}
+                            </a>
+                        </li>`;
+                    });
+
+                    html += '<li><hr class="dropdown-divider"></li>';
+                }
+
+                html += '<li><h6 class="dropdown-header text-success fw-bold">Items</h6></li>';
+
+                response.items.forEach(function(item){
+                    html += `
+                    <li>
+                        <a class="dropdown-item select-option"
+                           data-type="item"
+                           data-id="${item.id}">
+                           ${item.name} (${item.barcode || ''})
+                        </a>
+                    </li>`;
+                });
+
+                $("#dropdownContent").html(html);
+            }
+        });
+    }
+
+    $(document).on("click", ".select-option", function(){
+
+        let id = $(this).data("id");
+        let type = $(this).data("type");
+        let text = $(this).text();
+
+        $("#mainDropdown").text(text);
+
+        loadTable(type, id);
+    });
+
+    function loadTable(type, id){
+
+        $.ajax({
+            url: "{% url 'get_filtered_data' %}",
+            type: "GET",
+            data: {
+                type: type,
+                id: id
+            },
+            success: function(response){
+
+                let rows = "";
+
+                if(response.data.length === 0){
+                    rows = `<tr>
+                                <td colspan="8" class="text-center">
+                                    No Data Found
+                                </td>
+                            </tr>`;
+                }else{
+                    response.data.forEach(function(item){
+                        rows += `
+                        <tr>
+                            <td>${item.id}</td>
+                            <td>${item.barcode || ''}</td>
+                            <td>${item.name}</td>
+                            <td>${item.unit__name || ''}</td>
+                            <td>${item.category__name || ''}</td>
+                            <td>${item.sub_category__name || ''}</td>
+                            <td>${item.purchase_rate}</td>
+                            <td>${item.sale_rate}</td>
+                        </tr>`;
+                    });
+                }
+
+                $("#tableBody").html(rows);
+            }
+        });
+    }
+
+});
+</script>
+
+{% endblock %}
