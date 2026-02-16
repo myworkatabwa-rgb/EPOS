@@ -732,16 +732,31 @@ def save_price_list(request):
                 print("ROW ERROR:", e)
                 continue
 
+            price_value = float(row.get("price") or 0)
+
             PriceListItem.objects.update_or_create(
                 pricelist=pricelist,
                 item=item,
                 defaults={
                     "unit": unit,
-                    "price": float(row.get("price") or 0),
+                    "price": price_value,
                     "tax": tax,
                     "price_inclusive": float(row.get("price_inclusive") or 0)
                 }
             )
+
+            # 🔥 ALSO UPDATE PRODUCT PRICE
+            item.regular_price = price_value
+            item.price = price_value
+            item.save()
+
+        return JsonResponse({"success": True})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+
+
 
         return JsonResponse({"success": True})
 
