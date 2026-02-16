@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3">
+        Price List: {{ price_list.name }}
+    </h4>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>Unit</th>
+                        <th>Master Price</th>
+                        <th>Override Price</th>
+                        <th>Tax</th>
+                        <th>Final Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.product.id }}</td>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.unit.name }}</td>
+
+                        <!-- Master price -->
+                        <td>
+                            {{ item.product.regular_price }}
+                        </td>
+
+                        <!-- Override price -->
+                        <td>
+                            {% if item.price_override %}
+                                {{ item.price_override }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <!-- Tax -->
+                        <td>
+                            {% if item.tax %}
+                                {{ item.tax.name }} ({{ item.tax.percent }}%)
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <!-- Final price logic -->
+                        <td>
+                            {% if item.price_override %}
+                                {{ item.price_override }}
+                            {% else %}
+                                {{ item.product.regular_price }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No Items Found
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+            <a href="{% url 'list_price_lists' %}" class="btn btn-secondary mt-3">
+                Back
+            </a>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
