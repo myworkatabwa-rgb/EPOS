@@ -597,7 +597,7 @@ def promotion_add(request):
         )
 
         messages.success(request, "Promotion added successfully!")
-        return redirect("items:promotion_list")  # ⚠️ adjust if no namespace
+        return redirect("promotion_list") 
 
     return render(request, "items/promotion_add.html")
 
