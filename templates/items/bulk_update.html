@@ -73,7 +73,7 @@ function loadItems() {
 
     let category = document.getElementById("category").value;
 
-    fetch(`/bulk-update/load-items/?category=${category}`)
+    fetch(`/items/bulk-update/load-items/?category=${category}`)  // ✅ Correct URL
     .then(res => res.json())
     .then(data => {
 
@@ -131,7 +131,7 @@ function saveBulk() {
         }
     });
 
-    fetch("/bulk-update/save/", {
+    fetch("/items/bulk-update/save/", {   // ✅ Correct URL
         method: "POST",
         headers: {
             "Content-Type": "application/json",
