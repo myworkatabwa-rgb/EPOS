@@ -173,6 +173,7 @@ class Category(models.Model):
     name = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True, null=True)
     status = models.BooleanField(default=True)
+    woo_id = models.IntegerField(null=True, blank=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -190,6 +191,7 @@ class SubCategory(models.Model):
     )
     name = models.CharField(max_length=150)
     status = models.BooleanField(default=True)
+    woo_id = models.IntegerField(null=True, blank=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
