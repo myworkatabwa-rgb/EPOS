@@ -34,19 +34,38 @@ def woocommerce_webhook(request):
     # =====================
     # PRODUCT WEBHOOKS
     # =====================
+    # =====================
+# PRODUCT WEBHOOKS
+# =====================
     if resource == "product":
         woo_id = payload.get("id")
-
+    
         if event == "deleted":
             Product.objects.filter(woo_id=woo_id).delete()
             logger.info(f"Deleted product {woo_id}")
             return JsonResponse({"success": True})
-
+    
         try:
             price = Decimal(payload.get("price") or "0")
         except InvalidOperation:
             price = Decimal("0")
-
+    
+        # 🔥 CATEGORY SYNC
+        category_instance = None
+        categories_data = payload.get("categories", [])
+    
+        if categories_data:
+            cat_data = categories_data[0]  # Take first category
+    
+            category_instance, _ = Category.objects.update_or_create(
+                woo_id=cat_data.get("id"),
+                defaults={
+                    "name": cat_data.get("name"),
+                    "slug": cat_data.get("slug"),
+                },
+            )
+    
+        # 🔥 PRODUCT SAVE
         Product.objects.update_or_create(
             woo_id=woo_id,
             defaults={
@@ -54,10 +73,11 @@ def woocommerce_webhook(request):
                 "sku": payload.get("sku"),
                 "price": price,
                 "stock": payload.get("stock_quantity") or 0,
+                "category": category_instance,
                 "source": "woocommerce",
             },
         )
-
+    
         logger.info(f"Upserted product {woo_id}")
         return JsonResponse({"success": True})
 
