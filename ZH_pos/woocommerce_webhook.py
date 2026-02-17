@@ -155,30 +155,52 @@ def woocommerce_webhook(request):
 # =====================
 # CATEGORY SYNC UTILITY
 # =====================
+# =====================
+# CATEGORY SYNC
+# =====================
 def sync_woo_categories():
-    wcapi = API(
-        url=os.getenv("WC_STORE_URL"),
-        consumer_key=os.getenv("WC_CONSUMER_KEY"),
-        consumer_secret=os.getenv("WC_CONSUMER_SECRET"),
-        version="wc/v3",
-        timeout=30
-    )
+    """
+    Sync categories from WooCommerce safely.
+    Will skip syncing if API credentials are missing or invalid.
+    """
+    wcapi = get_wcapi()
+    if not wcapi:
+        logger.warning("Skipping WooCommerce category sync because API is None or credentials missing.")
+        return
 
-    response = wcapi.get("products/categories")
+    try:
+        response = wcapi.get("products/categories")
+    except Exception as e:
+        logger.exception(f"Failed to connect to WooCommerce API: {e}")
+        return
 
-    if response.status_code == 200:
+    if response is None:
+        logger.warning("WooCommerce API returned None response.")
+        return
+
+    if response.status_code != 200:
+        logger.error(f"Failed to fetch Woo categories: {response.status_code} {getattr(response, 'text', '')}")
+        return
+
+    try:
         categories = response.json()
-        for cat in categories:
+    except Exception as e:
+        logger.exception(f"Failed to parse WooCommerce categories JSON: {e}")
+        return
+
+    for cat in categories:
+        try:
             Category.objects.update_or_create(
-                woo_id=cat["id"],
+                woo_id=cat.get("id"),
                 defaults={
-                    "name": cat["name"],
-                    "slug": cat["slug"],
+                    "name": cat.get("name", ""),
+                    "slug": cat.get("slug", ""),
                 }
             )
-        logger.info("WooCommerce categories synced successfully")
-    else:
-        logger.error(f"Failed to fetch Woo categories: {response.status_code} {response.text}")
+        except Exception as e:
+            logger.exception(f"Failed to update/create category {cat.get('name')}: {e}")
+
+    logger.info("WooCommerce categories synced successfully")
 
 
 # =====================
