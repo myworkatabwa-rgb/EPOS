@@ -822,7 +822,7 @@ def load_bulk_items(request):
             "category": product.category.name if product.category else "",
             "purchase_rate": product.purchase_price or 0,
             "sale_rate": product.price or 0,
-            "tax": product.tax.id if product.tax else "",
+            #"tax": product.tax.id if product.tax else "",
             "supplier": product.supplier.id if product.supplier else "",
             "status": product.status if hasattr(product, 'status') else "Active"
         })
