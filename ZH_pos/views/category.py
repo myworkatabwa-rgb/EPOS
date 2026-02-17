@@ -12,7 +12,7 @@ def list_category(request):
 
     categories = Category.objects.all()
 
-    return render(request, "category/list_category.html", {
+    return render(request, "categories/list_category.html", {
         "categories": categories
     })
 @login_required
@@ -25,4 +25,4 @@ def add_category(request):
 
         return redirect("list_category")
 
-    return render(request, "category/add_category.html")
+    return render(request, "categories/add_category.html")
