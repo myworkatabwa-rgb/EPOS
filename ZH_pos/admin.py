@@ -16,10 +16,22 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("source",)  # add CategoryFilter if ManyToMany
 
     def category_list(self, obj):
+        """
+        Returns the category names for display in admin.
+        Handles both ForeignKey (obj.category) and ManyToMany (obj.categories) safely.
+        """
+        # ForeignKey case
         if hasattr(obj, "category") and obj.category:
             return obj.category.name
-        if hasattr(obj, "categories") and obj.categories.exists():
-            return ", ".join([c.name for c in obj.categories.all()])
+
+        # ManyToMany case, check it's a manager first
+        if hasattr(obj, "categories") and obj.categories is not None:
+            # Ensure it's a RelatedManager before calling exists()
+            try:
+                return ", ".join([c.name for c in obj.categories.all()])
+            except AttributeError:
+                return "-"
+
         return "-"
     category_list.short_description = "Category"
 
