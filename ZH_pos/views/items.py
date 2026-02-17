@@ -792,7 +792,7 @@ def price_list_detail(request, pk):
 @login_required
 def bulk_update(request):
     return render(request, "items/bulk_update.html")
-@login_required
+
 def get_categories_and_items(request):
     categories = Category.objects.all().values("id", "name")
     items = Product.objects.all().values(
@@ -812,7 +812,7 @@ def get_categories_and_items(request):
     })
 
 
-@login_required
+
 def get_filtered_data(request):
     type_selected = request.GET.get("type")
     id_selected = request.GET.get("id")
