@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3">Category</h4>
+
+    <div class="card p-3">
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Woo ID</th>
+                    <th>Name</th>
+                    <th>Display on POS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categories %}
+                <tr>
+                    <td>{{ cat.id }}</td>
+                    <td>{{ cat.woo_id }}</td>
+                    <td>{{ cat.name }}</td>
+                    <td>{{ cat.display_on_pos }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No Categories Found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
