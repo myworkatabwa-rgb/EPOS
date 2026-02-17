@@ -168,7 +168,38 @@ class PriceListItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     tax = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True)
     price_inclusive = models.DecimalField(max_digits=10, decimal_places=2)
+    
+class Category(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(blank=True, null=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.name
+class SubCategory(models.Model):
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name="subcategories"
+    )
+    name = models.CharField(max_length=150)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('category', 'name')
+        ordering = ['name']
+        verbose_name = "Sub Category"
+        verbose_name_plural = "Sub Categories"
+
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
 
 # =========================
 # ORDER (SALE)
