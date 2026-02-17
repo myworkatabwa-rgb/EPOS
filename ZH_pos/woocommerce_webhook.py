@@ -6,6 +6,7 @@ from django.conf import settings
 from decimal import Decimal, InvalidOperation
 import json
 import logging
+import os
 
 from .models import Order, Customer, Product, OrderItem, Category
 from woocommerce import API
@@ -156,10 +157,11 @@ def woocommerce_webhook(request):
 # =====================
 def sync_woo_categories():
     wcapi = API(
-        url=settings.WOO_URL,
-        consumer_key=settings.WOO_CONSUMER_KEY,
-        consumer_secret=settings.WOO_CONSUMER_SECRET,
-        version="wc/v3"
+        url=os.getenv("WC_STORE_URL"),
+        consumer_key=os.getenv("WC_CONSUMER_KEY"),
+        consumer_secret=os.getenv("WC_CONSUMER_SECRET"),
+        version="wc/v3",
+        timeout=30
     )
 
     response = wcapi.get("products/categories")
