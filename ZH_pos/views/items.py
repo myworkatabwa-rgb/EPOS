@@ -817,7 +817,7 @@ def load_bulk_items(request):
 
     if category_name:
         # Filter products whose categories field contains this category name
-        products = Product.objects.filter(categories__icontains=category_name)
+        products = Product.objects.filter(category_id=category_id)
     else:
         products = Product.objects.all()
 
