@@ -793,36 +793,47 @@ def price_list_detail(request, pk):
 def bulk_update(request):
     return render(request, "items/bulk_update.html")
 
+@login_required
 def get_categories_and_items(request):
-    categories = Category.objects.all().values("id", "name")
-    items = Product.objects.all().values(
-        "id",
-        "barcode",
-        "name",
-        "unit__name",
-        "category__name",
-        "sub_category__name",
-        "purchase_rate",
-        "sale_rate"
+
+    categories = list(
+        Category.objects.all().values("id", "name")
+    )
+
+    items = list(
+        Product.objects.all().values(
+            "id",
+            "barcode",
+            "name",
+            "unit__name",
+            "category__name",
+            "sub_category__name",
+            "purchase_rate",
+            "sale_rate"
+        )
     )
 
     return JsonResponse({
-        "categories": list(categories),
-        "items": list(items)
+        "categories": categories if categories else [],
+        "items": items if items else []
     })
 
 
 
+@login_required
 def get_filtered_data(request):
     type_selected = request.GET.get("type")
     id_selected = request.GET.get("id")
 
-    if type_selected == "category":
-        products = Product.objects.filter(category_id=id_selected)
-    else:
-        products = Product.objects.filter(id=id_selected)
+    products = Product.objects.all()
 
-    data = products.values(
+    if type_selected == "category" and id_selected:
+        products = products.filter(category_id=id_selected)
+
+    elif type_selected == "item" and id_selected:
+        products = products.filter(id=id_selected)
+
+    data = list(products.values(
         "id",
         "barcode",
         "name",
@@ -831,9 +842,10 @@ def get_filtered_data(request):
         "sub_category__name",
         "purchase_rate",
         "sale_rate"
-    )
+    ))
 
-    return JsonResponse({"data": list(data)})
+    return JsonResponse({"data": data})
+
 
 
 @login_required
