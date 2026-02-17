@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from ZH_pos.models import Category
-from ZH_pos.woocommerce_webhook.py import sync_woo_categories
+from ZH_pos.woocommerce_webhook import sync_woo_categories
 
 
 @login_required
