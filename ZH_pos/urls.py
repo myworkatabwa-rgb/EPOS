@@ -12,7 +12,9 @@ from .views.sale import (
     packing_slip,
     packing_history,
 )
-
+from .views.category import (
+    list_category,
+    add_category,
 # Returns
 
 # TRANSACTIONS
@@ -134,6 +136,10 @@ urlpatterns = [
     path("returns/fetch-sale/", fetch_sale_for_return, name="fetch_sale_for_return"),
     path("returns/confirm/", confirm_sale_return, name="confirm_sale_return"),
     path("returns/history/", sale_return_history),
+
+    #categories
+    path("categories/", list_category, name="list_category"),
+    path("categories/add/", add_category, name="add_category"),
 
     # SALES
     path("sales/", sell),
