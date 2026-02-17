@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from ...models import Category
+from ZH_pos.models import Category
 from ...woocommerce_api import sync_woo_categories
 
 
