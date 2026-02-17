@@ -791,60 +791,75 @@ def price_list_detail(request, pk):
 
 @login_required
 def bulk_update(request):
-    return render(request, "items/bulk_update.html")
 
-@login_required
-def get_categories_and_items(request):
+    categories = Category.objects.all()
+    units = Unit.objects.all()
+    taxes = Tax.objects.all()
+    suppliers = Supplier.objects.all()
 
-    categories = list(
-        Category.objects.all().values("id", "name")
-    )
-
-    items = list(
-        Product.objects.all().values(
-            "id",
-            "barcode",
-            "name",
-            "unit__name",
-            "category__name",
-            "sub_category__name",
-            "purchase_rate",
-            "sale_rate"
-        )
-    )
-
-    return JsonResponse({
-        "categories": categories if categories else [],
-        "items": items if items else []
+    return render(request, "items/bulk_update.html", {
+        "categories": categories,
+        "units": units,
+        "taxes": taxes,
+        "suppliers": suppliers
     })
-
-
-
 @login_required
-def get_filtered_data(request):
-    type_selected = request.GET.get("type")
-    id_selected = request.GET.get("id")
+def load_bulk_items(request):
 
-    products = Product.objects.all()
+    category_id = request.GET.get("category")
 
-    if type_selected == "category" and id_selected:
-        products = products.filter(category_id=id_selected)
+    # If categories exist and selected
+    if category_id:
+        products = Product.objects.filter(category_id=category_id)
+    else:
+        # If no category selected OR no categories exist
+        if Category.objects.exists():
+            products = Product.objects.none()
+        else:
+            products = Product.objects.all()
 
-    elif type_selected == "item" and id_selected:
-        products = products.filter(id=id_selected)
+    data = []
 
-    data = list(products.values(
-        "id",
-        "barcode",
-        "name",
-        "unit__name",
-        "category__name",
-        "sub_category__name",
-        "purchase_rate",
-        "sale_rate"
-    ))
+    for product in products:
+        data.append({
+            "id": product.id,
+            "barcode": product.barcode,
+            "name": product.name,
+            "unit": product.unit.name if product.unit else "",
+            "category": product.category.name if product.category else "",
+            "sub_category": product.sub_category.name if hasattr(product, 'sub_category') and product.sub_category else "",
+            "purchase_rate": product.purchase_price or 0,
+            "sale_rate": product.price or 0,
+            "tax": product.tax.id if product.tax else "",
+            "supplier": product.supplier.id if product.supplier else "",
+            "status": product.status if hasattr(product, 'status') else "Active"
+        })
 
-    return JsonResponse({"data": data})
+    return JsonResponse({"items": data})
+@csrf_exempt
+@login_required
+def save_bulk_update(request):
+
+    if request.method != "POST":
+        return JsonResponse({"success": False})
+
+    data = json.loads(request.body)
+    items = data.get("items", [])
+
+    for row in items:
+        try:
+            product = Product.objects.get(id=row["id"])
+
+            # 🔥 Update values
+            product.purchase_price = row.get("new_purchase_rate") or product.purchase_price
+            product.price = row.get("new_sale_rate") or product.price
+            product.regular_price = row.get("new_sale_rate") or product.price
+            product.save()
+
+        except Product.DoesNotExist:
+            continue
+
+    return JsonResponse({"success": True})
 
 
 
