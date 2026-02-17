@@ -2,44 +2,33 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import Product, Customer, Order, OrderItem, Category
 
-# =====================
-# CATEGORY
-# =====================
+# Category
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "woo_id", "slug")  # show WooCommerce ID and slug if applicable
-    search_fields = ("name", "slug")
+    list_display = ("name",)
+    search_fields = ("name",)
 
-# =====================
-# PRODUCT
-# =====================
+# Product
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name", "sku", "price", "stock", "source", "category_list")
     search_fields = ("name", "sku")
-    list_filter = ("source", "category")  # filter by WooCommerce source and category
+    list_filter = ("source",)  # add CategoryFilter if ManyToMany
 
     def category_list(self, obj):
-        # If your Product has a ForeignKey to Category
         if hasattr(obj, "category") and obj.category:
             return obj.category.name
-        # If you use ManyToManyField (multiple categories)
         if hasattr(obj, "categories") and obj.categories.exists():
             return ", ".join([c.name for c in obj.categories.all()])
         return "-"
     category_list.short_description = "Category"
 
-# =====================
-# CUSTOMER
-# =====================
+# Customer
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ("name", "email", "phone")
-    search_fields = ("name", "email", "phone")
 
-# =====================
-# ORDER ITEM INLINE
-# =====================
+# OrderItem Inline
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
@@ -53,12 +42,8 @@ class OrderItemInline(admin.TabularInline):
         return obj.product_name
     product_link.short_description = "Product"
 
-# =====================
-# ORDER
-# =====================
+# Order
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("order_id", "customer", "total", "status", "source", "created_at")
     inlines = [OrderItemInline]
-    search_fields = ("order_id", "customer__name", "customer__email")
-    list_filter = ("status", "source")
