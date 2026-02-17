@@ -805,37 +805,32 @@ def bulk_update(request):
     })
 @login_required
 def load_bulk_items(request):
-
     category_id = request.GET.get("category")
 
-    # If categories exist and selected
+    products = Product.objects.all()
+
     if category_id:
-        products = Product.objects.filter(category_id=category_id)
-    else:
-        # If no category selected OR no categories exist
-        if Category.objects.exists():
-            products = Product.objects.none()
-        else:
-            products = Product.objects.all()
+        products = products.filter(category_id=category_id)
 
     data = []
 
     for product in products:
         data.append({
             "id": product.id,
-            "barcode": product.barcode,
+            "barcode": getattr(product, "barcode", ""),
             "name": product.name,
-            "unit": product.unit.name if product.unit else "",
-            "category": product.category.name if product.category else "",
+            "unit": product.unit.name if getattr(product, "unit", None) else "",
+            "category": product.category.name if getattr(product, "category", None) else "",
             "sub_category": product.sub_category.name if hasattr(product, 'sub_category') and product.sub_category else "",
-            "purchase_rate": product.purchase_price or 0,
-            "sale_rate": product.price or 0,
-            "tax": product.tax.id if product.tax else "",
-            "supplier": product.supplier.id if product.supplier else "",
-            "status": product.status if hasattr(product, 'status') else "Active"
+            "purchase_rate": getattr(product, "purchase_price", 0) or 0,
+            "sale_rate": getattr(product, "price", 0) or 0,
+            "tax": product.tax.id if getattr(product, "tax", None) else "",
+            "supplier": product.supplier.id if getattr(product, "supplier", None) else "",
+            "status": getattr(product, "status", "Active")
         })
 
     return JsonResponse({"items": data})
+
 @csrf_exempt
 @login_required
 def save_bulk_update(request):
