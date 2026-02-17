@@ -807,10 +807,11 @@ def bulk_update(request):
 def load_bulk_items(request):
     category_id = request.GET.get("category")
 
-    products = Product.objects.all()
-
     if category_id:
-        products = products.filter(category_id=category_id)
+        # ManyToManyField lookup
+        products = Product.objects.filter(categories__id=category_id)
+    else:
+        products = Product.objects.all()
 
     data = []
 
@@ -820,17 +821,16 @@ def load_bulk_items(request):
             "barcode": getattr(product, "barcode", ""),
             "name": product.name,
             "unit": product.unit.name if getattr(product, "unit", None) else "",
-            "category": product.category.name if getattr(product, "category", None) else "",
-            "sub_category": product.sub_category.name if hasattr(product, 'sub_category') and product.sub_category else "",
-            "purchase_rate": getattr(product, "purchase_price", 0) or 0,
-            "sale_rate": getattr(product, "price", 0) or 0,
-            "tax": product.tax.id if getattr(product, "tax", None) else "",
-            "supplier": product.supplier.id if getattr(product, "supplier", None) else "",
+            "category": ", ".join([c.name for c in product.categories.all()]) if hasattr(product, "categories") else "",
+            "sub_category": getattr(product.sub_category, "name", "") if hasattr(product, "sub_category") and product.sub_category else "",
+            "purchase_rate": getattr(product, "purchase_price", 0),
+            "sale_rate": getattr(product, "price", 0),
+            "tax": getattr(product.tax, "id", "") if getattr(product, "tax", None) else "",
+            "supplier": getattr(product.supplier, "id", "") if getattr(product, "supplier", None) else "",
             "status": getattr(product, "status", "Active")
         })
 
     return JsonResponse({"items": data})
-
 @csrf_exempt
 @login_required
 def save_bulk_update(request):
