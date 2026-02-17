@@ -10,13 +10,12 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.IntegerField(default=0)
     image = models.ImageField(upload_to="products/", blank=True, null=True)
-
     source = models.CharField(max_length=50, default="woocommerce")
     woo_id = models.IntegerField(null=True, blank=True, unique=True)
 
-    # Extra Woo / CSV fields
     gtin = models.CharField(max_length=50, blank=True, null=True)
     upc = models.CharField(max_length=50, blank=True, null=True)
     ean = models.CharField(max_length=50, blank=True, null=True)
@@ -28,7 +27,15 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     regular_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    category = models.ForeignKey("Category", on_delete=models.SET_NULL, null=True, blank=True, related_name="products")
+
+    category = models.ForeignKey(
+        "Category", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
+
+    unit = models.ForeignKey(
+        "Unit", on_delete=models.SET_NULL, null=True, blank=True, related_name="product_units"
+    )
+
     tags = models.TextField(blank=True, null=True)
     weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -39,9 +46,11 @@ class Product(models.Model):
     shipping_class = models.CharField(max_length=100, blank=True, null=True)
     swatches_attributes = models.TextField(blank=True, null=True)
     brands = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=50, default="Active")
 
     def __str__(self):
         return self.name
+
 
 
 # =========================
