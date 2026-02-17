@@ -818,7 +818,7 @@ def load_bulk_items(request):
             "id": product.id,
             "barcode": product.sku,
             "name": product.name,
-            "units": product.unit.name if product.unit else "",
+            "unit": product.unit.name if product.unit else "",
             "category": product.category.name if product.category else "",
             "purchase_rate": product.purchase_price or 0,
             "sale_rate": product.price or 0,
