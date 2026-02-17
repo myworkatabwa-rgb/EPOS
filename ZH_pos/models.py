@@ -28,7 +28,7 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     regular_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    categories = models.TextField(blank=True, null=True)
+    category = models.ForeignKey("Category", on_delete=models.SET_NULL, null=True, blank=True, related_name="products")
     tags = models.TextField(blank=True, null=True)
     weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
