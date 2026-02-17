@@ -129,6 +129,7 @@ class Size(models.Model):
     def __str__(self):
         return self.Size_name
 class Unit(models.Model):
+    unit = models.ForeignKey("Unit",on_delete=models.SET_NULL,null=True,blank=True,related_name="products")
 
     Unit_code = models.CharField(max_length=50, unique=True)
     Unit_name = models.CharField(max_length=255)
