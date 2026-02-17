@@ -816,7 +816,7 @@ def load_bulk_items(request):
     for product in products:
         data.append({
             "id": product.id,
-            "barcode": product.barcode,
+            "barcode": product.sku,
             "name": product.name,
             "unit": product.unit.name if product.unit else "",
             "category": product.category.name if product.category else "",
