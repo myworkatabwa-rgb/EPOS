@@ -806,38 +806,25 @@ def bulk_update(request):
 @login_required
 def load_bulk_items(request):
     category_id = request.GET.get("category")
-    category_name = None
 
     if category_id:
-        try:
-            cat = Category.objects.get(id=category_id)
-            category_name = cat.name
-        except Category.DoesNotExist:
-            category_name = None
-
-    if category_name:
-        # Filter products whose categories field contains this category name
         products = Product.objects.filter(category_id=category_id)
     else:
         products = Product.objects.all()
 
     data = []
-
     for product in products:
-        # If categories is a comma-separated string
-        product_categories = product.categories or ""
         data.append({
             "id": product.id,
-            "barcode": getattr(product, "barcode", ""),
+            "barcode": product.barcode,
             "name": product.name,
-            "unit": getattr(product.unit, "name", "") if hasattr(product, "unit") and product.unit else "",
-            "category": product_categories,
-            "sub_category": getattr(product.sub_category, "name", "") if hasattr(product, "sub_category") and product.sub_category else "",
-            "purchase_rate": getattr(product, "purchase_price", 0),
-            "sale_rate": getattr(product, "price", 0),
-            "tax": getattr(product.tax, "id", "") if getattr(product, "tax", None) else "",
-            "supplier": getattr(product.supplier, "id", "") if getattr(product, "supplier", None) else "",
-            "status": getattr(product, "status", "Active")
+            "unit": product.unit.name if product.unit else "",
+            "category": product.category.name if product.category else "",
+            "purchase_rate": product.purchase_price or 0,
+            "sale_rate": product.price or 0,
+            "tax": product.tax.id if product.tax else "",
+            "supplier": product.supplier.id if product.supplier else "",
+            "status": product.status if hasattr(product, 'status') else "Active"
         })
 
     return JsonResponse({"items": data})
