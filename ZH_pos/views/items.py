@@ -806,22 +806,32 @@ def bulk_update(request):
 @login_required
 def load_bulk_items(request):
     category_id = request.GET.get("category")
+    category_name = None
 
     if category_id:
-        # ManyToManyField lookup
-        products = Product.objects.filter(categories__id=category_id)
+        try:
+            cat = Category.objects.get(id=category_id)
+            category_name = cat.name
+        except Category.DoesNotExist:
+            category_name = None
+
+    if category_name:
+        # Filter products whose categories field contains this category name
+        products = Product.objects.filter(categories__icontains=category_name)
     else:
         products = Product.objects.all()
 
     data = []
 
     for product in products:
+        # If categories is a comma-separated string
+        product_categories = product.categories or ""
         data.append({
             "id": product.id,
             "barcode": getattr(product, "barcode", ""),
             "name": product.name,
-            "unit": product.unit.name if getattr(product, "unit", None) else "",
-            "category": ", ".join([c.name for c in product.categories.all()]) if hasattr(product, "categories") else "",
+            "unit": getattr(product.unit, "name", "") if hasattr(product, "unit") and product.unit else "",
+            "category": product_categories,
             "sub_category": getattr(product.sub_category, "name", "") if hasattr(product, "sub_category") and product.sub_category else "",
             "purchase_rate": getattr(product, "purchase_price", 0),
             "sale_rate": getattr(product, "price", 0),
