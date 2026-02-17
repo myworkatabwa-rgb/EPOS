@@ -1,41 +1,40 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Bulk Item Update{% endblock %}
-
 {% block content %}
 
-<div class="container-fluid mt-3">
+<div class="container-fluid">
 
-    <div class="card shadow-sm p-4">
-        <h4 class="mb-3">Bulk Item Update</h4>
+    <h4 class="mb-3">Bulk Item Update</h4>
 
-        <!-- 🔹 CATEGORY / ITEM DROPDOWN -->
-        <div class="mb-3">
-            <label class="form-label">Select Category / Items</label>
+    <!-- Top Section -->
+    <div class="card p-3 mb-3">
 
-            <div class="dropdown">
-                <button class="btn btn-outline-primary w-100 text-start dropdown-toggle"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                        id="mainDropdown">
-                    Please Select Category / Items
-                </button>
+        <div class="row">
 
-                <ul class="dropdown-menu w-100"
-                    id="dropdownContent"
-                    style="max-height:400px; overflow-y:auto;">
-                </ul>
+            <div class="col-md-4">
+                <label>Select Category</label>
+                <select id="category" class="form-control">
+                    <option value="">Select Category</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
+
+            <div class="col-md-2 align-self-end">
+                <button class="btn btn-primary w-100" onclick="loadItems()">Load Items</button>
+            </div>
+
         </div>
+
     </div>
 
-
-    <!-- 🔹 TABLE AREA -->
-    <div class="card shadow-sm mt-4 p-3">
+    <!-- Table Section -->
+    <div class="card p-3">
 
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-striped" id="bulkTable">
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
@@ -46,146 +45,108 @@
                         <th>Sub Category</th>
                         <th>Purchase Rate</th>
                         <th>Sale Rate</th>
+                        <th>New Purchase Rate</th>
+                        <th>Disc. Amount</th>
+                        <th>Curr Sale Rate</th>
+                        <th>New Sale Rate</th>
+                        <th>Tax</th>
+                        <th>Supplier</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
-
-                <tbody id="tableBody">
+                <tbody>
                     <tr>
-                        <td colspan="8" class="text-center">No Data</td>
+                        <td colspan="15" class="text-center">No Data</td>
                     </tr>
                 </tbody>
-
             </table>
         </div>
+
+        <button class="btn btn-success mt-3" onclick="saveBulk()">Save</button>
 
     </div>
 
 </div>
-
-{% endblock %}
-
-{% block extra_js %}
-
 <script>
-$(document).ready(function(){
 
-    loadDropdown();
+function loadItems() {
 
-    // 🔹 Load Dropdown Data
-    function loadDropdown(){
-        $.ajax({
-            url: "{% url 'get_categories_items' %}",
-            type: "GET",
-            success: function(response){
+    let category = document.getElementById("category").value;
 
-                let html = "";
+    fetch(`/bulk-update/load-items/?category=${category}`)
+    .then(res => res.json())
+    .then(data => {
 
-                let hasCategories = response.categories && response.categories.length > 0;
-                let hasItems = response.items && response.items.length > 0;
+        let tbody = document.querySelector("#bulkTable tbody");
+        tbody.innerHTML = "";
 
-                if(hasCategories){
-                    html += '<li><h6 class="dropdown-header text-primary fw-bold">Category</h6></li>';
+        if (data.items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="15" class="text-center">No Data</td></tr>`;
+            return;
+        }
 
-                    response.categories.forEach(function(cat){
-                        html += `
-                        <li>
-                            <a class="dropdown-item select-option"
-                               data-type="category"
-                               data-id="${cat.id}">
-                               ${cat.name}
-                            </a>
-                        </li>`;
-                    });
+        data.items.forEach(item => {
 
-                    html += '<li><hr class="dropdown-divider"></li>';
-                }
-
-                if(hasItems){
-                    html += '<li><h6 class="dropdown-header text-success fw-bold">Items</h6></li>';
-
-                    response.items.forEach(function(item){
-                        html += `
-                        <li>
-                            <a class="dropdown-item select-option"
-                               data-type="item"
-                               data-id="${item.id}">
-                               ${item.name} ${item.barcode ? '('+item.barcode+')' : ''}
-                            </a>
-                        </li>`;
-                    });
-                }
-
-                if(!hasCategories && !hasItems){
-                    html = `
-                        <li>
-                            <span class="dropdown-item text-danger">
-                                No Categories or Items Found
-                            </span>
-                        </li>`;
-                }
-
-                $("#dropdownContent").html(html);
-            }
+            tbody.innerHTML += `
+            <tr>
+                <td>${item.id}</td>
+                <td>${item.barcode}</td>
+                <td>${item.name}</td>
+                <td>${item.unit}</td>
+                <td>${item.category}</td>
+                <td>${item.sub_category}</td>
+                <td>${item.purchase_rate}</td>
+                <td>${item.sale_rate}</td>
+                <td><input type="number" class="form-control new_purchase" value=""></td>
+                <td><input type="number" class="form-control discount" value=""></td>
+                <td>${item.sale_rate}</td>
+                <td><input type="number" class="form-control new_sale" value=""></td>
+                <td>${item.tax}</td>
+                <td>${item.supplier}</td>
+                <td>${item.status}</td>
+            </tr>`;
         });
-    }
+
+    });
+}
 
 
-    // 🔹 When Dropdown Option Selected
-    $(document).on("click", ".select-option", function(){
+function saveBulk() {
 
-        let id = $(this).data("id");
-        let type = $(this).data("type");
-        let text = $(this).text();
+    let rows = document.querySelectorAll("#bulkTable tbody tr");
+    let items = [];
 
-        $("#mainDropdown").text(text);
+    rows.forEach(row => {
 
-        loadTable(type, id);
+        let id = row.cells[0].innerText;
+        let new_purchase = row.querySelector(".new_purchase")?.value;
+        let new_sale = row.querySelector(".new_sale")?.value;
+
+        if (new_purchase || new_sale) {
+            items.push({
+                id: id,
+                new_purchase_rate: new_purchase,
+                new_sale_rate: new_sale
+            });
+        }
     });
 
+    fetch("/bulk-update/save/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({items: items})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("Bulk Update Successful");
+            loadItems();
+        }
+    });
 
-    // 🔹 Load Table Data
-    function loadTable(type, id){
+}
 
-        $.ajax({
-            url: "{% url 'get_filtered_data' %}",
-            type: "GET",
-            data: {
-                type: type,
-                id: id
-            },
-            success: function(response){
-
-                let rows = "";
-
-                if(response.data.length === 0){
-                    rows = `
-                        <tr>
-                            <td colspan="8" class="text-center">
-                                No Data Found
-                            </td>
-                        </tr>`;
-                }else{
-                    response.data.forEach(function(item){
-                        rows += `
-                        <tr>
-                            <td>${item.id}</td>
-                            <td>${item.barcode || ''}</td>
-                            <td>${item.name}</td>
-                            <td>${item.unit || '-'}</td>
-                            <td>${item.category || '-'}</td>
-                            <td>${item.sub_category || '-'}</td>
-                            <td>${item.purchase_rate}</td>
-                            <td>${item.sale_rate}</td>
-                        </tr>`;
-                    });
-                }
-
-                $("#tableBody").html(rows);
-            }
-        });
-    }
-
-});
 </script>
-
-{% endblock %}
