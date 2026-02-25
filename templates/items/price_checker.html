@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3">Price Checker</h4>
+
+    <!-- SEARCH BOX -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <input type="text"
+                   id="search_box"
+                   class="form-control form-control-lg"
+                   placeholder="Please cursor here to scan barcode or write 3 characters to search"
+                   autofocus>
+
+        </div>
+    </div>
+
+    <!-- RESULT SECTION -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <div class="row mb-4">
+
+                <div class="col-md-4">
+                    <h6>ITEM PRICE</h6>
+                    <h4 id="item_price">-</h4>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>ITEM NAME</h6>
+                    <h4 id="item_name">-</h4>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>AUTHOR</h6>
+                    <h4 id="author">-</h4>
+                </div>
+
+            </div>
+
+            <div class="row mb-4">
+
+                <div class="col-md-4">
+                    <h6>CATEGORY</h6>
+                    <p id="category">-</p>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>SUB CATEGORY</h6>
+                    <p id="sub_category">-</p>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>SALES RATE</h6>
+                    <p id="sales_rate">-</p>
+                </div>
+
+            </div>
+
+            <div class="row mb-4">
+
+                <div class="col-md-4">
+                    <h6>ITEM DISCOUNT</h6>
+                    <p id="item_discount">-</p>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>PROMOTION DISCOUNT</h6>
+                    <p id="promotion_discount">-</p>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>ITEM TAX</h6>
+                    <p id="item_tax">-</p>
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4">
+                    <h6>NET AMOUNT</h6>
+                    <h4 id="net_amount">-</h4>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>LOGO</h6>
+                    <img id="logo" src="" width="100">
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.getElementById("search_box").addEventListener("keyup", function () {
+
+    let value = this.value.trim();
+
+    if (value.length >= 3) {
+        fetch(`/items/ajax/price-checker-search/?q=${value}`)
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.status) {
+                document.getElementById("item_price").innerText = data.item_price;
+                document.getElementById("item_name").innerText = data.item_name;
+                document.getElementById("author").innerText = data.author;
+                document.getElementById("category").innerText = data.category;
+                document.getElementById("sub_category").innerText = data.sub_category;
+                document.getElementById("sales_rate").innerText = data.sales_rate;
+                document.getElementById("item_discount").innerText = data.item_discount;
+                document.getElementById("promotion_discount").innerText = data.promotion_discount;
+                document.getElementById("item_tax").innerText = data.item_tax;
+                document.getElementById("net_amount").innerText = data.net_amount;
+
+                if (data.logo){
+                    document.getElementById("logo").src = data.logo;
+                }
+            }
+        });
+    }
+
+});
+</script>
+
+{% endblock %}
