@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+    <h4>Edit Courier</h4>
+
+    <div class="card p-4">
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group mb-3">
+                <label>Courier</label>
+                <input type="text"
+                       name="name"
+                       value="{{ courier.name }}"
+                       class="form-control"
+                       required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-50">
+                Update
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
