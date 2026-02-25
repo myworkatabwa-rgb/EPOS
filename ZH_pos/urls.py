@@ -68,6 +68,7 @@ from .views.items import (
     promotion_edit,
     price_list,
     bulk_update,
+    price_checker_search,
     price_checker,
     courier,
     sales_target,
