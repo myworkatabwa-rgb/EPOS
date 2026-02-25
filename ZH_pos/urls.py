@@ -68,7 +68,7 @@ from .views.items import (
     promotion_edit,
     price_list,
     bulk_update,
-    price_checker_search,
+    #price_checker_search,
     price_checker,
     courier,
     sales_target,
@@ -206,7 +206,7 @@ urlpatterns = [
     path("items/bulk-update/load-items/", views.items.load_bulk_items, name="load_bulk_items"),
     path("items/bulk-update/save/", views.items.save_bulk_update, name="save_bulk_update"),
     path("items/price-checker/", price_checker, name="price_checker"),
-    path("items/ajax/price-checker-search/", views.price_checker_search, name="price_checker_search"),
+    path("items/ajax/price-checker-search/", views.items.price_checker_search, name="price_checker_search"),
     path("items/courier/", courier, name="courier"),
     path("items/sales-target/", sales_target, name="sales_target"),
 
