@@ -51,9 +51,9 @@
                     <td>{{ target.year }}</td>
                     <td>{{ target.month }}</td>
                     <td>{{ target.branch }}</td>
-                    <td>{{ target.barcode }}</td>
-                    <td>{{ target.quantity }}</td>
-                    <td>{{ target.amount }}</td>
+                    <td>{{ target.product.sku }}</td>
+                    <td>{{ target.target_quantity }}</td>
+                    <td>{{ target.target_amount }}</td>
                 </tr>
                 {% empty %}
                 <tr>
