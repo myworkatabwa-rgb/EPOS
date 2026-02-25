@@ -208,6 +208,9 @@ urlpatterns = [
     path("items/price-checker/", price_checker, name="price_checker"),
     path("items/ajax/price-checker-search/", views.items.price_checker_search, name="price_checker_search"),
     path("items/courier/", courier, name="courier"),
+    path('items/courier/add/', views.items.courier_add, name='courier_add'),
+    path('items/courier/edit/<int:id>/', views.items.courier_edit, name='courier_edit'),
+    path('items/courier/delete/<int:id>/', views.items.courier_delete, name='courier_delete'),
     path("items/sales-target/", sales_target, name="sales_target"),
 
     
