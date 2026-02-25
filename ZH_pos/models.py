@@ -355,3 +355,26 @@ class Courier(models.Model):
 
     def __str__(self):
         return self.name
+class Branch(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+class Sales(models.Model):
+    date = models.DateField()
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+
+class SalesTarget(models.Model):
+    year = models.IntegerField()
+    month = models.IntegerField()
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    target_quantity = models.IntegerField()
+    target_amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.branch} - {self.month}/{self.year}"
