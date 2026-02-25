@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit, Promotion, PriceList,Tax,Item,PriceListItem, Category, Courier,SalesTarget, Sales
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit, Promotion, PriceList,Tax,Item,PriceListItem, Category, Courier,SalesTarget, Sales, Branch
 import csv
 import json
 from django.db.models import Q
@@ -950,7 +950,6 @@ def sales_target(request):
         messages.success(request, "All Sales Target records deleted.")
         return redirect("sales_target")
 
-
     # ==========================
     # CSV IMPORT
     # ==========================
@@ -966,22 +965,45 @@ def sales_target(request):
         reader = csv.DictReader(decoded_file)
 
         for row in reader:
-            SalesTarget.objects.create(
-                year=row["year"],
-                month=row["month"],
-                branch=row["branch"],
-                barcode=row["barcode"],
-                quantity=row["quantity"],
-                amount=row["amount"],
-            )
+            try:
+                year = int(row.get("year"))
+                month = int(row.get("month"))
+                branch_name = row.get("branch")
+                product_sku = row.get("product") or row.get("barcode")
+                quantity = int(row.get("quantity", 0))
+                amount = Decimal(row.get("amount", 0))
+
+                # ✅ Get Branch object
+                branch_obj = Branch.objects.filter(name=branch_name).first()
+                if not branch_obj:
+                    continue
+
+                # ✅ Get Product object (using SKU)
+                product_obj = Product.objects.filter(sku=product_sku).first()
+                if not product_obj:
+                    continue
+
+                # ✅ Create or Update (No duplicates)
+                SalesTarget.objects.update_or_create(
+                    year=year,
+                    month=month,
+                    branch=branch_obj,
+                    product=product_obj,
+                    defaults={
+                        "target_quantity": quantity,
+                        "target_amount": amount,
+                    }
+                )
+
+            except Exception:
+                continue
 
         messages.success(request, "CSV file uploaded successfully.")
         return redirect("sales_target")
 
-
     # ==========================
     # SHOW DATA
     # ==========================
-    targets = SalesTarget.objects.all()
+    targets = SalesTarget.objects.select_related("branch", "product").all()
 
     return render(request, "items/sales_target.html", {"targets": targets})
