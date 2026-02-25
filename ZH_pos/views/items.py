@@ -858,6 +858,41 @@ def save_bulk_update(request):
 @login_required
 def price_checker(request):
     return render(request, "items/price_checker.html")
+@login_required
+def price_checker_search(request):
+    query = request.GET.get("q", "").strip()
+
+    if not query:
+        return JsonResponse({"status": False})
+
+    # If scanner sends full barcode → exact match
+    product = Product.objects.filter(barcode=query).first()
+
+    # If not barcode, and user typed 3+ characters → search by name
+    if not product and len(query) >= 3:
+        product = Product.objects.filter(
+            Q(name__icontains=query)
+        ).first()
+
+    if not product:
+        return JsonResponse({"status": False})
+
+    data = {
+        "status": True,
+        "item_price": product.sales_rate,
+        "item_name": product.name,
+        "author": product.author if hasattr(product, "author") else "",
+        "category": product.category.name if product.category else "",
+        "sub_category": product.sub_category.name if product.sub_category else "",
+        "sales_rate": product.sales_rate,
+        "item_discount": product.discount if hasattr(product, "discount") else 0,
+        "promotion_discount": product.promotion_discount if hasattr(product, "promotion_discount") else 0,
+        "item_tax": product.tax.name if product.tax else "",
+        "net_amount": product.sales_rate,
+        "logo": product.image.url if product.image else "",
+    }
+
+    return JsonResponse(data)
 
 
 @login_required
