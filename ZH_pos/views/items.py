@@ -941,4 +941,40 @@ def courier_delete(request, id):
 
 @login_required
 def sales_target(request):
-    return render(request, "items/sales_target.html")
+
+    targets = SalesTarget.objects.all()
+    data = []
+
+    for target in targets:
+
+        actual = Sales.objects.filter(
+            date__year=target.year,
+            date__month=target.month,
+            branch=target.branch,
+            barcode=target.barcode
+        ).aggregate(
+            total_qty=Sum('quantity'),
+            total_amt=Sum('amount')
+        )
+
+        actual_qty = actual['total_qty'] or 0
+        actual_amt = actual['total_amt'] or 0
+
+        achievement = 0
+        if target.amount > 0:
+            achievement = (actual_amt / target.amount) * 100
+
+        data.append({
+            "id": target.id,
+            "year": target.year,
+            "month": target.month,
+            "branch": target.branch,
+            "barcode": target.barcode,
+            "target_qty": target.quantity,
+            "target_amt": target.amount,
+            "actual_qty": actual_qty,
+            "actual_amt": actual_amt,
+            "achievement": round(achievement, 2)
+        })
+
+    return render(request, "items/sales_target.html", {"data": data})
