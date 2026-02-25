@@ -942,39 +942,46 @@ def courier_delete(request, id):
 @login_required
 def sales_target(request):
 
+    # ==========================
+    # EMPTY TARGET RECORDS
+    # ==========================
+    if request.method == "POST" and "empty_records" in request.POST:
+        SalesTarget.objects.all().delete()
+        messages.success(request, "All Sales Target records deleted.")
+        return redirect("sales_target")
+
+
+    # ==========================
+    # CSV IMPORT
+    # ==========================
+    if request.method == "POST" and request.FILES.get("csv_file"):
+
+        csv_file = request.FILES["csv_file"]
+
+        if not csv_file.name.endswith(".csv"):
+            messages.error(request, "Please upload CSV file only.")
+            return redirect("sales_target")
+
+        decoded_file = csv_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded_file)
+
+        for row in reader:
+            SalesTarget.objects.create(
+                year=row["year"],
+                month=row["month"],
+                branch=row["branch"],
+                barcode=row["barcode"],
+                quantity=row["quantity"],
+                amount=row["amount"],
+            )
+
+        messages.success(request, "CSV file uploaded successfully.")
+        return redirect("sales_target")
+
+
+    # ==========================
+    # SHOW DATA
+    # ==========================
     targets = SalesTarget.objects.all()
-    data = []
 
-    for target in targets:
-
-        actual = Sales.objects.filter(
-            date__year=target.year,
-            date__month=target.month,
-            branch=target.branch,
-            barcode=target.barcode
-        ).aggregate(
-            total_qty=Sum('quantity'),
-            total_amt=Sum('amount')
-        )
-
-        actual_qty = actual['total_qty'] or 0
-        actual_amt = actual['total_amt'] or 0
-
-        achievement = 0
-        if target.amount > 0:
-            achievement = (actual_amt / target.amount) * 100
-
-        data.append({
-            "id": target.id,
-            "year": target.year,
-            "month": target.month,
-            "branch": target.branch,
-            "barcode": target.barcode,
-            "target_qty": target.quantity,
-            "target_amt": target.amount,
-            "actual_qty": actual_qty,
-            "actual_amt": actual_amt,
-            "achievement": round(achievement, 2)
-        })
-
-    return render(request, "items/sales_target.html", {"data": data})
+    return render(request, "items/sales_target.html", {"targets": targets})
