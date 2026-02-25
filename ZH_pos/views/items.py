@@ -865,31 +865,38 @@ def price_checker_search(request):
     if not query:
         return JsonResponse({"status": False})
 
-    # If scanner sends full barcode → exact match
-    product = Product.objects.filter(barcode=query).first()
+    # 🔎 Search by SKU / EAN / UPC / GTIN
+    product = Product.objects.filter(
+        Q(sku=query) |
+        Q(ean=query) |
+        Q(gtin=query) |
+        Q(upc=query)
+    ).first()
 
-    # If not barcode, and user typed 3+ characters → search by name
+    # 🔎 If not found and user typed 3+ letters → search by name
     if not product and len(query) >= 3:
         product = Product.objects.filter(
-            Q(name__icontains=query)
+            name__icontains=query
         ).first()
 
     if not product:
         return JsonResponse({"status": False})
 
+    # Decide final price
+    final_price = (
+        product.sale_price
+        if product.sale_price and product.sale_price > 0
+        else product.regular_price
+    )
+
     data = {
         "status": True,
-        "item_price": product.sales_rate,
         "item_name": product.name,
-        "author": product.author if hasattr(product, "author") else "",
-        "category": product.category.name if product.category else "",
-        "sub_category": product.sub_category.name if product.sub_category else "",
-        "sales_rate": product.sales_rate,
-        "item_discount": product.discount if hasattr(product, "discount") else 0,
-        "promotion_discount": product.promotion_discount if hasattr(product, "promotion_discount") else 0,
-        "item_tax": product.tax.name if product.tax else "",
-        "net_amount": product.sales_rate,
-        "logo": product.image.url if product.image else "",
+        "sku": product.sku,
+        "stock": product.stock,
+        "regular_price": str(product.regular_price),
+        "sale_price": str(product.sale_price) if product.sale_price else "0",
+        "final_price": str(final_price),
     }
 
     return JsonResponse(data)
