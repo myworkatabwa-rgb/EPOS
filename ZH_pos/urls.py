@@ -70,7 +70,7 @@ from .views.items import (
     bulk_update,
     #price_checker_search,
     price_checker,
-    courier,
+    #courier,
     sales_target,
 )
 
