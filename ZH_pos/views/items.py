@@ -901,10 +901,42 @@ def price_checker_search(request):
 
     return JsonResponse(data)
 
-
 @login_required
-def courier(request):
-    return render(request, "items/courier.html")
+def courier_list(request):
+    couriers = Courier.objects.all()
+    return render(request, 'items/courier_list.html', {'couriers': couriers})
+
+
+# ADD PAGE
+def courier_add(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            Courier.objects.create(name=name)
+            return redirect('courier_list')
+
+    return render(request, 'items/courier_add.html')
+
+
+# EDIT PAGE
+def courier_edit(request, id):
+    courier = get_object_or_404(Courier, id=id)
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            courier.name = name
+            courier.save()
+            return redirect('courier_list')
+
+    return render(request, 'items/courier_edit.html', {'courier': courier})
+
+
+# DELETE
+def courier_delete(request, id):
+    courier = get_object_or_404(Courier, id=id)
+    courier.delete()
+    return redirect('courier_list')
 
 
 @login_required
