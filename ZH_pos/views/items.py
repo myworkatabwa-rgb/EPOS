@@ -942,17 +942,11 @@ def courier_delete(request, id):
 @login_required
 def sales_target(request):
 
-    # ==========================
-    # EMPTY TARGET RECORDS
-    # ==========================
     if request.method == "POST" and "empty_records" in request.POST:
         SalesTarget.objects.all().delete()
         messages.success(request, "All Sales Target records deleted.")
         return redirect("sales_target")
 
-    # ==========================
-    # CSV IMPORT
-    # ==========================
     if request.method == "POST" and request.FILES.get("csv_file"):
 
         csv_file = request.FILES["csv_file"]
@@ -961,29 +955,36 @@ def sales_target(request):
             messages.error(request, "Please upload CSV file only.")
             return redirect("sales_target")
 
-        decoded_file = csv_file.read().decode("utf-8").splitlines()
+        decoded_file = csv_file.read().decode("utf-8-sig").splitlines()
         reader = csv.DictReader(decoded_file)
 
         for row in reader:
             try:
                 year = int(row.get("year"))
                 month = int(row.get("month"))
-                branch_name = row.get("branch")
-                product_sku = row.get("product") or row.get("sku")
+                branch_name = row.get("branch", "").strip()
+                product_sku = row.get("barcode") or row.get("sku")
+
                 quantity = int(row.get("quantity", 0))
                 amount = Decimal(row.get("amount", 0))
 
-                # ✅ Get Branch object
-                branch_obj = Branch.objects.filter(name=branch_name).first()
+                branch_obj = Branch.objects.filter(
+                    name__iexact=branch_name
+                ).first()
+
                 if not branch_obj:
+                    print("Branch not found:", branch_name)
                     continue
 
-                # ✅ Get Product object (using SKU)
-                product_obj = Product.objects.filter(sku=product_sku).first()
+                product_obj = Product.objects.filter(
+                    Q(sku__iexact=product_sku) |
+                    Q(barcode__iexact=product_sku)
+                ).first()
+
                 if not product_obj:
+                    print("Product not found:", product_sku)
                     continue
 
-                # ✅ Create or Update (No duplicates)
                 SalesTarget.objects.update_or_create(
                     year=year,
                     month=month,
@@ -995,16 +996,13 @@ def sales_target(request):
                     }
                 )
 
-            except Exception:
+            except Exception as e:
                 print("CSV ERROR:", e)
                 continue
 
         messages.success(request, "CSV file uploaded successfully.")
         return redirect("sales_target")
 
-    # ==========================
-    # SHOW DATA
-    # ==========================
     targets = SalesTarget.objects.select_related("branch", "product").all()
 
     return render(request, "items/sales_target.html", {"targets": targets})
