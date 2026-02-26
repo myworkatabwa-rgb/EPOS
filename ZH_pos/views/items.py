@@ -969,7 +969,7 @@ def sales_target(request):
                 year = int(row.get("year"))
                 month = int(row.get("month"))
                 branch_name = row.get("branch")
-                product_sku = row.get("product") or row.get("barcode")
+                product_sku = row.get("product") or row.get("sku")
                 quantity = int(row.get("quantity", 0))
                 amount = Decimal(row.get("amount", 0))
 
