@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
-from ZH_pos.models import Product, Packing
+from ZH_pos.models import Product, Packing, Category
 from datetime import date
 
 
@@ -12,10 +12,12 @@ from ZH_pos.models import Order
 
 @login_required(login_url="/login/")
 def sell(request):
-    products = Product.objects.all().order_by("name")
+    products = Product.objects.select_related("category").all().order_by("name")
+    categories = Category.objects.all().order_by("name")
 
     return render(request, "sales/sell.html", {
-        "products": products
+        "products": products,
+        "categories": categories,
     })
 
 
