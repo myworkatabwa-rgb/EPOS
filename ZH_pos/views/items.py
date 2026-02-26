@@ -966,51 +966,51 @@ def sales_target(request):
         #reader = csv.DictReader(decoded_file)
 
         for row in reader:
-        try:
-            row = {k.strip(): v.strip() for k, v in row.items() if k}
-    
-            year = int(row.get("year", 0))
-            month = int(row.get("month", 0))
-    
-            branch_name = row.get("branch", "").strip()
-            product_sku = str(row.get("barcode") or row.get("sku") or "").strip()
-    
-            quantity = int(row.get("quantity", 0))
-            amount = Decimal(row.get("amount", 0))
-    
-            branch_obj = Branch.objects.filter(
-                name__iexact=branch_name
-            ).first()
-    
-            if not branch_obj:
-                print("❌ Branch not found:", branch_name)
+            try:
+                row = {k.strip(): v.strip() for k, v in row.items() if k}
+        
+                year = int(row.get("year", 0))
+                month = int(row.get("month", 0))
+        
+                branch_name = row.get("branch", "").strip()
+                product_sku = str(row.get("barcode") or row.get("sku") or "").strip()
+        
+                quantity = int(row.get("quantity", 0))
+                amount = Decimal(row.get("amount", 0))
+        
+                branch_obj = Branch.objects.filter(
+                    name__iexact=branch_name
+                ).first()
+        
+                if not branch_obj:
+                    print("❌ Branch not found:", branch_name)
+                    continue
+        
+                product_obj = Product.objects.filter(
+                    Q(sku__iexact=product_sku) |
+                    Q(barcode__iexact=product_sku)
+                ).first()
+        
+                if not product_obj:
+                    print("❌ Product not found:", product_sku)
+                    continue
+        
+                SalesTarget.objects.update_or_create(
+                    year=year,
+                    month=month,
+                    branch=branch_obj,
+                    product=product_obj,
+                    defaults={
+                        "target_quantity": quantity,
+                        "target_amount": amount,
+                    }
+                )
+        
+                print("✅ Saved:", branch_name, product_sku)
+        
+            except Exception as e:
+                print("🔥 CSV ERROR:", e)
                 continue
-    
-            product_obj = Product.objects.filter(
-                Q(sku__iexact=product_sku) |
-                Q(barcode__iexact=product_sku)
-            ).first()
-    
-            if not product_obj:
-                print("❌ Product not found:", product_sku)
-                continue
-    
-            SalesTarget.objects.update_or_create(
-                year=year,
-                month=month,
-                branch=branch_obj,
-                product=product_obj,
-                defaults={
-                    "target_quantity": quantity,
-                    "target_amount": amount,
-                }
-            )
-    
-            print("✅ Saved:", branch_name, product_sku)
-    
-        except Exception as e:
-            print("🔥 CSV ERROR:", e)
-            continue
 
         messages.success(request, "CSV file uploaded successfully.")
         return redirect("sales_target")
