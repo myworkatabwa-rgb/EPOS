@@ -953,9 +953,16 @@ def sales_target(request):
         if not csv_file.name.endswith(".csv"):
             messages.error(request, "Please upload CSV file only.")
             return redirect("sales_target")
+        decoded_file = csv_file.read().decode("utf-8-sig")
 
-        decoded_file = csv_file.read().decode("utf-8-sig").splitlines()
-        reader = csv.DictReader(decoded_file)
+        # 🔥 Auto detect delimiter (comma or tab)
+        sniffer = csv.Sniffer()
+        delimiter = sniffer.sniff(decoded_file[:1000]).delimiter
+        
+        reader = csv.DictReader(io.StringIO(decoded_file), delimiter=delimiter)
+
+       # decoded_file = csv_file.read().decode("utf-8-sig").splitlines()
+        #reader = csv.DictReader(decoded_file)
 
         for row in reader:
             try:
