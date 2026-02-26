@@ -970,22 +970,16 @@ def sales_target(request):
         skipped_count = 0
 
         for row in reader:
-            try:
-                if not row:
-                    continue
-
-                # Normalize keys + values
-                row = {
-                    (k.strip().lower() if k else ""): (v.strip() if v else "")
-                    for k, v in row.items()
-                }
-
-                year = int(row.get("year") or 0)
-                month = int(row.get("month") or 0)
-                branch_name = row.get("branch") or ""
-                product_sku = row.get("barcode") or row.get("sku") or ""
-                quantity = int(row.get("quantity") or 0)
-                amount = Decimal(row.get("amount") or 0)
+                print("RAW:", row)
+            
+                SalesTarget.objects.create(
+                    year=2024,
+                    month=1,
+                    branch=None,
+                    product=Product.objects.first(),
+                    target_quantity=10,
+                    target_amount=100
+                )
 
                 # Product is mandatory
                 if not product_sku:
