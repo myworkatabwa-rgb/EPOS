@@ -943,78 +943,102 @@ def courier_delete(request, id):
 @login_required
 def sales_target(request):
 
+    # 🔥 Delete all records
     if request.method == "POST" and "empty_records" in request.POST:
         SalesTarget.objects.all().delete()
         messages.success(request, "All Sales Target records deleted.")
         return redirect("sales_target")
 
+    # 🔥 CSV Import
     if request.method == "POST" and request.FILES.get("file"):
         csv_file = request.FILES["file"]
 
         if not csv_file.name.endswith(".csv"):
             messages.error(request, "Please upload CSV file only.")
             return redirect("sales_target")
-        decoded_file = csv_file.read().decode("utf-8-sig")
 
-        # 🔥 Auto detect delimiter (comma or tab)
+        decoded_file = csv_file.read().decode("utf-8-sig")
+        io_string = io.StringIO(decoded_file)
+
+        # Auto detect delimiter
         sniffer = csv.Sniffer()
         delimiter = sniffer.sniff(decoded_file[:1000]).delimiter
-        
-        reader = csv.DictReader(io.StringIO(decoded_file), delimiter=delimiter)
 
-       # decoded_file = csv_file.read().decode("utf-8-sig").splitlines()
-        #reader = csv.DictReader(decoded_file)
+        reader = csv.DictReader(io_string, delimiter=delimiter)
+
+        saved_count = 0
+        skipped_count = 0
 
         for row in reader:
             try:
-                row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
-        
-                year = int(row.get("year", 0))
-                month = int(row.get("month", 0))
-        
-                branch_name = row.get("branch", "").strip()
-                product_sku = str(row.get("barcode") or row.get("sku") or "").strip()
-        
-                quantity = int(row.get("quantity", 0))
-                amount = Decimal(row.get("amount", 0))
-        
-                branch_obj = Branch.objects.filter(
-                    name__iexact=branch_name
-                ).first()
-        
-                if not branch_obj:
-                    print("❌ Branch not found:", branch_name)
+                if not row:
                     continue
-        
+
+                # Normalize keys + values
+                row = {
+                    (k.strip().lower() if k else ""): (v.strip() if v else "")
+                    for k, v in row.items()
+                }
+
+                year = int(row.get("year") or 0)
+                month = int(row.get("month") or 0)
+                branch_name = row.get("branch") or ""
+                product_sku = row.get("barcode") or row.get("sku") or ""
+                quantity = int(row.get("quantity") or 0)
+                amount = Decimal(row.get("amount") or 0)
+
+                # Product is mandatory
+                if not product_sku:
+                    skipped_count += 1
+                    continue
+
                 product_obj = Product.objects.filter(
                     Q(sku__iexact=product_sku) |
                     Q(barcode__iexact=product_sku)
                 ).first()
-        
+
                 if not product_obj:
                     print("❌ Product not found:", product_sku)
+                    skipped_count += 1
                     continue
-        
+
+                # Branch is optional
+                branch_obj = None
+                if branch_name:
+                    branch_obj = Branch.objects.filter(
+                        name__iexact=branch_name.strip()
+                    ).first()
+
+                    if not branch_obj:
+                        print("⚠ Branch not found. Saving without branch:", branch_name)
+
+                # Save record
                 SalesTarget.objects.update_or_create(
                     year=year,
                     month=month,
-                    branch=branch_obj,
+                    branch=branch_obj,  # can be None
                     product=product_obj,
                     defaults={
                         "target_quantity": quantity,
                         "target_amount": amount,
                     }
                 )
-        
-                print("✅ Saved:", branch_name, product_sku)
-        
+
+                saved_count += 1
+
             except Exception as e:
                 print("🔥 CSV ERROR:", e)
+                skipped_count += 1
                 continue
 
-        messages.success(request, "CSV file uploaded successfully.")
+        messages.success(
+            request,
+            f"Import completed. Saved: {saved_count}, Skipped: {skipped_count}"
+        )
+
         return redirect("sales_target")
 
+    # 🔥 Display Data
     targets = SalesTarget.objects.select_related("branch", "product").all()
 
     return render(request, "items/sales_target.html", {"targets": targets})
