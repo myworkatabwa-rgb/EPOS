@@ -371,10 +371,17 @@ class Sales(models.Model):
 class SalesTarget(models.Model):
     year = models.IntegerField()
     month = models.IntegerField()
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     target_quantity = models.IntegerField()
     target_amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
-        return f"{self.branch} - {self.month}/{self.year}"
+        if self.branch:
+            return f"{self.branch} - {self.month}/{self.year}"
+        return f"No Branch - {self.month}/{self.year}"
