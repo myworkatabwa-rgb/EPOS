@@ -996,6 +996,7 @@ def sales_target(request):
                 )
 
             except Exception:
+                print("CSV ERROR:", e)
                 continue
 
         messages.success(request, "CSV file uploaded successfully.")
