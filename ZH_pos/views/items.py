@@ -967,7 +967,7 @@ def sales_target(request):
 
         for row in reader:
             try:
-                row = {k.strip(): v.strip() for k, v in row.items() if k}
+                row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
         
                 year = int(row.get("year", 0))
                 month = int(row.get("month", 0))
