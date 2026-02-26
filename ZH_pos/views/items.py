@@ -970,8 +970,9 @@ def sales_target(request):
         skipped_count = 0
 
         for row in reader:
+            try:
                 print("RAW:", row)
-            
+
                 SalesTarget.objects.create(
                     year=2024,
                     month=1,
