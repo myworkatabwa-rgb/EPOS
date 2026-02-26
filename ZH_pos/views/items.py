@@ -947,9 +947,8 @@ def sales_target(request):
         messages.success(request, "All Sales Target records deleted.")
         return redirect("sales_target")
 
-    if request.method == "POST" and request.FILES.get("csv_file"):
-
-        csv_file = request.FILES["csv_file"]
+    if request.method == "POST" and request.FILES.get("file"):
+        csv_file = request.FILES["file"]
 
         if not csv_file.name.endswith(".csv"):
             messages.error(request, "Please upload CSV file only.")
