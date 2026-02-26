@@ -24,16 +24,21 @@
     </div>
 
     <!-- CATEGORIES -->
-    <div class="card mb-2" style="border-radius: 0;">
-      <div class="card-body">
-        <h6>Categories</h6>
-        <div class="d-flex gap-2 flex-wrap">
-          {% for c in "123456"|make_list %}
-          <div class="border rounded p-3 text-center" style="width:140px;">Category {{ forloop.counter }}</div>
-          {% endfor %}
-        </div>
+   <div class="card mb-2 border-0" style="border-radius:0;">
+  <div class="card-body" style="background:#f4f5f7;">
+    
+    <h6 class="mb-3 fw-bold">Categories</h6>
+
+    <div class="d-flex flex-wrap gap-3">
+      {% for c in categories %}
+      <div class="category-box">
+        {{ c.name }}
       </div>
+      {% endfor %}
     </div>
+
+  </div>
+</div>
 
     <!-- ITEMS TABLE -->
     <div class="card" style="border-radius: 0;">
