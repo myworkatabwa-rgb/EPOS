@@ -141,7 +141,7 @@ urlpatterns = [
 
     #categories
     path("categories/", list_category, name="list_category"),
-    path("categories/add/", add_category, name="add_category"),
+    #path("categories/add/", add_category, name="add_category"),
 
     # SALES
     path("sales/", sell),
