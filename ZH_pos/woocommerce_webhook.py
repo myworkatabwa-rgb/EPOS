@@ -1,16 +1,14 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
 from decimal import Decimal, InvalidOperation
 import json
 import logging
+from django.db import transaction
 
 from .models import Order, Customer, Product, OrderItem, Category
 from .woocommerce_api import get_wcapi
-from django.db import transaction
 
 logger = logging.getLogger(__name__)
-
 
 # =====================
 # WOOCOMMERCE WEBHOOK
@@ -40,21 +38,40 @@ def woocommerce_webhook(request):
     # =====================
     if resource == "product":
         woo_id = payload.get("id")
+        sku = payload.get("sku")
+        product = None
 
-        if event == "deleted":
-            Product.objects.filter(woo_id=woo_id).delete()
-            logger.info(f"Deleted product {woo_id}")
-            return JsonResponse({"success": True})
+        # -------- Find product by SKU to avoid duplicates --------
+        if sku:
+            product = Product.objects.filter(sku=sku).first()
 
-        # Safe price
-        try:
-            price = Decimal(payload.get("price") or "0")
-        except InvalidOperation:
-            price = Decimal("0")
+        if product:
+            # Update existing product
+            product.woo_id = woo_id
+            product.name = payload.get("name", "")
+            try:
+                product.price = Decimal(payload.get("price") or "0")
+            except InvalidOperation:
+                product.price = Decimal("0")
+            product.stock = payload.get("stock_quantity") or 0
+            product.source = "woocommerce"
+            product.save()
+        else:
+            # Create new product safely
+            try:
+                price = Decimal(payload.get("price") or "0")
+            except InvalidOperation:
+                price = Decimal("0")
+            product = Product.objects.create(
+                woo_id=woo_id,
+                name=payload.get("name", ""),
+                sku=sku,
+                price=price,
+                stock=payload.get("stock_quantity") or 0,
+                source="woocommerce",
+            )
 
-        stock = payload.get("stock_quantity") or 0
-
-        # -------- FIXED CATEGORY FETCH --------
+        # -------- CATEGORY SYNC --------
         categories_data = payload.get("categories", [])
         category_instances = []
 
@@ -68,18 +85,6 @@ def woocommerce_webhook(request):
                     },
                 )
                 category_instances.append(category_instance)
-
-        # Create or update product
-        product, _ = Product.objects.update_or_create(
-            woo_id=woo_id,
-            defaults={
-                "name": payload.get("name", ""),
-                "sku": payload.get("sku"),
-                "price": price,
-                "stock": stock,
-                "source": "woocommerce",
-            }
-        )
 
         # Attach categories properly
         if hasattr(product, "categories"):
@@ -143,13 +148,13 @@ def woocommerce_webhook(request):
                 except InvalidOperation:
                     total_item = price * quantity
 
-                product = None
+                product_item = None
                 if item.get("sku"):
-                    product = Product.objects.filter(sku=item.get("sku")).first()
+                    product_item = Product.objects.filter(sku=item.get("sku")).first()
 
                 OrderItem.objects.create(
                     order=order,
-                    product=product,
+                    product=product_item,
                     product_name=item.get("name", ""),
                     woo_product_id=item.get("product_id"),
                     quantity=quantity,
@@ -161,7 +166,6 @@ def woocommerce_webhook(request):
         return JsonResponse({"success": True})
 
     return JsonResponse({"ok": True})
-
 
 # =====================
 # CATEGORY + PRODUCT SYNC
@@ -177,25 +181,20 @@ def sync_woo_categories():
 
     try:
         page = 1
-
         while True:
             response = wcapi.get("products", params={"per_page": 100, "page": page})
-
             if response.status_code != 200:
                 logger.error(f"WooCommerce fetch failed: {response.status_code}")
                 return
 
             products = response.json()
-
             if not products:
                 break
 
             for p in products:
-
                 # -------- CATEGORY SYNC --------
                 categories_data = p.get("categories", [])
                 category_instances = []
-
                 for cat in categories_data:
                     if cat and cat.get("id"):
                         category_instance, _ = Category.objects.update_or_create(
@@ -208,24 +207,38 @@ def sync_woo_categories():
                         category_instances.append(category_instance)
 
                 # -------- PRODUCT SYNC --------
-                try:
-                    price = Decimal(p.get("price") or "0")
-                except InvalidOperation:
-                    price = Decimal("0")
+                sku = p.get("sku")
+                product = None
 
-                stock = p.get("stock_quantity") or 0
+                if sku:
+                    product = Product.objects.filter(sku=sku).first()
 
-                product, _ = Product.objects.update_or_create(
-                    woo_id=p.get("id"),
-                    defaults={
-                        "name": p.get("name", ""),
-                        "sku": p.get("sku"),
-                        "price": price,
-                        "stock": stock,
-                        "source": "woocommerce",
-                    }
-                )
+                if product:
+                    # Update existing product
+                    product.woo_id = p.get("id")
+                    product.name = p.get("name", "")
+                    try:
+                        product.price = Decimal(p.get("price") or "0")
+                    except InvalidOperation:
+                        product.price = Decimal("0")
+                    product.stock = p.get("stock_quantity") or 0
+                    product.source = "woocommerce"
+                    product.save()
+                else:
+                    try:
+                        price = Decimal(p.get("price") or "0")
+                    except InvalidOperation:
+                        price = Decimal("0")
+                    product = Product.objects.create(
+                        woo_id=p.get("id"),
+                        name=p.get("name", ""),
+                        sku=sku,
+                        price=price,
+                        stock=p.get("stock_quantity") or 0,
+                        source="woocommerce",
+                    )
 
+                # Attach categories properly
                 if hasattr(product, "categories"):
                     product.categories.set(category_instances)
                 elif category_instances:
