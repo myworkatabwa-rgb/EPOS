@@ -98,28 +98,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Search (barcode or name)
-  searchInput.addEventListener("keyup", function () {
-    filterProducts();
-  });
-
-  function filterProducts() {
-    const searchValue = searchInput.value.toLowerCase();
-
-    rows.forEach(row => {
-      const sku = row.cells[0].innerText.toLowerCase();
-      const name = row.cells[2].innerText.toLowerCase();
-      const category = row.dataset.category;
-
-      const matchCategory = (currentCategory === "all" || category === currentCategory);
-      const matchSearch = sku.includes(searchValue) || name.includes(searchValue);
-
-      if (matchCategory && matchSearch) {
-        row.style.display = "";
-      } else {
-        row.style.display = "none";
-      }
-    });
-  }
-
-});
+  
