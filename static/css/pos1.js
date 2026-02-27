@@ -76,3 +76,50 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+// Category filters code
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  let currentCategory = "all";
+
+  const categoryButtons = document.querySelectorAll(".category-btn");
+  const rows = document.querySelectorAll("#product-table-body tr");
+  const searchInput = document.getElementById("itemSearch");
+
+  // Category Click
+  categoryButtons.forEach(btn => {
+    btn.addEventListener("click", function () {
+
+      categoryButtons.forEach(b => b.classList.remove("active"));
+      this.classList.add("active");
+
+      currentCategory = this.dataset.category;
+      filterProducts();
+    });
+  });
+
+  // Search (barcode or name)
+  searchInput.addEventListener("keyup", function () {
+    filterProducts();
+  });
+
+  function filterProducts() {
+    const searchValue = searchInput.value.toLowerCase();
+
+    rows.forEach(row => {
+      const sku = row.cells[0].innerText.toLowerCase();
+      const name = row.cells[2].innerText.toLowerCase();
+      const category = row.dataset.category;
+
+      const matchCategory = (currentCategory === "all" || category === currentCategory);
+      const matchSearch = sku.includes(searchValue) || name.includes(searchValue);
+
+      if (matchCategory && matchSearch) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+
+});
