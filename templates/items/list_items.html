@@ -56,7 +56,8 @@
 
           <tbody>
 {% for c in categories %}
-{% for item in items %}
+  {% for item in items %}
+  {% if item.category == c %}
 <tr>
 
   <!-- SELECT -->
