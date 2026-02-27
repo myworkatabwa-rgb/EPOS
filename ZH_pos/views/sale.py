@@ -89,7 +89,7 @@ def advance_booking(request):
     return render(request, "sales/advance_booking.html", {
 
         "products": products,
-        "Categories": categories,
+        "categories": categories,
         "bill_no": "Auto",
         "today": date.today()
     })
