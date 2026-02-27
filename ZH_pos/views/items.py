@@ -122,6 +122,7 @@ def import_items(request):
                 "sale_price": sale_price,         # ✅ sale price
                 "price": regular_price,           # fallback field
                 "stock": stock,
+                "category": category,
                 "source": "import",
                 "woo_id": None,
             }
