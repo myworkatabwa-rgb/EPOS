@@ -60,7 +60,7 @@
               <tr>
                 <td>{{ product.sku }}</td>
                 <td>{{ product.id }}</td>
-                <td>
+                <tr data-category="{{ product.category.id }}">
                   <button class="btn btn-link p-0 add-to-cart" 
                           style="color: green; font-weight: 500;" 
                           data-id="{{ product.id }}" 
@@ -75,7 +75,7 @@
             </tbody>
           </table>
         </div>
-
+<!--- I am converting sales to the selected categories -->
       </div>
     </div>
 
