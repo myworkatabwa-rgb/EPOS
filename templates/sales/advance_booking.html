@@ -63,7 +63,7 @@
             </thead>
             <tbody id="product-table-body">
               {% for product in products %}
-              <tr>
+              <tr data-category="{{ product.category.id }}">
                 <td>{{ product.sku }}</td>
                 <td>{{ product.id }}</td>
                 <td>
