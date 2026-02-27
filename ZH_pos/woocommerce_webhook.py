@@ -1,6 +1,5 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from decimal import Decimal, InvalidOperation
 import json
@@ -11,6 +10,7 @@ from .woocommerce_api import get_wcapi
 from django.db import transaction
 
 logger = logging.getLogger(__name__)
+
 
 # =====================
 # WOOCOMMERCE WEBHOOK
@@ -46,7 +46,7 @@ def woocommerce_webhook(request):
             logger.info(f"Deleted product {woo_id}")
             return JsonResponse({"success": True})
 
-        # Price & Stock
+        # Safe price
         try:
             price = Decimal(payload.get("price") or "0")
         except InvalidOperation:
@@ -54,22 +54,22 @@ def woocommerce_webhook(request):
 
         stock = payload.get("stock_quantity") or 0
 
-        # Categories (WooCommerce can have multiple)
+        # -------- FIXED CATEGORY FETCH --------
         categories_data = payload.get("categories", [])
         category_instances = []
+
         for cat in categories_data:
-            if cat:
+            if cat and cat.get("id"):
                 category_instance, _ = Category.objects.update_or_create(
                     woo_id=cat.get("id"),
                     defaults={
                         "name": cat.get("name", ""),
-                        "description": cat.get("description", ""),
                         "status": True,
                     },
                 )
                 category_instances.append(category_instance)
 
-        # Create/update product
+        # Create or update product
         product, _ = Product.objects.update_or_create(
             woo_id=woo_id,
             defaults={
@@ -81,14 +81,17 @@ def woocommerce_webhook(request):
             }
         )
 
-        # Link categories (handles ManyToMany or ForeignKey)
+        # Attach categories properly
         if hasattr(product, "categories"):
             product.categories.set(category_instances)
         elif category_instances:
             product.category = category_instances[0]
             product.save()
 
-        logger.info(f"Upserted product {woo_id} with categories {[c.name for c in category_instances]}")
+        logger.info(
+            f"Upserted product {woo_id} with categories "
+            f"{[c.name for c in category_instances]}"
+        )
         return JsonResponse({"success": True})
 
     # =====================
@@ -123,15 +126,18 @@ def woocommerce_webhook(request):
             },
         )
 
-        # Save order items
+        # Save order items safely
         with transaction.atomic():
             order.items.all().delete()
+
             for item in payload.get("line_items", []):
                 quantity = int(item.get("quantity", 1))
+
                 try:
                     price = Decimal(item.get("price") or "0")
                 except InvalidOperation:
                     price = Decimal("0")
+
                 try:
                     total_item = Decimal(item.get("total") or price * quantity)
                 except InvalidOperation:
@@ -158,12 +164,11 @@ def woocommerce_webhook(request):
 
 
 # =====================
-# CATEGORY SYNC UTILITY
+# CATEGORY + PRODUCT SYNC
 # =====================
 def sync_woo_categories():
     """
-    Sync all categories and products from WooCommerce.
-    Ensures products have their categories linked.
+    Sync products AND categories from WooCommerce properly.
     """
     wcapi = get_wcapi()
     if not wcapi:
@@ -171,69 +176,65 @@ def sync_woo_categories():
         return
 
     try:
-        response = wcapi.get("products")
-        if response.status_code != 200:
-            logger.error(f"Failed to fetch WooCommerce products: {response.status_code}")
-            return
+        page = 1
 
-        products = response.json()
-        for p in products:
-            # Categories
-            categories_data = p.get("categories", [])
-            category_instances = []
-            for cat in categories_data:
-                if cat:
-                    category_instance, _ = Category.objects.update_or_create(
-                        woo_id=cat.get("id"),
-                        defaults={
-                            "name": cat.get("name", ""),
-                            "description": cat.get("description", ""),
-                            "status": True,
-                        }
-                    )
-                    category_instances.append(category_instance)
+        while True:
+            response = wcapi.get("products", params={"per_page": 100, "page": page})
 
-            # Product
-            price = Decimal(p.get("price") or "0")
-            stock = p.get("stock_quantity") or 0
+            if response.status_code != 200:
+                logger.error(f"WooCommerce fetch failed: {response.status_code}")
+                return
 
-            product, _ = Product.objects.update_or_create(
-                woo_id=p.get("id"),
-                defaults={
-                    "name": p.get("name", ""),
-                    "sku": p.get("sku"),
-                    "price": price,
-                    "stock": stock,
-                    "source": "woocommerce",
-                }
-            )
+            products = response.json()
 
-            if hasattr(product, "categories"):
-                product.categories.set(category_instances)
-            elif category_instances:
-                product.category = category_instances[0]
-                product.save()
+            if not products:
+                break
+
+            for p in products:
+
+                # -------- CATEGORY SYNC --------
+                categories_data = p.get("categories", [])
+                category_instances = []
+
+                for cat in categories_data:
+                    if cat and cat.get("id"):
+                        category_instance, _ = Category.objects.update_or_create(
+                            woo_id=cat.get("id"),
+                            defaults={
+                                "name": cat.get("name", ""),
+                                "status": True,
+                            },
+                        )
+                        category_instances.append(category_instance)
+
+                # -------- PRODUCT SYNC --------
+                try:
+                    price = Decimal(p.get("price") or "0")
+                except InvalidOperation:
+                    price = Decimal("0")
+
+                stock = p.get("stock_quantity") or 0
+
+                product, _ = Product.objects.update_or_create(
+                    woo_id=p.get("id"),
+                    defaults={
+                        "name": p.get("name", ""),
+                        "sku": p.get("sku"),
+                        "price": price,
+                        "stock": stock,
+                        "source": "woocommerce",
+                    }
+                )
+
+                if hasattr(product, "categories"):
+                    product.categories.set(category_instances)
+                elif category_instances:
+                    product.category = category_instances[0]
+                    product.save()
+
+            page += 1
 
         logger.info("WooCommerce products and categories synced successfully")
+
     except Exception as e:
-        logger.exception(f"Exception syncing WooCommerce products: {e}")
-
-
-# =====================
-# CATEGORY VIEWS
-# =====================
-@login_required
-def list_category(request):
-    # Sync categories before listing
-    sync_woo_categories()
-    categories = Category.objects.all()
-    return render(request, "category/list_category.html", {"categories": categories})
-
-
-@login_required
-def add_category(request):
-    if request.method == "POST":
-        name = request.POST.get("name")
-        Category.objects.create(name=name)
-        return redirect("list_category")
-    return render(request, "category/add_category.html")
+        logger.exception(f"Exception syncing WooCommerce data: {e}")
