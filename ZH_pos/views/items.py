@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit, Promotion, PriceList,Tax,Item,PriceListItem, Category, Courier,SalesTarget, Sales, Branch
+from ZH_pos.models import Product, ModifierGroup, ModifierItem, Supplier, Brand, Discount, Color, Size, Unit, Promotion, PriceList, Tax, Item, PriceListItem, Category, Courier, SalesTarget, Sales, Branch
 import csv
 import json
 import io
@@ -11,8 +11,7 @@ from django.contrib import messages
 from ZH_pos.utils import generate_barcode_base64
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from decimal import Decimal
-
+from decimal import Decimal, InvalidOperation
 
 @login_required
 def list_items(request):
@@ -24,6 +23,7 @@ def list_items(request):
             "items": products  # keep template unchanged
         }
     )
+
 @csrf_exempt
 @login_required
 @require_POST
@@ -69,7 +69,6 @@ def import_items(request):
 
     # ---------- PROCESS ROWS ----------
     for row in rows:
-
         sku = str(
             row.get("sku")
             or row.get("barcode")
@@ -87,6 +86,9 @@ def import_items(request):
         if not sku or not name:
             skipped += 1
             continue
+
+        # 1. ALWAYS initialize to None at the start of the loop
+        category_instance = None 
 
         try:
             # WooCommerce compatible mapping
@@ -109,6 +111,8 @@ def import_items(request):
                 or row.get("quantity")
                 or 0
             )
+
+            # 2. Only assign a value if the category exists in the file
             category_name = (row.get("category") or "").strip()
             if category_name:
                 category_instance, _ = Category.objects.get_or_create(
@@ -119,6 +123,7 @@ def import_items(request):
             skipped += 1
             continue
 
+        # 3. Now category_instance is guaranteed to exist (either as None or an Object)
         Product.objects.update_or_create(
             sku=sku,
             defaults={
@@ -127,7 +132,7 @@ def import_items(request):
                 "sale_price": sale_price,         # ✅ sale price
                 "price": regular_price,           # fallback field
                 "stock": stock,
-                "category": category_instance,
+                "category": category_instance,    # This will no longer crash
                 "source": "import",
                 "woo_id": None,
             }
@@ -142,9 +147,6 @@ def import_items(request):
         "total": len(rows),
     })
 
-
-
-
 @require_POST
 @login_required
 def delete_items(request):
@@ -155,12 +157,9 @@ def delete_items(request):
     # Redirect back to the page that submitted the form
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
-
-
 @login_required
 def add_item(request):
     return render(request, "items/add_item.html")
-
 
 # NEW VIEWS START HERE
 
@@ -168,30 +167,32 @@ def add_item(request):
 def item_modifiers(request):
     return render(request, "items/item_modifiers.html")
 
-
 @login_required
 def search_products(request):
-    query = request.GET.get("q", "")
+    q = request.GET.get("q", "").strip()
+    products = Product.objects.all().order_by("id")
 
-    if len(query) >= 3:
-        items = Product.objects.filter(name__icontains=query).order_by("id")[:20]
+    if q:
+        products = products.filter(
+            Q(name__icontains=q) | Q(sku__icontains=q)
+        )
 
-        data = []
-        for item in items:
-            data.append({
-                "id": item.id,
-                "name": item.name,
-                "sku": item.sku,
-                "price": str(item.price),
-            })
+    products = products[:50]
 
-        return JsonResponse(data, safe=False)
+    data = []
+    for p in products:
+        data.append({
+            "id": p.id,
+            "name": p.name or "",
+            "barcode": p.sku or "",
+            "unit": "",
+            "rate": str(p.sale_price or p.price or 0)
+        })
 
-    return JsonResponse([], safe=False)
+    return JsonResponse({"data": data})
 
 @login_required
 def save_modifiers(request):
-
     if request.method == "POST":
         data = json.loads(request.body)
 
@@ -212,13 +213,13 @@ def save_modifiers(request):
         return JsonResponse({"success": True})
 
     return JsonResponse({"success": False})
+
 @login_required
 def modifiers_list(request):
     modifiers = ModifierGroup.objects.all().order_by("-id")
     return render(request, "items/modifiers_list.html", {
         "modifiers": modifiers
     })
-
 
 @login_required
 def suppliers(request):
@@ -242,31 +243,24 @@ def suppliers(request):
 
     return render(request, "items/suppliers.html")
 
-
 @login_required
 def supplier_list(request):
     suppliers = Supplier.objects.all().order_by("-id")
     return render(request, "items/supplier_list.html", {
         "suppliers": suppliers
     })
-    
-
 
 @login_required
 def add_brand(request):
-
     if request.method == "POST":
-
         Brand.objects.create(
             brand_code=request.POST.get("brand_code"),
             brand_name=request.POST.get("brand_name"),
         )
-
         return redirect("brand_list")
 
     # Auto generate next code
     last = Brand.objects.order_by("-id").first()
-
     if last:
         next_code = str(int(last.brand_code) + 1).zfill(4)
     else:
@@ -276,42 +270,33 @@ def add_brand(request):
         "next_code": next_code
     })
 
-
 def brand_list(request):
-
     brands = Brand.objects.all().order_by("-id")
-
     return render(request, "items/brand_list.html", {
         "brands": brands
     })
+
 @login_required
 def delete_brand(request, id):
-
     brand = get_object_or_404(Brand, id=id)
-
     brand.delete()
-
     return redirect("brand_list")
+
 @login_required
 def edit_brand(request, id):
-
     brand = get_object_or_404(Brand, id=id)
-
     if request.method == "POST":
-
         brand.brand_code = request.POST.get("brand_code")
         brand.brand_name = request.POST.get("brand_name")
-
         brand.save()
-
         return redirect("brand_list")
 
     return render(request, "items/edit_brand.html", {
         "brand": brand
     })
+
 @login_required
 def search_items(request):
-
     barcode = request.GET.get("barcode")
     name = request.GET.get("name")
     category = request.GET.get("category")
@@ -320,36 +305,28 @@ def search_items(request):
 
     # only search if any filter used
     if barcode or name or (category and category != "All"):
-
         items = Product.objects.all()
-
         if barcode:
             items = items.filter(sku__icontains=barcode)
-
         if name:
             items = items.filter(name__icontains=name)
-
         if category and category != "All":
             items = items.filter(categories__icontains=category)
 
     context = {
         "items": items
     }
-
     return render(request, "items/search_items.html", context)
-
 
 @login_required
 def print_multiple_barcodes(request):
     return render(request, "items/print_multiple_barcodes.html")
+
 @login_required
 def barcode_search_api(request):
-
     barcode = request.GET.get("barcode")
-
     try:
         product = Product.objects.get(sku=barcode)
-
         data = {
             "success": True,
             "id": product.id,
@@ -357,24 +334,18 @@ def barcode_search_api(request):
             "name": product.name,
             "price": str(product.sale_price or product.price or 0),
         }
-
     except Product.DoesNotExist:
-
-        data = {
-            "success": False
-        }
+        data = {"success": False}
 
     return JsonResponse(data)
+
 @login_required
 def generate_barcodes(request):
-
     data = json.loads(request.body)
-
     items = data.get("items", [])
     settings = data.get("settings", {})
 
     barcode_list = []
-
     for item in items:
         barcode_list.extend([item["barcode"]] * int(item["qty"]))
 
@@ -388,10 +359,8 @@ def generate_barcodes(request):
 
 @login_required
 def barcode_preview(request):
-
     barcode_list = request.session.get("barcode_list", [])
     settings = request.session.get("barcode_settings", {})
-
     products = Product.objects.filter(sku__in=barcode_list)
 
     return render(request, "items/barcode_preview.html", {
@@ -400,11 +369,9 @@ def barcode_preview(request):
         "store_name": "Orh WEAR"
     })
 
-    
 @login_required
 def discount(request):
     if request.method == "POST":
-
         name = request.POST.get("name")
         value = request.POST.get("value")
         type = request.POST.get("type")
@@ -416,73 +383,38 @@ def discount(request):
             type=type,
             status=status
         )
-
         return redirect("discount_list")
     return render(request, "items/discount.html")
+
 @login_required
 def discount_list(request):
-
     discounts = Discount.objects.all().order_by("-id")
-
     return render(request, "items/discount_list.html", {
         "discounts": discounts
     })
 
-
 @login_required
 def colors(request):
-
-    # generate next code
     last = Color.objects.order_by("-id").first()
     next_code = f"{(last.id + 1) if last else 1:04d}"
 
     if request.method == "POST":
-
-        color_name = request.POST.get("color_name")   # <-- lowercase
-
-        if color_name:  # safety check
+        color_name = request.POST.get("color_name")
+        if color_name:
             last = Color.objects.order_by("-id").first()
             next_code = f"{(last.id + 1) if last else 1:04d}"
-
             Color.objects.create(
                 Color_code=next_code,
                 Color_name=color_name
             )
-
             return redirect("Color_list")
 
     return render(request, "items/colors.html", {"next_code": next_code})
-@login_required
-def search_products(request):
-    q = request.GET.get("q", "").strip()
-
-    products = Product.objects.all().order_by("id")
-
-    if q:
-        products = products.filter(
-            Q(name__icontains=q) | Q(sku__icontains=q)
-        )
-
-    products = products[:50]
-
-    data = []
-    for p in products:
-        data.append({
-            "id": p.id,
-            "name": p.name or "",
-            "barcode": p.sku or "",
-            "unit": "",
-            "rate": str(p.sale_price or p.price or 0)
-        })
-
-    return JsonResponse({"data": data})
-
 
 @login_required
 def Color_list(request):
     colors = Color.objects.all().order_by("-id")
     return render(request, "items/colors_list.html", {"colors": colors})
-
 
 @login_required
 def delete_Color(request, id):
@@ -490,11 +422,9 @@ def delete_Color(request, id):
     color.delete()
     return redirect("Color_list")
 
-
 @login_required
 def edit_Color(request, id):
     color = get_object_or_404(Color, id=id)
-
     if request.method == "POST":
         color.Color_code = request.POST.get("color_code")
         color.Color_name = request.POST.get("color_name")
@@ -503,33 +433,28 @@ def edit_Color(request, id):
 
     return render(request, "items/edit_color.html", {"color": color})
 
-
 @login_required
 def sizes(request):
-
     last = Size.objects.order_by("-id").first()
     next_code = f"{(last.id + 1) if last else 1:04d}"
 
     if request.method == "POST":
         size_name = request.POST.get("size_name")
-
-        if size_name:  # prevent null error
+        if size_name:
             last = Size.objects.order_by("-id").first()
             next_code = f"{(last.id + 1) if last else 1:04d}"
-
             Size.objects.create(
                 Size_code=next_code,
                 Size_name=size_name
             )
-
             return redirect("Size_list")
 
     return render(request, "items/sizes.html", {"next_code": next_code})
+
 @login_required
 def Size_list(request):
     sizes = Size.objects.all().order_by("-id")
     return render(request, "items/sizes_list.html", {"sizes": sizes})
-
 
 @login_required
 def delete_Size(request, id):
@@ -537,11 +462,9 @@ def delete_Size(request, id):
     size.delete()
     return redirect("Size_list")
 
-
 @login_required
 def edit_Size(request, id):
     size = get_object_or_404(Size, id=id)
-
     if request.method == "POST":
         size.Size_code = request.POST.get("Size_code")
         size.Size_name = request.POST.get("Size_name")
@@ -550,51 +473,38 @@ def edit_Size(request, id):
 
     return render(request, "items/edit_size.html", {"size": size})
 
-
-
 @login_required
 def units(request):
-
     last = Unit.objects.order_by("-id").first()
     next_code = f"{(last.id + 1) if last else 1:04d}"
 
     if request.method == "POST":
         unit_name = request.POST.get("unit_name")
-
         if unit_name:
             last = Unit.objects.order_by("-id").first()
             next_code = f"{(last.id + 1) if last else 1:04d}"
-
             Unit.objects.create(
                 Unit_code=next_code,
                 Unit_name=unit_name
             )
-
             return redirect("Unit_list")
 
     return render(request, "items/units.html", {"next_code": next_code})
 
-
-# UNIT LIST
 @login_required
 def Unit_list(request):
     units = Unit.objects.all().order_by("-id")
     return render(request, "items/units_list.html", {"units": units})
 
-
-# DELETE
 @login_required
 def delete_Unit(request, id):
     unit = get_object_or_404(Unit, id=id)
     unit.delete()
     return redirect("Unit_list")
 
-
-# EDIT
 @login_required
 def edit_Unit(request, id):
     unit = get_object_or_404(Unit, id=id)
-
     if request.method == "POST":
         unit.Unit_code = request.POST.get("Unit_code")
         unit.Unit_name = request.POST.get("Unit_name")
@@ -602,22 +512,18 @@ def edit_Unit(request, id):
         return redirect("Unit_list")
 
     return render(request, "items/edit_unit.html", {"unit": unit})
+
 @login_required
 def promotions(request):
     return render(request, "items/promotions.html")
 
-
 @login_required
 def promotion_add(request):
-
     if request.method == "POST":
-
         promo_code = request.POST.get("promo_code")
-
-        # ✅ Check duplicate promo code (case-insensitive)
         if Promotion.objects.filter(promo_code__iexact=promo_code).exists():
             messages.error(request, "Promo code already exists!")
-            return redirect("items:promotion_add")   # use namespace if needed
+            return redirect("items:promotion_add")
 
         Promotion.objects.create(
             name=request.POST.get("name"),
@@ -632,34 +538,25 @@ def promotion_add(request):
             discount_value=request.POST.get("discount"),
             application=request.POST.get("application"),
         )
-
         messages.success(request, "Promotion added successfully!")
         return redirect("promotion_list") 
 
     return render(request, "items/promotion_add.html")
 
-
-# LIST
 @login_required
 def promotion_list(request):
     promos = Promotion.objects.all().order_by("-id")
     return render(request, "items/promotion_list.html", {"promos": promos})
 
-
-# DELETE
 @login_required
 def promotion_delete(request, id):
     promo = get_object_or_404(Promotion, id=id)
     promo.delete()
     return redirect("promotion_list")
 
-
-# EDIT
 @login_required
 def promotion_edit(request, id):
-
     promo = get_object_or_404(Promotion, id=id)
-
     if request.method == "POST":
         promo.name = request.POST.get("name")
         promo.promo_code = request.POST.get("promo_code")
@@ -673,11 +570,9 @@ def promotion_edit(request, id):
         promo.discount_value = request.POST.get("discount")
         promo.application = request.POST.get("application")
         promo.save()
-
         return redirect("promotion_list")
 
     return render(request, "items/promotion_edit.html", {"promo": promo})
-
 
 @login_required
 def price_list(request):
@@ -688,35 +583,24 @@ def price_list(request):
         "units": units
     })
 
-
-
-# REAL TIME BARCODE SEARCH
-# REAL TIME BARCODE SEARCH
 def get_item_by_barcode(request):
     barcode = request.GET.get('barcode')
-
     try:
         product = Product.objects.get(barcode__iexact=barcode.strip())
-
         return JsonResponse({
             "status": "found",
             "name": product.name,
             "id": product.id
         })
-
     except Product.DoesNotExist:
         return JsonResponse({"status": "not_found"})
 
-
-# SAVE PRICE LIST
 def save_price_list(request):
-
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "Invalid request"})
 
     try:
         data = json.loads(request.body)
-
         name = data.get("name")
         items = data.get("items", [])
 
@@ -726,11 +610,9 @@ def save_price_list(request):
         pricelist = PriceList.objects.create(name=name)
 
         for row in items:
-
             item_id = row.get("item_id")
             if not item_id:
                 continue
-
             try:
                 item = Product.objects.get(id=item_id)
                 unit = Unit.objects.get(id=row.get("unit"))
@@ -740,7 +622,6 @@ def save_price_list(request):
                 continue
 
             price_value = float(row.get("price") or 0)
-
             PriceListItem.objects.update_or_create(
                 pricelist=pricelist,
                 item=item,
@@ -752,45 +633,30 @@ def save_price_list(request):
                 }
             )
 
-            # 🔥 ALSO UPDATE PRODUCT PRICE
+            # ALSO UPDATE PRODUCT PRICE
             item.regular_price = price_value
             item.price = price_value
             item.save()
 
         return JsonResponse({"success": True})
-
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
 
-
-
-
-        return JsonResponse({"success": True})
-
-    except Exception as e:
-        print("SAVE ERROR:", e)
-        return JsonResponse({"success": False, "error": str(e)})
 @login_required
-
 def list_price_lists(request):
-
     price_lists = PriceList.objects.all().order_by("-id")
-
     return render(request, "price_list/list_price_lists.html", {
         "price_lists": price_lists
     })
 
 @login_required
 def price_list_detail(request, pk):
-
     price_list = get_object_or_404(PriceList, pk=pk)
-
     items = price_list.items.select_related(
         "product",
         "unit",
         "tax"
     )
-
     return render(request, "price_list/price_list_detail.html", {
         "price_list": price_list,
         "items": items
@@ -798,22 +664,20 @@ def price_list_detail(request, pk):
 
 @login_required
 def bulk_update(request):
-
     categories = Category.objects.all()
     units = Unit.objects.all()
     taxes = Tax.objects.all()
     suppliers = Supplier.objects.all()
-
     return render(request, "items/bulk_update.html", {
         "categories": categories,
         "units": units,
         "taxes": taxes,
         "suppliers": suppliers
     })
+
 @login_required
 def load_bulk_items(request):
     category_id = request.GET.get("category")
-
     if category_id:
         products = Product.objects.filter(category_id=category_id)
     else:
@@ -825,71 +689,52 @@ def load_bulk_items(request):
             "id": product.id,
             "barcode": product.sku,
             "name": product.name,
-            #"unit": product.unit.name if product.unit else "",
             "category": product.category.name if product.category else "",
             "purchase_rate": product.purchase_price or 0,
             "sale_rate": product.price or 0,
-            #"tax": product.tax.id if product.tax else "",
-            #"supplier": product.supplier.id if product.supplier else "",
             "status": product.status if hasattr(product, 'status') else "Active"
         })
-
     return JsonResponse({"items": data})
+
 @csrf_exempt
 @login_required
 def save_bulk_update(request):
-
     if request.method != "POST":
         return JsonResponse({"success": False})
 
     data = json.loads(request.body)
     items = data.get("items", [])
-
     for row in items:
         try:
             product = Product.objects.get(id=row["id"])
-
-            # 🔥 Update values
             product.purchase_price = row.get("new_purchase_rate") or product.purchase_price
             product.price = row.get("new_sale_rate") or product.price
             product.regular_price = row.get("new_sale_rate") or product.price
             product.save()
-
         except Product.DoesNotExist:
             continue
-
     return JsonResponse({"success": True})
-
-
 
 @login_required
 def price_checker(request):
     return render(request, "items/price_checker.html")
+
 @login_required
 def price_checker_search(request):
     query = request.GET.get("q", "").strip()
-
     if not query:
         return JsonResponse({"status": False})
 
-    # 🔎 Search by SKU / EAN / UPC / GTIN
     product = Product.objects.filter(
-        Q(sku=query) |
-        Q(ean=query) |
-        Q(gtin=query) |
-        Q(upc=query)
+        Q(sku=query) | Q(ean=query) | Q(gtin=query) | Q(upc=query)
     ).first()
 
-    # 🔎 If not found and user typed 3+ letters → search by name
     if not product and len(query) >= 3:
-        product = Product.objects.filter(
-            name__icontains=query
-        ).first()
+        product = Product.objects.filter(name__icontains=query).first()
 
     if not product:
         return JsonResponse({"status": False})
 
-    # Decide final price
     final_price = (
         product.sale_price
         if product.sale_price and product.sale_price > 0
@@ -905,7 +750,6 @@ def price_checker_search(request):
         "sale_price": str(product.sale_price) if product.sale_price else "0",
         "final_price": str(final_price),
     }
-
     return JsonResponse(data)
 
 @login_required
@@ -913,63 +757,46 @@ def courier_list(request):
     couriers = Courier.objects.all()
     return render(request, 'items/courier_list.html', {'couriers': couriers})
 
-
-# ADD PAGE
 def courier_add(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         if name:
             Courier.objects.create(name=name)
             return redirect('courier_list')
-
     return render(request, 'items/courier_add.html')
 
-
-# EDIT PAGE
 def courier_edit(request, id):
     courier = get_object_or_404(Courier, id=id)
-
     if request.method == 'POST':
         name = request.POST.get('name')
         if name:
             courier.name = name
             courier.save()
             return redirect('courier_list')
-
     return render(request, 'items/courier_edit.html', {'courier': courier})
 
-
-# DELETE
 def courier_delete(request, id):
     courier = get_object_or_404(Courier, id=id)
     courier.delete()
     return redirect('courier_list')
 
-
 @login_required
 def sales_target(request):
-
-    # 🔥 Delete all records
     if request.method == "POST" and "empty_records" in request.POST:
         SalesTarget.objects.all().delete()
         messages.success(request, "All Sales Target records deleted.")
         return redirect("sales_target")
 
-    # 🔥 CSV Import
     if request.method == "POST" and request.FILES.get("file"):
         csv_file = request.FILES["file"]
-
         if not csv_file.name.endswith(".csv"):
             messages.error(request, "Please upload CSV file only.")
             return redirect("sales_target")
 
         decoded_file = csv_file.read().decode("utf-8-sig")
         io_string = io.StringIO(decoded_file)
-
-        # Auto detect delimiter
         sniffer = csv.Sniffer()
         delimiter = sniffer.sniff(decoded_file[:1000]).delimiter
-
         reader = csv.DictReader(io_string, delimiter=delimiter)
 
         saved_count = 0
@@ -977,18 +804,14 @@ def sales_target(request):
 
         for row in reader:
             try:
-                print("RAW:", row)
+                # Assuming CSV columns match these variables
+                product_sku = row.get('sku') or row.get('barcode')
+                year = row.get('year', 2024)
+                month = row.get('month', 1)
+                quantity = row.get('target_quantity', 0)
+                amount = row.get('target_amount', 0)
+                branch_name = row.get('branch')
 
-                SalesTarget.objects.create(
-                    year=2024,
-                    month=1,
-                    branch=None,
-                    product=Product.objects.first(),
-                    target_quantity=10,
-                    target_amount=100
-                )
-
-                # Product is mandatory
                 if not product_sku:
                     skipped_count += 1
                     continue
@@ -999,47 +822,30 @@ def sales_target(request):
                 ).first()
 
                 if not product_obj:
-                    print("❌ Product not found:", product_sku)
                     skipped_count += 1
                     continue
 
-                # Branch is optional
                 branch_obj = None
                 if branch_name:
-                    branch_obj = Branch.objects.filter(
-                        name__iexact=branch_name.strip()
-                    ).first()
+                    branch_obj = Branch.objects.filter(name__iexact=branch_name.strip()).first()
 
-                    if not branch_obj:
-                        print("⚠ Branch not found. Saving without branch:", branch_name)
-
-                # Save record
                 SalesTarget.objects.update_or_create(
                     year=year,
                     month=month,
-                    branch=branch_obj,  # can be None
+                    branch=branch_obj,
                     product=product_obj,
                     defaults={
                         "target_quantity": quantity,
                         "target_amount": amount,
                     }
                 )
-
                 saved_count += 1
-
             except Exception as e:
-                print("🔥 CSV ERROR:", e)
                 skipped_count += 1
                 continue
 
-        messages.success(
-            request,
-            f"Import completed. Saved: {saved_count}, Skipped: {skipped_count}"
-        )
-
+        messages.success(request, f"Import completed. Saved: {saved_count}, Skipped: {skipped_count}")
         return redirect("sales_target")
 
-    # 🔥 Display Data
     targets = SalesTarget.objects.select_related("branch", "product").all()
-
     return render(request, "items/sales_target.html", {"targets": targets})
