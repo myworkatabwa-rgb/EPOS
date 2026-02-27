@@ -110,10 +110,10 @@ def import_items(request):
                 or 0
             )
             category_name = (row.get("category") or "").strip()
-          if category_name:
-              category_instance, _ = Category.objects.get_or_create(
-                  name=category_name
-              )
+            if category_name:
+                category_instance, _ = Category.objects.get_or_create(
+                    name=category_name
+                )
 
         except (InvalidOperation, ValueError, TypeError):
             skipped += 1
