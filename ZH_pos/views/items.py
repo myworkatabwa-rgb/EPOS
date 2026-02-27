@@ -109,6 +109,11 @@ def import_items(request):
                 or row.get("quantity")
                 or 0
             )
+            category_name = (row.get("category") or "").strip()
+          if category_name:
+              category_instance, _ = Category.objects.get_or_create(
+                  name=category_name
+              )
 
         except (InvalidOperation, ValueError, TypeError):
             skipped += 1
@@ -122,7 +127,7 @@ def import_items(request):
                 "sale_price": sale_price,         # ✅ sale price
                 "price": regular_price,           # fallback field
                 "stock": stock,
-                "category": category,
+                "category": category_instance,
                 "source": "import",
                 "woo_id": None,
             }
