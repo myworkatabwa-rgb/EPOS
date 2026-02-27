@@ -55,6 +55,7 @@
             </thead>
 
           <tbody>
+{% for c in categories %}
 {% for item in items %}
 <tr>
 
@@ -81,7 +82,7 @@
   <td>-</td>
 
   <!-- CATEGORY -->
-  <td>{{ item.c.name|default:"-" }}</td>
+  <td>{{ item.categories|default:"-" }}</td>
 
   <!-- SUB CATEGORY -->
   <td>-</td>
