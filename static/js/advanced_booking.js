@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const clearCartBtn = document.getElementById("clearCartBtn");
   const saveBookingBtn = document.getElementById("saveBookingBtn");
   const itemSearch = document.getElementById("itemSearch");
+  const receiptOkBtn = document.getElementById("receiptOkBtn");
+  const receiptPrintBtn = document.getElementById("receiptPrintBtn");
 
   /* ===============================
      ADD TO CART
@@ -142,21 +144,75 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     SAVE BOOKING (DEMO)
+     SAVE BOOKING → UPDATED RECEIPT INJECTION
   =============================== */
   if (saveBookingBtn) {
     saveBookingBtn.addEventListener("click", function () {
+
       if (cart.length === 0) {
         alert("Cart is empty");
         return;
       }
 
-      console.log("BOOKING DATA:", cart);
+      const receiptBody = document.getElementById("receipt-body");
+      if (!receiptBody) return;
+
+      let totalQty = 0;
+      let totalAmount = 0;
+      const now = new Date();
+
+      let html = `
+        <p><strong>Date:</strong> ${now.toLocaleString()}</p>
+        <hr>
+      `;
+
+      cart.forEach(item => {
+        const itemTotal = item.qty * item.price;
+        totalQty += item.qty;
+        totalAmount += itemTotal;
+
+        html += `
+          <div class="d-flex justify-content-between">
+            <span>${item.name} x ${item.qty}</span>
+            <span>PKR ${itemTotal.toFixed(0)}</span>
+          </div>
+        `;
+      });
+
+      html += `
+        <hr>
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total Qty:</span>
+          <span>${totalQty}</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total:</span>
+          <span>PKR ${totalAmount.toFixed(0)}</span>
+        </div>
+      `;
+
+      receiptBody.innerHTML = html;
 
       const receiptModal = document.getElementById("receiptModal");
       if (receiptModal && window.bootstrap) {
         new bootstrap.Modal(receiptModal).show();
       }
+    });
+  }
+
+  /* ===============================
+     RECEIPT BUTTONS
+  =============================== */
+  if (receiptOkBtn) {
+    receiptOkBtn.addEventListener("click", function () {
+      const modal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
+      modal?.hide();
+    });
+  }
+
+  if (receiptPrintBtn) {
+    receiptPrintBtn.addEventListener("click", function () {
+      window.print();
     });
   }
 
