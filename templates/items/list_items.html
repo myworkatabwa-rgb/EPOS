@@ -80,7 +80,7 @@
   <td>{{ item.name }}</td>
 
   <!-- UNIT (not in model yet) -->
-  <td>-</td>
+  <td>{{ item.unit|default:"-"}}</td>
 
   <!-- CATEGORY -->
   <td>{{ item.category|default:"-" }}</td>
