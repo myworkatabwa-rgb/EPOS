@@ -222,3 +222,28 @@ body {
     padding: 8px 0;
     border-bottom: 1px dashed #ddd;
 }
+@media print {
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #receiptModal,
+  #receiptModal * {
+    visibility: visible !important;
+  }
+
+  #receiptModal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .modal-footer,
+  #receiptOkBtn,
+  #receiptPrintBtn {
+    display: none !important;
+  }
+
+}

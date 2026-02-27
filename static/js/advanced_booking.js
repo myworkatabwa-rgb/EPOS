@@ -1,13 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  /* ===============================
-     STATE
-  =============================== */
   let cart = [];
 
-  /* ===============================
-     DOM ELEMENTS (SAFE)
-  =============================== */
   const cartItemsEl = document.getElementById("cart-items");
   const totalItemsEl = document.getElementById("total-items");
   const totalQtyEl = document.getElementById("total-qty");
@@ -35,22 +29,13 @@ document.addEventListener("DOMContentLoaded", function () {
       if (existing) {
         existing.qty += 1;
       } else {
-        cart.push({
-          id,
-          sku,
-          name,
-          price,
-          qty: 1
-        });
+        cart.push({ id, sku, name, price, qty: 1 });
       }
 
       renderCart();
     });
   });
 
-  /* ===============================
-     RENDER CART
-  =============================== */
   function renderCart() {
     if (!cartItemsEl) return;
 
@@ -85,9 +70,6 @@ document.addEventListener("DOMContentLoaded", function () {
     updateTotals();
   }
 
-  /* ===============================
-     QTY BUTTONS
-  =============================== */
   function attachQtyEvents() {
     document.querySelectorAll(".plus-btn").forEach(btn => {
       btn.addEventListener("click", function () {
@@ -106,9 +88,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* ===============================
-     TOTALS
-  =============================== */
   function updateTotals() {
     let totalItems = cart.length;
     let totalQty = 0;
@@ -124,17 +103,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (totalItemsEl) totalItemsEl.innerText = totalItems;
     if (totalQtyEl) totalQtyEl.innerText = totalQty;
-    if (subTotalEl) subTotalEl.innerText = subTotal.toFixed(0);
-    if (totalEl) totalEl.innerText = total.toFixed(0);
+    if (subTotalEl) subTotalEl.innerText = subTotal.toFixed(2);
+    if (totalEl) totalEl.innerText = total.toFixed(2);
   }
 
-  if (discountEl) {
-    discountEl.addEventListener("input", updateTotals);
-  }
+  if (discountEl) discountEl.addEventListener("input", updateTotals);
 
-  /* ===============================
-     CLEAR CART
-  =============================== */
   if (clearCartBtn) {
     clearCartBtn.addEventListener("click", function () {
       if (!confirm("Discard booking?")) return;
@@ -144,7 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     SAVE BOOKING → UPDATED RECEIPT INJECTION
+     PROFESSIONAL RECEIPT
   =============================== */
   if (saveBookingBtn) {
     saveBookingBtn.addEventListener("click", function () {
@@ -157,13 +131,39 @@ document.addEventListener("DOMContentLoaded", function () {
       const receiptBody = document.getElementById("receipt-body");
       if (!receiptBody) return;
 
+      const now = new Date();
+      const pad = n => (n < 10 ? "0" + n : n);
+      const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
+      const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      const billNo = Math.floor(10000 + Math.random() * 90000);
+
       let totalQty = 0;
       let totalAmount = 0;
-      const now = new Date();
 
       let html = `
-        <p><strong>Date:</strong> ${now.toLocaleString()}</p>
-        <hr>
+        <div style="font-family: monospace; font-size:12px; padding:10px;">
+
+          <div>
+            Bill No : ${billNo}<br>
+            Date & Time : ${dateStr} ${timeStr}<br>
+            Payment Type : Booking<br>
+            User : admin<br>
+            Counter : 0001
+          </div>
+
+          <hr>
+
+          <table style="width:100%; font-size:12px;">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Description</th>
+                <th style="text-align:center;">Qty</th>
+                <th style="text-align:center;">SKU</th>
+                <th style="text-align:right;">Rate</th>
+                <th style="text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
       `;
 
       cart.forEach(item => {
@@ -172,61 +172,69 @@ document.addEventListener("DOMContentLoaded", function () {
         totalAmount += itemTotal;
 
         html += `
-          <div class="d-flex justify-content-between">
-            <span>${item.name} x ${item.qty}</span>
-            <span>PKR ${itemTotal.toFixed(0)}</span>
-          </div>
+          <tr>
+            <td>${item.name}</td>
+            <td style="text-align:center;">${item.qty}</td>
+            <td style="text-align:center;">${item.sku || "-"}</td>
+            <td style="text-align:right;">${item.price.toFixed(2)}</td>
+            <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
+          </tr>
         `;
       });
 
       html += `
-        <hr>
-        <div class="d-flex justify-content-between fw-bold">
-          <span>Total Qty:</span>
-          <span>${totalQty}</span>
-        </div>
-        <div class="d-flex justify-content-between fw-bold">
-          <span>Total:</span>
-          <span>PKR ${totalAmount.toFixed(0)}</span>
+            </tbody>
+          </table>
+
+          <hr>
+
+          <div style="display:flex; justify-content:space-between; font-weight:bold;">
+            <span>No Of Items: ${cart.length}</span>
+            <span>Total Qty: ${totalQty}</span>
+            <span>${totalAmount.toFixed(2)}</span>
+          </div>
+
+          <div style="text-align:center; margin:10px 0;">
+            <svg id="barcode"></svg>
+            <div>${billNo}</div>
+          </div>
+
+          <div style="text-align:center; font-size:10px;">
+            Print Date: ${dateStr} ${timeStr}<br>
+            Powered by: ZHePOS
+          </div>
+
         </div>
       `;
 
       receiptBody.innerHTML = html;
 
-      const receiptModal = document.getElementById("receiptModal");
-      if (receiptModal && window.bootstrap) {
-        new bootstrap.Modal(receiptModal).show();
+      if (typeof JsBarcode !== "undefined") {
+        JsBarcode("#barcode", billNo.toString(), {
+          format: "CODE128",
+          width: 2,
+          height: 40,
+          displayValue: false
+        });
       }
+
+      new bootstrap.Modal(document.getElementById("receiptModal"), {
+        backdrop: "static",
+        keyboard: true
+      }).show();
+
     });
   }
 
-  /* ===============================
-     RECEIPT BUTTONS
-  =============================== */
   if (receiptOkBtn) {
     receiptOkBtn.addEventListener("click", function () {
-      const modal = bootstrap.Modal.getInstance(document.getElementById("receiptModal"));
-      modal?.hide();
+      bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
     });
   }
 
   if (receiptPrintBtn) {
     receiptPrintBtn.addEventListener("click", function () {
       window.print();
-    });
-  }
-
-  /* ===============================
-     SEARCH ITEMS
-  =============================== */
-  if (itemSearch) {
-    itemSearch.addEventListener("keyup", function () {
-      const value = this.value.toLowerCase();
-      document.querySelectorAll("#product-table-body tr").forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(value)
-          ? ""
-          : "none";
-      });
     });
   }
 
