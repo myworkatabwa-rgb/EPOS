@@ -103,7 +103,7 @@ def packing_slip(request):
 
         # 🔒 Make sure order_id is valid
         if not order_id or not order_id.isdigit():
-            return redirect("packing_history")
+            return redirect("packing_his")
 
         order = get_object_or_404(Order, id=int(order_id))
 
