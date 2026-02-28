@@ -125,6 +125,21 @@ def packing_slip(request):
             "orders": orders
         }
     )
+@login_required(login_url="/login/")
+def packing_history(request):
+    packings = (
+        Packing.objects
+        .select_related("customer", "order")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "sales/packing_history.html",
+        {
+            "packings": packings
+        }
+    )
 
 
 
