@@ -113,7 +113,7 @@ def packing_slip(request):
             order=order
         )
 
-        return redirect("packing_history")
+        return redirect("packing_his")
 
     products = Product.objects.all().order_by("name")
     orders = (
