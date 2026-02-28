@@ -107,10 +107,13 @@
 
 
   <!-- ✅ SAVE BOOKING -->
+   <form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="order_id" id="order_id_input">
   <div class="col-md-3">
-    <button class="btn btn-primary w-100" id="saveBookingBtn">
-      Save Booking
-    </button>
+   <button type="submit" class="btn btn-primary w-100">
+  Save Booking
+</button>
   </div>
 
   <!-- DISCARD -->
