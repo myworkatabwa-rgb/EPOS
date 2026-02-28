@@ -101,9 +101,14 @@ def packing_slip(request):
     if request.method == "POST":
         order_id = request.POST.get("order_id")
 
-        order = Order.objects.get(id=order_id)
+        # 🔒 Make sure order_id is valid
+        if not order_id or not order_id.isdigit():
+            return redirect("packing_history")
 
-        packing = Packing.objects.create(
+        order = get_object_or_404(Order, id=int(order_id))
+
+        # ✅ Create Packing record
+        Packing.objects.create(
             customer=order.customer,
             order=order
         )
