@@ -104,17 +104,19 @@
 </div>
 
 <!-- ACTION BUTTONS -->
-
+<div class="row g-2 mt-2">
 
   <!-- ✅ SAVE BOOKING -->
-   <form method="POST">
+  <form method="POST">
     {% csrf_token %}
     <input type="hidden" name="order_id" id="order_id_input">
-  <div class="col-md-3">
-   <button type="submit" class="btn btn-primary w-100">
-  Save Booking
-</button>
-  </div>
+
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-primary w-100">
+        Save Booking
+      </button>
+    </div>
+  </form>
 
   <!-- DISCARD -->
   <div class="col-md-3">
@@ -122,6 +124,7 @@
       Discard Booking
     </button>
   </div>
+
 </div>
 
 <!-- ================= RECEIPT MODAL (REUSED) ================= -->
