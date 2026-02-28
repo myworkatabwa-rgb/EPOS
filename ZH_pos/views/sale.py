@@ -108,9 +108,12 @@ def packing_slip(request):
         order = get_object_or_404(Order, id=int(order_id))
 
         # ✅ Create Packing record
-        Packing.objects.create(
-            customer=order.customer,
-            order=order
+        Packing.objects.get_or_create(
+            order=order,
+            defaults={
+                "customer": order.customer,
+                "packed_by": request.user
+            }
         )
 
         return redirect("packing_his")
