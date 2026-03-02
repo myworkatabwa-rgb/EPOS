@@ -257,7 +257,6 @@ def booking_detail(request, booking_no):
 
 
 @login_required(login_url="/login/")
-@login_required(login_url="/login/")
 def packing_history(request):
     packings = (
         Packing.objects
