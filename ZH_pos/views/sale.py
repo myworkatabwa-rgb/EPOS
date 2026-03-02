@@ -100,26 +100,29 @@ def advance_booking(request):
 @login_required(login_url="/login/")
 def packing_slip(request):
     if request.method == "POST":
-        
+
+        cart_json    = request.POST.get("cart_data", "[]")
+        discount_raw = request.POST.get("discount", "0")
+        customer_id  = request.POST.get("customer_id") or None
+
         print("\n=== DEBUG POST ===")
-        print("cart_data  :", request.POST.get("cart_data"))
-        print("discount   :", request.POST.get("discount"))
-        print("ALL POST   :", dict(request.POST))
+        print("cart_data:", cart_json)
         print("==================\n")
 
-        cart_json = request.POST.get("cart_data", "[]")
-        
         try:
             cart_items = json.loads(cart_json)
-        except Exception as e:
-            print("JSON ERROR:", e)
+        except (json.JSONDecodeError, TypeError):
             cart_items = []
 
         if not cart_items:
-            messages.error(request, "Cart is empty.")
-            return redirect("packing_slip")  # ← going back to packing_sl/ means this line is hitting
+            messages.error(request, "Cart is empty. Please add items first.")
+            return redirect("packing_slip")
 
-        # ✅ Resolve customer
+        try:
+            discount = float(discount_raw)
+        except (ValueError, TypeError):
+            discount = 0.0
+
         customer = None
         if customer_id:
             try:
@@ -128,71 +131,82 @@ def packing_slip(request):
                 pass
 
         try:
-            discount = float(discount)
-        except (ValueError, TypeError):
-            discount = 0.0
+            with transaction.atomic():
 
-        with transaction.atomic():
-            # ✅ Create Order
-            order = Order.objects.create(
-                customer=customer,
-                created_by=request.user,
-            )
+                # ✅ order_id is CharField — generate it manually
+                import uuid
+                order_id = "BK-" + uuid.uuid4().hex[:8].upper()
 
-            # ✅ Create OrderItems
-            total_items = 0
-            total_qty = 0
-            sub_total = 0.0
-
-            for item in cart_items:
-                product = get_object_or_404(Product, id=item["id"])
-                qty = int(item.get("qty", 1))
-                price = float(item.get("price", product.price))
-                amount = qty * price
-
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    qty=qty,
-                    price=price,
-                    amount=amount
+                order = Order.objects.create(
+                    order_id=order_id,          # ✅ required CharField
+                    customer=customer,
+                    created_by=request.user,    # ✅ needs migration above
+                    payment_method="cash",
+                    status="pending",
+                    source="booking",
                 )
 
-                total_items += 1
-                total_qty += qty
-                sub_total += amount
+                total_items = 0
+                total_qty   = 0
+                sub_total   = 0.0
 
-            net_amount = sub_total - discount
+                for item in cart_items:
+                    product  = get_object_or_404(Product, id=item["id"])
+                    qty      = int(item.get("qty", 1))
+                    price    = float(item.get("price", product.price or 0))
 
-            # ✅ Create Packing
-            packing = Packing.objects.create(
-                order=order,
-                customer=customer,
-                packed_by=request.user,
-                booking_no=f"PK-{order.id}",
-                total_items=total_items,
-                total_qty=total_qty,
-                discount=discount,
-                net_amount=net_amount,
-            )
+                    # ✅ OrderItem uses: quantity, price, total, product_name
+                    OrderItem.objects.create(
+                        order        = order,
+                        product      = product,
+                        product_name = product.name,   # ✅ required field
+                        quantity     = qty,             # ✅ NOT qty
+                        price        = price,
+                        # total is auto-calculated in OrderItem.save()
+                    )
 
-            # ✅ Create PackingItems
-            for item in cart_items:
-                product = Product.objects.get(id=item["id"])
-                qty = int(item.get("qty", 1))
-                price = float(item.get("price", product.price))
-                PackingItem.objects.create(
-                    packing=packing,
-                    product=product,
-                    qty=qty,
-                    price=price,
-                    amount=qty * price
+                    total_items += 1
+                    total_qty   += qty
+                    sub_total   += qty * price
+
+                net_amount = max(sub_total - discount, 0)
+
+                # ✅ Update order total
+                order.total    = net_amount
+                order.discount = discount
+                order.save()
+
+                packing = Packing.objects.create(
+                    order       = order,
+                    customer    = customer,
+                    packed_by   = request.user,
+                    booking_no  = f"PK-{order_id}",
+                    total_items = total_items,
+                    total_qty   = total_qty,
+                    discount    = discount,
+                    net_amount  = net_amount,
                 )
 
-        messages.success(request, f"Packing slip {packing.booking_no} saved successfully.")
-        return redirect("packing_his")
+                for item in cart_items:
+                    product = Product.objects.get(id=item["id"])
+                    qty     = int(item.get("qty", 1))
+                    price   = float(item.get("price", product.price or 0))
+                    PackingItem.objects.create(
+                        packing = packing,
+                        product = product,
+                        qty     = qty,
+                        price   = price,
+                        amount  = qty * price,
+                    )
 
-    # GET
+            messages.success(request, f"Packing slip {packing.booking_no} saved!")
+            return redirect("packing_his")
+
+        except Exception as e:
+            print("SAVE ERROR:", e)
+            messages.error(request, f"Failed to save: {e}")
+            return redirect("packing_slip")
+
     products = Product.objects.all().order_by("name")
     return render(request, "sales/packing_slip.html", {"products": products})
 
