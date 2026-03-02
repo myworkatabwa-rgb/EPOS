@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
-from ZH_pos.models import Product, Packing, Category
+from ZH_pos.models import Product, Packing, Category, 
 from django.contrib import messages
 from datetime import date
 
@@ -101,10 +101,10 @@ def packing_slip(request):
 
     if request.method == "POST":
 
-        # Get latest order (or you can filter by status if needed)
         order = (
             Order.objects
             .select_related("customer")
+            .prefetch_related("items__product")
             .order_by("-created_at")
             .first()
         )
@@ -113,37 +113,83 @@ def packing_slip(request):
             messages.error(request, "No order found to create packing slip.")
             return redirect("packing_his")
 
-        # Prevent duplicate packing for same order
         packing, created = Packing.objects.get_or_create(
             order=order,
             defaults={
                 "customer": order.customer,
-                "packed_by": request.user
+                "packed_by": request.user,
+                "booking_no": f"PK-{order.id}"
             }
         )
 
         if created:
+
+            total_items = 0
+            total_qty = 0
+            sub_total = 0
+
+            for item in order.items.all():
+
+                PackingItem.objects.create(
+                    packing=packing,
+                    product=item.product,
+                    qty=item.qty,
+                    price=item.price,
+                    amount=item.qty * item.price
+                )
+
+                total_items += 1
+                total_qty += item.qty
+                sub_total += item.qty * item.price
+
+            packing.total_items = total_items
+            packing.total_qty = total_qty
+            packing.net_amount = sub_total
+            packing.save()
+
             messages.success(request, "Packing slip created successfully.")
+
         else:
-            messages.warning(request, "Packing slip already exists for this order.")
+            messages.warning(request, "Packing slip already exists.")
 
         return redirect("packing_his")
 
     products = Product.objects.all().order_by("name")
 
-    return render(
-        request,
-        "sales/packing_slip.html",
-        {
-            "products": products,
-        }
-    )
+    return render(request, "sales/packing_slip.html", {"products": products})
 @login_required(login_url="/login/")
 def delete_booking(request, booking_no):
     packing = get_object_or_404(Packing, booking_no=booking_no)
 
     if request.method == "POST":
         packing.delete()
+def booking_detail(request, booking_no):
+
+    packing = get_object_or_404(Packing, booking_no=booking_no)
+
+    items = []
+
+    for item in packing.items.all():
+
+        items.append({
+            "name": item.product.name,
+            "qty": item.qty,
+            "price": float(item.price),
+            "amount": float(item.amount),
+        })
+
+    data = {
+        "booking_no": packing.booking_no,
+        "date": packing.created_at.strftime("%Y-%m-%d %H:%M"),
+        "packed_by": packing.packed_by.username if packing.packed_by else "",
+        "customer": packing.customer.name if packing.customer else "Walk-in",
+        "sub_total": float(packing.net_amount),
+        "discount": float(packing.discount or 0),
+        "net_amount": float(packing.net_amount),
+        "items": items
+    }
+
+    return JsonResponse(data)
 
     return redirect("packing_his")
 @login_required(login_url="/login/")
