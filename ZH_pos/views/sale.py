@@ -99,16 +99,21 @@ def advance_booking(request):
 def packing_slip(request):
 
     if request.method == "POST":
-        order_id = request.POST.get("order_id")
 
-        # 🔒 Make sure order_id is valid
-        if not order_id or not order_id.isdigit():
+        # Get latest order (or you can filter by status if needed)
+        order = (
+            Order.objects
+            .select_related("customer")
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not order:
+            messages.error(request, "No order found to create packing slip.")
             return redirect("packing_his")
 
-        order = get_object_or_404(Order, id=int(order_id))
-
-        # ✅ Create Packing record
-        Packing.objects.get_or_create(
+        # Prevent duplicate packing for same order
+        packing, created = Packing.objects.get_or_create(
             order=order,
             defaults={
                 "customer": order.customer,
@@ -116,21 +121,20 @@ def packing_slip(request):
             }
         )
 
+        if created:
+            messages.success(request, "Packing slip created successfully.")
+        else:
+            messages.warning(request, "Packing slip already exists for this order.")
+
         return redirect("packing_his")
 
     products = Product.objects.all().order_by("name")
-    orders = (
-        Order.objects
-        .select_related("customer")
-        .order_by("-created_at")
-    )
 
     return render(
         request,
         "sales/packing_slip.html",
         {
             "products": products,
-            "orders": orders
         }
     )
 @login_required(login_url="/login/")
