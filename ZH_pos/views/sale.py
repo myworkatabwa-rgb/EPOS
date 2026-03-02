@@ -100,20 +100,24 @@ def advance_booking(request):
 @login_required(login_url="/login/")
 def packing_slip(request):
     if request.method == "POST":
+        
+        print("\n=== DEBUG POST ===")
+        print("cart_data  :", request.POST.get("cart_data"))
+        print("discount   :", request.POST.get("discount"))
+        print("ALL POST   :", dict(request.POST))
+        print("==================\n")
 
-        # ✅ Read cart from form
         cart_json = request.POST.get("cart_data", "[]")
-        discount = request.POST.get("discount", 0)
-        customer_id = request.POST.get("customer_id") or None
-
+        
         try:
             cart_items = json.loads(cart_json)
-        except (json.JSONDecodeError, TypeError):
+        except Exception as e:
+            print("JSON ERROR:", e)
             cart_items = []
 
         if not cart_items:
-            messages.error(request, "Cart is empty. Please add items before saving.")
-            return redirect("packing_slip")  # stay on same page
+            messages.error(request, "Cart is empty.")
+            return redirect("packing_slip")  # ← going back to packing_sl/ means this line is hitting
 
         # ✅ Resolve customer
         customer = None
