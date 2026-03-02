@@ -270,4 +270,3 @@ def packing_history(request):
     print("==============================\n")
 
     return render(request, "sales/packing_history.html", {"bookings": packings})
-```
