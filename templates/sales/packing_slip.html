@@ -106,26 +106,29 @@
 <!-- ACTION BUTTONS -->
 <div class="row g-2 mt-2">
 
-  <!-- ✅ SAVE BOOKING -->
-  <form method="POST">
-    {% csrf_token %}
-    <input type="hidden" name="order_id" id="order_id_input">
+  <<!-- ✅ SAVE BOOKING -->
+<form method="POST" action="{% url 'packing_slip' %}" id="saveBookingForm">
+  {% csrf_token %}
 
+  <!-- Cart data will be injected here as JSON -->
+  <input type="hidden" name="cart_data" id="cart_data_input">
+  <input type="hidden" name="discount" id="discount_input">
+  <input type="hidden" name="customer_id" id="customer_id_input" value="">
+
+  <div class="row g-2 mt-2">
     <div class="col-md-3">
-      <button type="submit" class="btn btn-primary w-100">
+      <button type="submit" class="btn btn-primary w-100" onclick="prepareFormSubmit()">
         Save Booking
       </button>
     </div>
-  </form>
-
-  <!-- DISCARD -->
-  <div class="col-md-3">
-    <button class="btn btn-danger w-100" id="clearCartBtn">
-      Discard Booking
-    </button>
+    <div class="col-md-3">
+      <button type="button" class="btn btn-danger w-100" id="clearCartBtn">
+        Discard Booking
+      </button>
+    </div>
   </div>
 
-</div>
+</form>
 
 <!-- ================= RECEIPT MODAL (REUSED) ================= -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
@@ -162,5 +165,12 @@
 
 <!-- ADVANCED BOOKING SCRIPT -->
 <script src="{% static 'js/advanced_booking.js' %}"></script>
+<script>
+  function prepareFormSubmit() {
+  // cart should be your JS cart array e.g. [{id, name, qty, price}, ...]
+  document.getElementById('cart_data_input').value = JSON.stringify(cart);
+  document.getElementById('discount_input').value = document.getElementById('discount').value || 0;
+}
+</script>
 
 {% endblock %}

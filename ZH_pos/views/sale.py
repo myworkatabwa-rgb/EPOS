@@ -99,65 +99,97 @@ def advance_booking(request):
 @login_required(login_url="/login/")
 def packing_slip(request):
     if request.method == "POST":
-        # ✅ Get order_id from POST data
-        order_id = request.POST.get("order_id")
 
-        if not order_id:
-            messages.error(request, "No order selected.")
-            return redirect("packing_his")
+        # ✅ Read cart from form
+        cart_json = request.POST.get("cart_data", "[]")
+        discount = request.POST.get("discount", 0)
+        customer_id = request.POST.get("customer_id") or None
 
-        order = get_object_or_404(
-            Order.objects.select_related("customer").prefetch_related("items__product"),
-            id=order_id
-        )
+        try:
+            cart_items = json.loads(cart_json)
+        except (json.JSONDecodeError, TypeError):
+            cart_items = []
 
-        packing, created = Packing.objects.get_or_create(
-            order=order,
-            defaults={
-                "customer": order.customer,
-                "packed_by": request.user,
-                "booking_no": f"PK-{order.id}"
-            }
-        )
+        if not cart_items:
+            messages.error(request, "Cart is empty. Please add items before saving.")
+            return redirect("packing_slip")  # stay on same page
 
-        if created:
+        # ✅ Resolve customer
+        customer = None
+        if customer_id:
+            try:
+                customer = Customer.objects.get(id=customer_id)
+            except Customer.DoesNotExist:
+                pass
+
+        try:
+            discount = float(discount)
+        except (ValueError, TypeError):
+            discount = 0.0
+
+        with transaction.atomic():
+            # ✅ Create Order
+            order = Order.objects.create(
+                customer=customer,
+                created_by=request.user,
+            )
+
+            # ✅ Create OrderItems
             total_items = 0
             total_qty = 0
-            sub_total = 0
+            sub_total = 0.0
 
-            for item in order.items.all():
+            for item in cart_items:
+                product = get_object_or_404(Product, id=item["id"])
+                qty = int(item.get("qty", 1))
+                price = float(item.get("price", product.price))
+                amount = qty * price
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    qty=qty,
+                    price=price,
+                    amount=amount
+                )
+
+                total_items += 1
+                total_qty += qty
+                sub_total += amount
+
+            net_amount = sub_total - discount
+
+            # ✅ Create Packing
+            packing = Packing.objects.create(
+                order=order,
+                customer=customer,
+                packed_by=request.user,
+                booking_no=f"PK-{order.id}",
+                total_items=total_items,
+                total_qty=total_qty,
+                discount=discount,
+                net_amount=net_amount,
+            )
+
+            # ✅ Create PackingItems
+            for item in cart_items:
+                product = Product.objects.get(id=item["id"])
+                qty = int(item.get("qty", 1))
+                price = float(item.get("price", product.price))
                 PackingItem.objects.create(
                     packing=packing,
-                    product=item.product,
-                    qty=item.qty,
-                    price=item.price,
-                    amount=item.qty * item.price
+                    product=product,
+                    qty=qty,
+                    price=price,
+                    amount=qty * price
                 )
-                total_items += 1
-                total_qty += item.qty
-                sub_total += item.qty * item.price
 
-            discount = packing.discount or 0
-            packing.total_items = total_items
-            packing.total_qty = total_qty
-            packing.net_amount = sub_total - discount  # ✅ Apply discount
-            packing.save()
-
-            messages.success(request, "Packing slip created successfully.")
-        else:
-            messages.warning(request, "Packing slip already exists for this order.")
-
+        messages.success(request, f"Packing slip {packing.booking_no} saved successfully.")
         return redirect("packing_his")
 
-    # GET — show available orders (not yet packed)
-    packed_order_ids = Packing.objects.values_list("order_id", flat=True)
-    orders = Order.objects.exclude(id__in=packed_order_ids).order_by("-created_at")
+    # GET
     products = Product.objects.all().order_by("name")
-
-    return render(request, "sales/packing_slip.html", {
-        "products": products,
-        "orders": orders  # ✅ Pass orders to template
-    })
+    return render(request, "sales/packing_slip.html", {"products": products})
 
 
 @login_required(login_url="/login/")
