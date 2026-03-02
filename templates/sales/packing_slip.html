@@ -104,24 +104,22 @@
 </div>
 
 <!-- ACTION BUTTONS -->
-<div class="row g-2 mt-2">
-
-  <<!-- ✅ SAVE BOOKING -->
 <form method="POST" action="{% url 'packing_slip' %}" id="saveBookingForm">
   {% csrf_token %}
 
-  <!-- Cart data will be injected here as JSON -->
+  <!-- ✅ Hidden inputs that JS will populate before submit -->
   <input type="hidden" name="cart_data" id="cart_data_input">
   <input type="hidden" name="discount" id="discount_input">
   <input type="hidden" name="customer_id" id="customer_id_input" value="">
 
   <div class="row g-2 mt-2">
     <div class="col-md-3">
-      <button type="submit" class="btn btn-primary w-100" onclick="prepareFormSubmit()">
+      <button type="submit" class="btn btn-primary w-100">
         Save Booking
       </button>
     </div>
     <div class="col-md-3">
+      <!-- ✅ type="button" prevents it from submitting the form -->
       <button type="button" class="btn btn-danger w-100" id="clearCartBtn">
         Discard Booking
       </button>

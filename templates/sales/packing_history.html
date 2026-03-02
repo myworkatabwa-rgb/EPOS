@@ -39,7 +39,8 @@
   <tr>
     <td>{{ booking.created_at|date:"Y-m-d H:i" }}</td>
     <td>{{ booking.booking_no }}</td>
-    <td>{{ booking.user.username|default:request.user.username }}</td>
+   <!-- ✅ Correct -->
+    <td>{{ booking.packed_by.username|default:"—" }}</td>
     <td>{{ booking.customer.name|default:"Walk-in" }}</td>
     <td>{{ booking.total_items }}</td>
     <td>{{ booking.total_qty }}</td>
