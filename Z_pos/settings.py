@@ -25,7 +25,8 @@ ALLOWED_HOSTS = [
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://epos-production-c366.up.railway.app",
-    "https://epos-production-3026.up.railway.app"
+    "https://epos-production-3026.up.railway.app",
+    "https://epos-production-8d49.up.railway.app/"
 ]
 
 # =====================================================
