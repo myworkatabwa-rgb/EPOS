@@ -98,20 +98,18 @@ def advance_booking(request):
                  
 @login_required(login_url="/login/")
 def packing_slip(request):
-
     if request.method == "POST":
+        # ✅ Get order_id from POST data
+        order_id = request.POST.get("order_id")
 
-        order = (
-            Order.objects
-            .select_related("customer")
-            .prefetch_related("items__product")
-            .order_by("-created_at")
-            .first()
-        )
-
-        if not order:
-            messages.error(request, "No order found to create packing slip.")
+        if not order_id:
+            messages.error(request, "No order selected.")
             return redirect("packing_his")
+
+        order = get_object_or_404(
+            Order.objects.select_related("customer").prefetch_related("items__product"),
+            id=order_id
+        )
 
         packing, created = Packing.objects.get_or_create(
             order=order,
@@ -123,13 +121,11 @@ def packing_slip(request):
         )
 
         if created:
-
             total_items = 0
             total_qty = 0
             sub_total = 0
 
             for item in order.items.all():
-
                 PackingItem.objects.create(
                     packing=packing,
                     product=item.product,
@@ -137,75 +133,84 @@ def packing_slip(request):
                     price=item.price,
                     amount=item.qty * item.price
                 )
-
                 total_items += 1
                 total_qty += item.qty
                 sub_total += item.qty * item.price
 
+            discount = packing.discount or 0
             packing.total_items = total_items
             packing.total_qty = total_qty
-            packing.net_amount = sub_total
+            packing.net_amount = sub_total - discount  # ✅ Apply discount
             packing.save()
 
             messages.success(request, "Packing slip created successfully.")
-
         else:
-            messages.warning(request, "Packing slip already exists.")
+            messages.warning(request, "Packing slip already exists for this order.")
 
         return redirect("packing_his")
 
+    # GET — show available orders (not yet packed)
+    packed_order_ids = Packing.objects.values_list("order_id", flat=True)
+    orders = Order.objects.exclude(id__in=packed_order_ids).order_by("-created_at")
     products = Product.objects.all().order_by("name")
 
-    return render(request, "sales/packing_slip.html", {"products": products})
+    return render(request, "sales/packing_slip.html", {
+        "products": products,
+        "orders": orders  # ✅ Pass orders to template
+    })
+
+
 @login_required(login_url="/login/")
 def delete_booking(request, booking_no):
     packing = get_object_or_404(Packing, booking_no=booking_no)
 
     if request.method == "POST":
         packing.delete()
-def booking_detail(request, booking_no):
+        messages.success(request, "Packing slip deleted.")
+        return redirect("packing_his")  # ✅ Fixed: redirect after delete
 
+    return redirect("packing_his")
+
+
+@login_required(login_url="/login/")  # ✅ Added login check
+def booking_detail(request, booking_no):
     packing = get_object_or_404(Packing, booking_no=booking_no)
 
     items = []
+    sub_total = 0  # ✅ Calculate real sub_total
 
     for item in packing.items.all():
-
         items.append({
             "name": item.product.name,
             "qty": item.qty,
             "price": float(item.price),
             "amount": float(item.amount),
         })
+        sub_total += float(item.amount)  # ✅ Sum from items
+
+    discount = float(packing.discount or 0)
 
     data = {
         "booking_no": packing.booking_no,
         "date": packing.created_at.strftime("%Y-%m-%d %H:%M"),
-        "packed_by": packing.packed_by.username if packing.packed_by else "",
+        "packed_by": packing.packed_by.username if packing.packed_by else "N/A",
         "customer": packing.customer.name if packing.customer else "Walk-in",
-        "sub_total": float(packing.net_amount),
-        "discount": float(packing.discount or 0),
-        "net_amount": float(packing.net_amount),
-        "items": items
+        "branch": getattr(packing, 'branch', 'Main Branch'),
+        "sub_total": sub_total,          # ✅ Real sub total
+        "discount": discount,
+        "net_amount": sub_total - discount,  # ✅ Correct net
+        "items": items,
     }
 
-    return JsonResponse(data)
+    return JsonResponse(data)  # ✅ Removed dead code below
 
-    return redirect("packing_his")
+
 @login_required(login_url="/login/")
 def packing_history(request):
     packings = (
         Packing.objects
-        .select_related("customer", "order")
+        .select_related("customer", "order", "packed_by")  # ✅ Also prefetch packed_by
         .order_by("-created_at")
     )
 
-    return render(
-        request,
-        "sales/packing_history.html",
-        {
-            "bookings": packings  # ✅ match template
-        }
-    )
-
-
+    return render(request, "sales/packing_history.html", {"bookings": packings})
