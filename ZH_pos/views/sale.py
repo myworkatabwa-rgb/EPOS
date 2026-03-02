@@ -145,9 +145,8 @@ def packing_history(request):
         request,
         "sales/packing_history.html",
         {
-            "packings": packings
+            "bookings": packings  # ✅ match template
         }
     )
-
 
 
