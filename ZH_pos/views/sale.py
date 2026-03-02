@@ -139,6 +139,14 @@ def packing_slip(request):
         }
     )
 @login_required(login_url="/login/")
+def delete_booking(request, booking_no):
+    packing = get_object_or_404(Packing, booking_no=booking_no)
+
+    if request.method == "POST":
+        packing.delete()
+
+    return redirect("packing_his")
+@login_required(login_url="/login/")
 def packing_history(request):
     packings = (
         Packing.objects

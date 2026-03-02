@@ -151,6 +151,7 @@ urlpatterns = [
     path("sales/ecommerce/", ecommerce_orders),
     path("sales/advance/", advance_booking),
     path ("sales/packing_sl/", packing_slip, name="packing_slip"),
+    path("sales/packing/delete/<str:booking_no>/",views.delete_booking,name="delete_booking"),
     path("sales/packing_his/", packing_history, name= "packing_his"),
 
     # TRANSACTIONS
