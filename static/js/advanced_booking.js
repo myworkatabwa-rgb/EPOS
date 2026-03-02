@@ -2,29 +2,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let cart = [];
 
-  const cartItemsEl = document.getElementById("cart-items");
+  const cartItemsEl  = document.getElementById("cart-items");
   const totalItemsEl = document.getElementById("total-items");
-  const totalQtyEl = document.getElementById("total-qty");
-  const subTotalEl = document.getElementById("sub-total");
-  const totalEl = document.getElementById("total");
-  const discountEl = document.getElementById("discount");
+  const totalQtyEl   = document.getElementById("total-qty");
+  const subTotalEl   = document.getElementById("sub-total");
+  const totalEl      = document.getElementById("total");
+  const discountEl   = document.getElementById("discount");
   const clearCartBtn = document.getElementById("clearCartBtn");
-  const itemSearch = document.getElementById("itemSearch");
-  const receiptOkBtn = document.getElementById("receiptOkBtn");
-  const receiptPrintBtn = document.getElementById("receiptPrintBtn");
+  const saveForm     = document.getElementById("saveBookingForm");
 
-  // ✅ Grab the FORM, not a button
-  const saveBookingForm = document.getElementById("saveBookingForm");
+  let receiptModal = null; // ✅ keep modal instance globally so OK can close it
 
   /* ===============================
      ADD TO CART
   =============================== */
   document.querySelectorAll(".add-to-cart").forEach(btn => {
     btn.addEventListener("click", function () {
-      const id = this.dataset.id;
-      const name = this.dataset.name;
+      const id    = this.dataset.id;
+      const name  = this.dataset.name;
       const price = parseFloat(this.dataset.price);
-      const sku = this.dataset.sku;
+      const sku   = this.dataset.sku;
 
       const existing = cart.find(item => item.id === id);
       if (existing) {
@@ -32,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         cart.push({ id, sku, name, price, qty: 1 });
       }
-
       renderCart();
     });
   });
@@ -50,7 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     cartItemsEl.innerHTML = "";
-
     cart.forEach((item, index) => {
       cartItemsEl.innerHTML += `
         <div class="d-flex justify-content-between align-items-center border-bottom py-1">
@@ -77,11 +72,10 @@ document.addEventListener("DOMContentLoaded", function () {
   function attachQtyEvents() {
     document.querySelectorAll(".plus-btn").forEach(btn => {
       btn.addEventListener("click", function () {
-        cart[this.dataset.index].qty++;
+        cart[parseInt(this.dataset.index)].qty++;
         renderCart();
       });
     });
-
     document.querySelectorAll(".minus-btn").forEach(btn => {
       btn.addEventListener("click", function () {
         const i = parseInt(this.dataset.index);
@@ -93,7 +87,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateTotals() {
-    let totalItems = cart.length;
     let totalQty = 0;
     let subTotal = 0;
 
@@ -103,12 +96,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
-    const total = Math.max(subTotal - discount, 0);
+    const total    = Math.max(subTotal - discount, 0);
 
-    if (totalItemsEl) totalItemsEl.innerText = totalItems;
-    if (totalQtyEl) totalQtyEl.innerText = totalQty;
-    if (subTotalEl) subTotalEl.innerText = subTotal.toFixed(2);
-    if (totalEl) totalEl.innerText = total.toFixed(2);
+    if (totalItemsEl) totalItemsEl.innerText = cart.length;
+    if (totalQtyEl)   totalQtyEl.innerText   = totalQty;
+    if (subTotalEl)   subTotalEl.innerText   = subTotal.toFixed(2);
+    if (totalEl)      totalEl.innerText      = total.toFixed(2);
   }
 
   if (discountEl) discountEl.addEventListener("input", updateTotals);
@@ -125,11 +118,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     SAVE BOOKING — intercept form submit
+     FORM SUBMIT
   =============================== */
-  if (saveBookingForm) {
-    saveBookingForm.addEventListener("submit", function (e) {
-      e.preventDefault(); // ✅ Stop default submit first
+  if (saveForm) {
+    saveForm.addEventListener("submit", function (e) {
+      e.preventDefault();
 
       if (cart.length === 0) {
         alert("Cart is empty. Please add items before saving.");
@@ -138,44 +131,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
 
-      // ✅ Inject cart JSON into hidden input
+      // ✅ Set hidden inputs NOW before modal
       document.getElementById("cart_data_input").value = JSON.stringify(cart);
-      document.getElementById("discount_input").value = discount;
+      document.getElementById("discount_input").value  = discount;
 
-      // ✅ Show receipt modal BEFORE submitting
-      showReceiptModal();
+      // ✅ Confirm data is set
+      console.log("✅ cart_data_input:", document.getElementById("cart_data_input").value);
+      console.log("✅ discount_input:", document.getElementById("discount_input").value);
 
-      // ✅ When user clicks OK in modal → actually submit the form
-      const okBtn = document.getElementById("receiptOkBtn");
-      okBtn.onclick = function () {
-        bootstrap.Modal.getInstance(document.getElementById("receiptModal"))?.hide();
-        saveBookingForm.submit(); // ✅ Now submit to Django
-      };
-
+      // ✅ Build and show receipt modal
+      showReceiptModal(discount);
     });
   }
 
   /* ===============================
-     RECEIPT MODAL (preview only)
+     RECEIPT MODAL
   =============================== */
-  function showReceiptModal() {
+  function showReceiptModal(discount) {
     const receiptBody = document.getElementById("receipt-body");
     if (!receiptBody) return;
 
-    const now = new Date();
-    const pad = n => (n < 10 ? "0" + n : n);
+    const now     = new Date();
+    const pad     = n => String(n).padStart(2, "0");
     const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    const billNo = Math.floor(10000 + Math.random() * 90000);
+    const billNo  = Math.floor(10000 + Math.random() * 90000);
 
-    let totalQty = 0;
+    let totalQty    = 0;
     let totalAmount = 0;
-    const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
+    let rows        = "";
 
-    let rows = "";
     cart.forEach(item => {
       const itemTotal = item.qty * item.price;
-      totalQty += item.qty;
+      totalQty    += item.qty;
       totalAmount += itemTotal;
       rows += `
         <tr>
@@ -191,10 +179,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const netAmount = Math.max(totalAmount - discount, 0);
 
     receiptBody.innerHTML = `
-      <div style="font-family: monospace; font-size:12px; padding:10px;">
+      <div style="font-family:monospace; font-size:12px; padding:10px;">
         <div>
           Bill No : ${billNo}<br>
-          Date & Time : ${dateStr} ${timeStr}<br>
+          Date &amp; Time : ${dateStr} ${timeStr}<br>
           Payment Type : Booking<br>
           Counter : 0001
         </div>
@@ -215,38 +203,54 @@ document.addEventListener("DOMContentLoaded", function () {
         <div style="display:flex; justify-content:space-between;">
           <span>Items: ${cart.length}</span>
           <span>Total Qty: ${totalQty}</span>
-          <span>Sub Total: ${totalAmount.toFixed(2)}</span>
         </div>
-        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-          <span>Discount: ${discount.toFixed(2)}</span>
-          <span>Net Amount: PKR ${netAmount.toFixed(2)}</span>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Sub Total:</span><span>PKR ${totalAmount.toFixed(2)}</span>
         </div>
-        <div style="text-align:center; margin:10px 0;">
-          <svg id="barcode"></svg>
-          <div>${billNo}</div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Discount:</span><span>PKR ${discount.toFixed(2)}</span>
         </div>
-        <div style="text-align:center; font-size:10px;">
-          Print Date: ${dateStr} ${timeStr}<br>
-          Powered by: ZHePOS
+        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:5px;">
+          <span>Net Amount:</span><span>PKR ${netAmount.toFixed(2)}</span>
         </div>
       </div>
     `;
 
-    if (typeof JsBarcode !== "undefined") {
-      JsBarcode("#barcode", billNo.toString(), {
-        format: "CODE128", width: 2, height: 40, displayValue: false
-      });
-    }
-
-    new bootstrap.Modal(document.getElementById("receiptModal"), {
+    // ✅ Create fresh modal instance
+    receiptModal = new bootstrap.Modal(document.getElementById("receiptModal"), {
       backdrop: "static",
-      keyboard: false  // ✅ Prevent accidental close before submit
-    }).show();
+      keyboard: false
+    });
+    receiptModal.show();
   }
 
   /* ===============================
-     PRINT RECEIPT
+     OK BUTTON — submit form to Django
+     ✅ Defined ONCE outside submit listener
+     to avoid stacking duplicate handlers
   =============================== */
+  const okBtn = document.getElementById("receiptOkBtn");
+  if (okBtn) {
+    okBtn.addEventListener("click", function () {
+      console.log("✅ OK clicked");
+      console.log("✅ Submitting cart_data:", document.getElementById("cart_data_input").value);
+
+      if (receiptModal) {
+        receiptModal.hide();
+      }
+
+      // ✅ Submit after modal animation completes
+      setTimeout(function () {
+        console.log("✅ Form submitting now...");
+        saveForm.submit();
+      }, 400);
+    });
+  }
+
+  /* ===============================
+     PRINT
+  =============================== */
+  const receiptPrintBtn = document.getElementById("receiptPrintBtn");
   if (receiptPrintBtn) {
     receiptPrintBtn.addEventListener("click", function () {
       window.print();
