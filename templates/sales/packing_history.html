@@ -63,16 +63,16 @@
     </td>
 
     <td>
-      {% if perms.ZH_pos.delete_booking %}
-      <form action="{% url 'delete_booking' booking.booking_no %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-sm btn-danger"
-                onclick="return confirm('Are you sure you want to delete this packing slip?');">
-          <i class="bi bi-trash"></i>
-        </button>
-      </form>
-      {% endif %}
-    </td>
+  {% if perms.ZH_pos.delete_booking and booking.booking_no %}
+  <form action="{% url 'delete_booking' booking.booking_no %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-danger"
+            onclick="return confirm('Are you sure you want to delete this packing slip?');">
+      <i class="bi bi-trash"></i>
+    </button>
+  </form>
+  {% endif %}
+</td>
   </tr>
   {% empty %}
   <tr>
