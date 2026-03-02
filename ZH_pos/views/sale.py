@@ -257,6 +257,7 @@ def booking_detail(request, booking_no):
 
 
 @login_required(login_url="/login/")
+@login_required(login_url="/login/")
 def packing_history(request):
     packings = (
         Packing.objects
@@ -265,9 +266,8 @@ def packing_history(request):
     )
     
     print("\n=== PACKING HISTORY DEBUG ===")
-    print("Total records:", packings.count())
-    for p in packings:
-        print(f"  - {p.booking_no} | {p.net_amount} | {p.created_at}")
+    print("Total records:", packings.count())  # ✅ this is safe
     print("==============================\n")
 
     return render(request, "sales/packing_history.html", {"bookings": packings})
+```
