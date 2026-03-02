@@ -151,7 +151,7 @@ urlpatterns = [
     path("sales/ecommerce/", ecommerce_orders),
     path("sales/advance/", advance_booking),
     path ("sales/packing_sl/", packing_slip, name="packing_slip"),
-    path("bookings/detail/<str:booking_no>/", views.booking_detail, name="booking_detail")
+    path("bookings/detail/<str:booking_no>/", views.booking_detail, name="booking_detail"),
     path("sales/packing/delete/<str:booking_no>/",views.sale.delete_booking, name="delete_booking"),
     path("sales/packing_his/", packing_history, name= "packing_his"),
 
