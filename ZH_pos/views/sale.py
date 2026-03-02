@@ -260,8 +260,14 @@ def booking_detail(request, booking_no):
 def packing_history(request):
     packings = (
         Packing.objects
-        .select_related("customer", "order", "packed_by")  # ✅ Also prefetch packed_by
+        .select_related("customer", "order", "packed_by")
         .order_by("-created_at")
     )
+    
+    print("\n=== PACKING HISTORY DEBUG ===")
+    print("Total records:", packings.count())
+    for p in packings:
+        print(f"  - {p.booking_no} | {p.net_amount} | {p.created_at}")
+    print("==============================\n")
 
     return render(request, "sales/packing_history.html", {"bookings": packings})
