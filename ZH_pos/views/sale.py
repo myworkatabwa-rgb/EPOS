@@ -140,7 +140,7 @@ def packing_slip(request):
                 order = Order.objects.create(
                     order_id=order_id,          # ✅ required CharField
                     customer=customer,
-                    created_by=request.user,    # ✅ needs migration above
+                    #created_by=request.user,    # ✅ needs migration above
                     payment_method="cash",
                     status="pending",
                     source="booking",
