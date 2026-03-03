@@ -120,14 +120,26 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ===============================
      FORM SUBMIT
   =============================== */
-  if (saveForm) {
-    saveForm.addEventListener("submit", function (e) {
-      e.preventDefault();
+  const saveBtn = document.getElementById("saveBookingBtn");
 
-      if (cart.length === 0) {
-        alert("Cart is empty. Please add items before saving.");
-        return;
-      }
+if (saveBtn) {
+  saveBtn.addEventListener("click", function () {
+
+    if (cart.length === 0) {
+      alert("Cart is empty. Please add items before saving.");
+      return;
+    }
+
+    const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
+
+    document.getElementById("cart_data_input").value = JSON.stringify(cart);
+    document.getElementById("discount_input").value  = discount;
+
+    console.log("Sending cart:", cart);
+
+    showReceiptModal(discount);
+  });
+}
 
       const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
 
