@@ -101,6 +101,7 @@ def advance_booking(request):
 def packing_slip(request):
     if request.method == "POST":
         print("Post is received")
+        print("=== FULL POST DATA ===", dict(request.POST))  # DEBUG
         cart_json = request.POST.get("cart_data", "[]")
         discount_raw = request.POST.get("discount", "0")
         customer_id = request.POST.get("customer_id") or None
