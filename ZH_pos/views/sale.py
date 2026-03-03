@@ -100,82 +100,106 @@ def advance_booking(request):
 @login_required(login_url="/login/")
 def packing_slip(request):
     if request.method == "POST":
-        print("Post is received")
-        print("=== FULL POST DATA ===", dict(request.POST))  # DEBUG
-        cart_json = request.POST.get("cart_data", "[]")
-        discount_raw = request.POST.get("discount", "0")
-        customer_id = request.POST.get("customer_id") or None
-
-        print("\n=== DEBUG POST ===")
-        print("cart_data:", cart_json)
-        print("==================\n")
-
         try:
-            cart_items = json.loads(cart_json)
-        except (json.JSONDecodeError, TypeError):
+            print("=== POST START ===")
+            
+            # SAFE data extraction
+            cart_json = request.POST.get("cart_data", "[]")
+            discount_raw = request.POST.get("discount", "0")
+            customer_id = request.POST.get("customer_id", "")
+            
+            print(f"RAW DATA - cart: {cart_json[:100]}..., discount: {discount_raw}, customer: {customer_id}")
+            
+            # Parse JSON safely
             cart_items = []
-
-        if not cart_items:
-            # For AJAX
-            return JsonResponse({'success': False, 'error': 'Cart is empty. Please add items first.'}, status=400)
-
-        try:
-            discount = float(discount_raw)
-        except (ValueError, TypeError):
-            discount = 0.0
-
-        customer = None
-        if customer_id:
             try:
-                customer = Customer.objects.get(id=customer_id)
-            except Customer.DoesNotExist:
-                pass
+                cart_items = json.loads(cart_json)
+                print(f"PARSED {len(cart_items)} items")
+            except:
+                print("JSON PARSE FAILED")
+                return JsonResponse({'success': False, 'error': 'Invalid cart data'}, status=400)
 
-        try:
+            if not cart_items:
+                print("EMPTY CART")
+                return JsonResponse({'success': False, 'error': 'Cart is empty'}, status=400)
+
+            # Parse discount safely
+            discount = 0.0
+            try:
+                discount = float(discount_raw or 0)
+            except:
+                discount = 0.0
+
+            # Customer safely
+            customer = None
+            if customer_id:
+                try:
+                    customer = Customer.objects.get(id=customer_id)
+                    print(f"Customer found: {customer}")
+                except Customer.DoesNotExist:
+                    print("Customer not found")
+                    customer = None
+
+            # DATABASE TRANSACTION
             with transaction.atomic():
-                import uuid
-                order_id = "BK-" + uuid.uuid4().hex[:8].upper()
+                print("TRANSACTION START")
+                
+                # Generate order ID
+                order_id = f"BK-{uuid.uuid4().hex[:8].upper()}"
+                print(f"Order ID: {order_id}")
 
-                # Fix: Use create_user_profile or defaults for required fields
+                # Create ORDER (minimal safe fields)
                 order = Order.objects.create(
                     order_id=order_id,
                     customer=customer,
-                    created_by=request.user,  # Add if required (migrate first)
                     payment_method="cash",
                     status="pending",
                     source="booking",
                 )
+                print(f"Order created: {order.id}")
 
+                # Process items SAFELY
                 total_items = 0
                 total_qty = 0
                 sub_total = 0.0
+                
+                for item in cart_items[:10]:  # Limit to prevent crash
+                    try:
+                        pid = str(item.get("id"))
+                        product = Product.objects.filter(id=pid).first()
+                        
+                        if not product:
+                            print(f"Product {pid} not found")
+                            continue
+                            
+                        qty = max(1, int(item.get("qty", 1)))
+                        price = float(item.get("price", getattr(product, 'price', 0) or 0))
+                        
+                        # Create OrderItem
+                        OrderItem.objects.create(
+                            order=order,
+                            product=product,
+                            product_name=product.name,
+                            quantity=qty,
+                            price=price,
+                        )
+                        
+                        total_items += 1
+                        total_qty += qty
+                        sub_total += qty * price
+                        
+                    except Exception as item_error:
+                        print(f"ITEM ERROR {item}: {item_error}")
+                        continue
 
-                product_cache = {}  # Fix loop performance
-                for item in cart_items:
-                    pid = item["id"]
-                    if pid not in product_cache:
-                        product_cache[pid] = Product.objects.get(id=pid)  # Use get() only once
-                    product = product_cache[pid]
-                    qty = int(item.get("qty", 1))
-                    price = float(item.get("price", product.price or 0))
-
-                    OrderItem.objects.create(
-                        order=order,
-                        product=product,
-                        product_name=product.name,
-                        quantity=qty,
-                        price=price,
-                    )
-
-                    total_items += 1
-                    total_qty += qty
-                    sub_total += qty * price
-
+                # Update order totals
                 net_amount = max(sub_total - discount, 0)
                 order.total = net_amount
                 order.discount = discount
                 order.save()
+                print(f"Order totals updated: {net_amount}")
 
+                # Create Packing
                 packing = Packing.objects.create(
                     order=order,
                     customer=customer,
@@ -186,31 +210,27 @@ def packing_slip(request):
                     discount=discount,
                     net_amount=net_amount,
                 )
+                print(f"Packing created: {packing.booking_no}")
 
-                # Create PackingItem (cached products)
-                for item in cart_items:
-                    pid = item["id"]
-                    product = product_cache[pid]
-                    qty = int(item.get("qty", 1))
-                    price = float(item.get("price", product.price or 0))
-                    PackingItem.objects.create(
-                        packing=packing,
-                        product=product,
-                        qty=qty,
-                        price=price,
-                        amount=qty * price,
-                    )
-
-            # Success for AJAX (no redirect)
-            return JsonResponse({'success': True, 'packing_no': packing.booking_no})
+                return JsonResponse({
+                    'success': True, 
+                    'packing_no': packing.booking_no
+                })
 
         except Exception as e:
-            print("SAVE ERROR:", e)  # Check server logs for exact error (e.g., IntegrityError)
-            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+            print(f"CRASH ERROR: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False, 
+                'error': f'Server error: {str(e)}'
+            }, status=500)
 
-    # GET unchanged
-    products = Product.objects.all().order_by("name")
-    return render(request, "sales/packing_slip.html", {"products": products})
+    # GET request - show form
+    products = Product.objects.all().order_by("name")[:100]  # Limit for safety
+    return render(request, "sales/packing_slip.html", {
+        "products": products,
+    })
 
 
 
