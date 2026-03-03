@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 import json
 
-from ZH_pos.models import Order, OrderItem, Return, Sales, SaleReturn, SaleItem, SaleReturnItem
+from ZH_pos.models import Order, OrderItem, Return
 
 
 @login_required
@@ -20,36 +20,36 @@ def fetch_sale_for_return(request):
         return JsonResponse({"success": False, "error": "Please enter a Bill No or Invoice No"})
 
     try:
-        sale = None
+        order = None
 
         if bill_no:
-            sale = Sale.objects.get(bill_no=bill_no)
+            order = Order.objects.get(order_id=bill_no)  # ✅ Order uses order_id not bill_no
         elif invoice_no:
-            sale = Sale.objects.get(invoice_no=invoice_no)
+            order = Order.objects.get(order_id=invoice_no)
 
         items = []
-        for item in sale.items.all():
+        for item in order.items.all():  # ✅ related_name="items" on OrderItem
             items.append({
                 "id": item.id,
-                "barcode": item.product.sku,
-                "name": item.product.name,
+                "barcode": item.product.sku if item.product else "—",
+                "name": item.product_name,
                 "qty": item.quantity,
                 "price": float(item.price),
-                "total": float(item.quantity * item.price),
+                "total": float(item.total),
             })
 
         return JsonResponse({
             "success": True,
-            "sale_id": sale.id,
-            "bill_no": sale.bill_no,
+            "sale_id": order.id,
+            "bill_no": order.order_id,
             "items": items
         })
 
-    except Sale.DoesNotExist:  # ✅ class, not instance
-        return JsonResponse({"success": False, "error": "Sale not found"})
+    except Order.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Order not found"})
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})  # ✅ catches any other crash
+        return JsonResponse({"success": False, "error": str(e)})
 
 
 @login_required
@@ -62,32 +62,33 @@ def confirm_sale_return(request):
         sale_id = data["sale_id"]
         return_items = data["items"]
 
-        sale = get_object_or_404(Sale, id=sale_id)
+        order = get_object_or_404(Order, id=sale_id)
 
-        sale_return = SaleReturn.objects.create(
-            sale=sale,
-            created_by=request.user
-        )
+        # Calculate total return amount
+        total_return_amount = 0
 
         for item in return_items:
             try:
-                sale_item = SaleItem.objects.get(id=item["sale_item_id"])
-            except SaleItem.DoesNotExist:
+                order_item = OrderItem.objects.get(id=item["sale_item_id"], order=order)
+            except OrderItem.DoesNotExist:
                 continue
 
             qty = int(item["qty"])
-            if qty <= 0 or qty > sale_item.quantity:
+            if qty <= 0 or qty > order_item.quantity:
                 continue
 
-            SaleReturnItem.objects.create(
-                sale_return=sale_return,
-                product=sale_item.product,
-                quantity=qty,
-                price=sale_item.price
-            )
+            total_return_amount += qty * float(order_item.price)
 
-            sale_item.quantity -= qty
-            sale_item.save()
+            # Reduce original order item qty
+            order_item.quantity -= qty
+            order_item.save()
+
+        # Create one Return record for the whole transaction ✅ matches your Return model
+        Return.objects.create(
+            order=order,
+            amount=total_return_amount,
+            reason=data.get("reason", "POS Return")
+        )
 
         return JsonResponse({"success": True})
 
@@ -97,7 +98,7 @@ def confirm_sale_return(request):
 
 @login_required
 def sale_return_history(request):
-    returns = SaleReturn.objects.all().order_by("-id")
+    returns = Return.objects.select_related("order").order_by("-created_at")
     return render(request, "returns/sale_return_history.html", {
         "returns": returns
     })
