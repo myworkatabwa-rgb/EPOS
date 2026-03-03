@@ -244,7 +244,6 @@ def delete_booking(request, booking_no):
     return redirect("packing_his")
 
 
-@login_required(login_url="/login/")  # ✅ Added login check
 @login_required(login_url="/login/")
 def booking_detail(request, booking_no):
     packing = get_object_or_404(Packing, booking_no=booking_no)
