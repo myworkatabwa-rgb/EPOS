@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  window.cart = [];
+  /* ===============================
+     GLOBAL CART
+  =============================== */
+  let cart = [];
 
   const cartItemsEl  = document.getElementById("cart-items");
   const totalItemsEl = document.getElementById("total-items");
@@ -11,13 +14,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const clearCartBtn = document.getElementById("clearCartBtn");
   const saveForm     = document.getElementById("saveBookingForm");
 
-  window receiptModal = null;
+  let receiptModal = null;
 
   /* ===============================
-     ADD TO CART
+     ADD PRODUCT TO CART
   =============================== */
   document.querySelectorAll(".add-to-cart").forEach(btn => {
+
     btn.addEventListener("click", function () {
+
       const id    = this.dataset.id;
       const name  = this.dataset.name;
       const price = parseFloat(this.dataset.price);
@@ -28,11 +33,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (existing) {
         existing.qty += 1;
       } else {
-        cart.push({ id, sku, name, price, qty: 1 });
+        cart.push({ id, name, sku, price, qty: 1 });
       }
 
       renderCart();
     });
+
   });
 
   /* ===============================
@@ -51,20 +57,27 @@ document.addEventListener("DOMContentLoaded", function () {
     cartItemsEl.innerHTML = "";
 
     cart.forEach((item, index) => {
+
       cartItemsEl.innerHTML += `
         <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+
           <div>
             <strong>${item.name}</strong><br>
             <small>SKU: ${item.sku || "-"}</small>
           </div>
+
           <div class="text-end">
+
             <div>
               <button class="btn btn-sm btn-light minus-btn" data-index="${index}">−</button>
               <span class="mx-2">${item.qty}</span>
               <button class="btn btn-sm btn-light plus-btn" data-index="${index}">+</button>
             </div>
+
             <small>PKR ${(item.price * item.qty).toFixed(2)}</small>
+
           </div>
+
         </div>
       `;
     });
@@ -73,18 +86,28 @@ document.addEventListener("DOMContentLoaded", function () {
     updateTotals();
   }
 
+  /* ===============================
+     QTY BUTTONS
+  =============================== */
   function attachQtyEvents() {
 
     document.querySelectorAll(".plus-btn").forEach(btn => {
+
       btn.onclick = function () {
+
         cart[parseInt(this.dataset.index)].qty++;
+
         renderCart();
       };
+
     });
 
     document.querySelectorAll(".minus-btn").forEach(btn => {
+
       btn.onclick = function () {
+
         const i = parseInt(this.dataset.index);
+
         cart[i].qty--;
 
         if (cart[i].qty <= 0) {
@@ -93,21 +116,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
         renderCart();
       };
+
     });
+
   }
 
+  /* ===============================
+     TOTAL CALCULATION
+  =============================== */
   function updateTotals() {
 
-    window totalQty = 0;
-    window subTotal = 0;
+    let totalQty = 0;
+    let subTotal = 0;
 
     cart.forEach(item => {
+
       totalQty += item.qty;
       subTotal += item.qty * item.price;
+
     });
 
     const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
-    const total    = Math.max(subTotal - discount, 0);
+
+    const total = Math.max(subTotal - discount, 0);
 
     if (totalItemsEl) totalItemsEl.innerText = cart.length;
     if (totalQtyEl)   totalQtyEl.innerText   = totalQty;
@@ -123,25 +154,31 @@ document.addEventListener("DOMContentLoaded", function () {
      CLEAR CART
   =============================== */
   if (clearCartBtn) {
+
     clearCartBtn.addEventListener("click", function () {
 
       if (!confirm("Discard booking?")) return;
 
       cart = [];
+
       renderCart();
     });
+
   }
 
   /* ===============================
-     SAVE BUTTON (SHOW MODAL ONLY)
+     FORM SUBMIT
   =============================== */
-  const saveBtn = document.getElementById("saveBookingBtn");
+  if (saveForm) {
 
-  if (saveBtn) {
-    saveBtn.addEventListener("click", function () {
+    saveForm.addEventListener("submit", function (e) {
+
+      e.preventDefault();
 
       if (cart.length === 0) {
-        alert("Cart is empty. Please add items before saving.");
+
+        alert("Cart is empty");
+
         return;
       }
 
@@ -151,7 +188,9 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("discount_input").value  = discount;
 
       showReceiptModal(discount);
+
     });
+
   }
 
   /* ===============================
@@ -160,22 +199,27 @@ document.addEventListener("DOMContentLoaded", function () {
   function showReceiptModal(discount) {
 
     const receiptBody = document.getElementById("receipt-body");
+
     if (!receiptBody) return;
 
-    const now     = new Date();
-    const pad     = n => String(n).padStart(2, "0");
-    const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    const billNo  = Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
 
-    window totalQty    = 0;
-    window totalAmount = 0;
-    window rows        = "";
+    const pad = n => String(n).padStart(2, "0");
+
+    const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    const billNo = Math.floor(10000 + Math.random() * 90000);
+
+    let totalQty = 0;
+    let totalAmount = 0;
+    let rows = "";
 
     cart.forEach(item => {
 
       const itemTotal = item.qty * item.price;
-      totalQty    += item.qty;
+
+      totalQty += item.qty;
       totalAmount += itemTotal;
 
       rows += `
@@ -187,35 +231,50 @@ document.addEventListener("DOMContentLoaded", function () {
           <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
         </tr>
       `;
+
     });
 
     const netAmount = Math.max(totalAmount - discount, 0);
 
     receiptBody.innerHTML = `
-      <div style="font-family:monospace; font-size:12px; padding:10px;">
+      <div style="font-family:monospace;font-size:12px">
+
         Bill No : ${billNo}<br>
-        Date & Time : ${dateStr} ${timeStr}<br>
-        Payment Type : Booking<br>
-        Counter : 0001
+        Date : ${dateStr}<br>
+        Time : ${timeStr}<br>
+
         <hr>
-        <table style="width:100%; font-size:12px;">
+
+        <table style="width:100%">
+
           <thead>
+
             <tr>
-              <th style="text-align:left;">Description</th>
-              <th style="text-align:center;">Qty</th>
-              <th style="text-align:center;">SKU</th>
-              <th style="text-align:right;">Rate</th>
-              <th style="text-align:right;">Amount</th>
+              <th>Description</th>
+              <th>Qty</th>
+              <th>SKU</th>
+              <th>Rate</th>
+              <th>Amount</th>
             </tr>
+
           </thead>
+
           <tbody>${rows}</tbody>
+
         </table>
+
         <hr>
-        Items: ${cart.length} | Total Qty: ${totalQty}
-        <br><br>
-        Sub Total: PKR ${totalAmount.toFixed(2)}<br>
-        Discount: PKR ${discount.toFixed(2)}<br>
-        <strong>Net Amount: PKR ${netAmount.toFixed(2)}</strong>
+
+        Items : ${cart.length}<br>
+        Qty   : ${totalQty}<br>
+
+        <br>
+
+        Sub Total : PKR ${totalAmount.toFixed(2)}<br>
+        Discount  : PKR ${discount.toFixed(2)}<br>
+
+        <strong>Net Total : PKR ${netAmount.toFixed(2)}</strong>
+
       </div>
     `;
 
@@ -225,14 +284,16 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     receiptModal.show();
+
   }
 
   /* ===============================
-     OK BUTTON (SUBMIT FORM)
+     OK BUTTON
   =============================== */
   const okBtn = document.getElementById("receiptOkBtn");
 
   if (okBtn) {
+
     okBtn.addEventListener("click", function () {
 
       if (receiptModal) {
@@ -240,20 +301,28 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       setTimeout(function () {
+
         saveForm.submit();
+
       }, 400);
+
     });
+
   }
 
   /* ===============================
      PRINT
   =============================== */
-  const receiptPrintBtn = document.getElementById("receiptPrintBtn");
+  const printBtn = document.getElementById("receiptPrintBtn");
 
-  if (receiptPrintBtn) {
-    receiptPrintBtn.addEventListener("click", function () {
+  if (printBtn) {
+
+    printBtn.addEventListener("click", function () {
+
       window.print();
+
     });
+
   }
 
 });
