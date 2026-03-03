@@ -103,20 +103,19 @@ def packing_slip(request):
     if request.method == "POST":
         try:
             print("=== POST START ===")
-            
+
             # SAFE data extraction
             cart_json = request.POST.get("cart_data", "[]")
             discount_raw = request.POST.get("discount", "0")
             customer_id = request.POST.get("customer_id", "")
-            
+
             print(f"RAW DATA - cart: {cart_json[:100]}..., discount: {discount_raw}, customer: {customer_id}")
-            
+
             # Parse JSON safely
-            cart_items = []
             try:
                 cart_items = json.loads(cart_json)
                 print(f"PARSED {len(cart_items)} items")
-            except:
+            except Exception:
                 print("JSON PARSE FAILED")
                 return JsonResponse({'success': False, 'error': 'Invalid cart data'}, status=400)
 
@@ -125,10 +124,9 @@ def packing_slip(request):
                 return JsonResponse({'success': False, 'error': 'Cart is empty'}, status=400)
 
             # Parse discount safely
-            discount = 0.0
             try:
                 discount = float(discount_raw or 0)
-            except:
+            except Exception:
                 discount = 0.0
 
             # Customer safely
@@ -144,12 +142,12 @@ def packing_slip(request):
             # DATABASE TRANSACTION
             with transaction.atomic():
                 print("TRANSACTION START")
-                
-                # Generate order ID (uuid now imported!)
+
+                # Generate order ID
                 order_id = f"BK-{uuid.uuid4().hex[:8].upper()}"
                 print(f"Order ID: {order_id}")
 
-                # Create ORDER (minimal safe fields - NO created_by)
+                # Create ORDER
                 order = Order.objects.create(
                     order_id=order_id,
                     customer=customer,
@@ -163,20 +161,19 @@ def packing_slip(request):
                 total_items = 0
                 total_qty = 0
                 sub_total = 0.0
-                
+
                 for item in cart_items[:10]:  # Limit to prevent crash
                     try:
                         pid = str(item.get("id"))
                         product = Product.objects.filter(id=pid).first()
-                        
+
                         if not product:
                             print(f"Product {pid} not found")
                             continue
-                            
+
                         qty = max(1, int(item.get("qty", 1)))
                         price = float(item.get("price", getattr(product, 'price', 0) or 0))
-                        
-                        # Create OrderItem
+
                         OrderItem.objects.create(
                             order=order,
                             product=product,
@@ -184,11 +181,11 @@ def packing_slip(request):
                             quantity=qty,
                             price=price,
                         )
-                        
+
                         total_items += 1
                         total_qty += qty
                         sub_total += qty * price
-                        
+
                     except Exception as item_error:
                         print(f"ITEM ERROR {item}: {item_error}")
                         continue
@@ -215,7 +212,7 @@ def packing_slip(request):
 
                 print("=== SAVE SUCCESS ===")
                 return JsonResponse({
-                    'success': True, 
+                    'success': True,
                     'packing_no': packing.booking_no
                 })
 
@@ -223,27 +220,12 @@ def packing_slip(request):
             print(f"CRASH ERROR: {type(e).__name__}: {str(e)}")
             traceback.print_exc()
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': f'Server error: {str(e)}'
             }, status=500)
 
     # GET request - show form
     products = Product.objects.all().order_by("name")[:100]
-    return render(request, "sales/packing_slip.html", {
-        "products": products,
-    })
-
-        except Exception as e:
-            print(f"CRASH ERROR: {type(e).__name__}: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({
-                'success': False, 
-                'error': f'Server error: {str(e)}'
-            }, status=500)
-
-    # GET request - show form
-    products = Product.objects.all().order_by("name")[:100]  # Limit for safety
     return render(request, "sales/packing_slip.html", {
         "products": products,
     })
