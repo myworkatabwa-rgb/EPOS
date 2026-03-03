@@ -124,11 +124,11 @@ def packing_slip(request):
                 print("EMPTY CART")
                 return JsonResponse({'success': False, 'error': 'Cart is empty'}, status=400)
 
-            # Parse discount safely
+            # Parse discount safely ✅ Decimal instead of float
             try:
-                discount = float(discount_raw or 0)
+                discount = Decimal(str(discount_raw or 0))
             except Exception:
-                discount = 0.0
+                discount = Decimal('0')
 
             # Customer safely
             customer = None
@@ -158,47 +158,46 @@ def packing_slip(request):
                 )
                 print(f"Order created: {order.id}")
 
-                # Process items SAFELY
+                # Process items SAFELY ✅ sub_total is Decimal
                 total_items = 0
                 total_qty = 0
-                sub_total = 0.0
+                sub_total = Decimal('0')
 
-                # In your packing_slip view, replace the item loop:
-            for item in cart_items[:50]:  # increase limit too
-                try:
-                    pid = item.get("id")
-                    print(f"Looking up product id: {pid}, type: {type(pid)}")
-                    
-                    product = Product.objects.filter(id=pid).first()
+                for item in cart_items[:50]:
+                    try:
+                        pid = item.get("id")
+                        print(f"Looking up product id: {pid}, type: {type(pid)}")
 
-                    if not product:
-                        print(f"❌ Product {pid} not found — skipping")
+                        product = Product.objects.filter(id=pid).first()
+
+                        if not product:
+                            print(f"❌ Product {pid} not found — skipping")
+                            continue
+
+                        qty = max(1, int(float(item.get("qty", 1))))
+                        price = Decimal(str(item.get("price", 0) or getattr(product, 'price', 0) or 0))  # ✅ Decimal
+
+                        print(f"✅ Adding: {product.name} x{qty} @ {price}")
+
+                        OrderItem.objects.create(
+                            order=order,
+                            product=product,
+                            product_name=product.name,
+                            quantity=qty,
+                            price=price,
+                        )
+
+                        total_items += 1
+                        total_qty += qty
+                        sub_total += Decimal(qty) * price  # ✅ all Decimal
+
+                    except Exception as item_error:
+                        print(f"ITEM ERROR {item}: {item_error}")
+                        traceback.print_exc()
                         continue
 
-                    qty = max(1, int(float(item.get("qty", 1))))  # handle string qty
-                    price = Decimal(str(item.get("price", 0) or getattr(product, 'price', 0) or 0))
-
-                    print(f"✅ Adding: {product.name} x{qty} @ {price}")
-
-                    OrderItem.objects.create(
-                        order=order,
-                        product=product,
-                        product_name=product.name,
-                        quantity=qty,
-                        price=price,
-                    )
-
-                    total_items += 1
-                    total_qty += qty
-                    sub_total += qty * price
-
-                except Exception as item_error:
-                    print(f"ITEM ERROR {item}: {item_error}")
-                    import traceback; traceback.print_exc()
-                    continue
-
-                # Update order totals
-                net_amount = max(sub_total - discount, 0)
+                # Update order totals ✅ all Decimal
+                net_amount = max(sub_total - discount, Decimal('0'))
                 order.total = net_amount
                 order.discount = discount
                 order.save()
