@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-
   let cart = [];
-  let allowSubmit = false;   // ⭐ IMPORTANT FLAG
 
   const cartItemsEl  = document.getElementById("cart-items");
   const totalItemsEl = document.getElementById("total-items");
@@ -10,18 +8,18 @@ document.addEventListener("DOMContentLoaded", function () {
   const totalEl      = document.getElementById("total");
   const discountEl   = document.getElementById("discount");
   const clearCartBtn = document.getElementById("clearCartBtn");
-  const saveForm     = document.getElementById("saveBookingForm");
+  const saveBtn      = document.getElementById("saveBookingBtn");
   const okBtn        = document.getElementById("receiptOkBtn");
   const printBtn     = document.getElementById("receiptPrintBtn");
 
   let receiptModal = null;
+  let currentPackingNo = null;
 
   /* ===============================
      ADD TO CART
   =============================== */
   document.querySelectorAll(".add-to-cart").forEach(btn => {
     btn.addEventListener("click", function () {
-
       const id    = this.dataset.id;
       const name  = this.dataset.name;
       const price = parseFloat(this.dataset.price);
@@ -40,7 +38,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function renderCart() {
-
     if (!cartItemsEl) return;
 
     if (cart.length === 0) {
@@ -52,7 +49,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let html = "";
 
     cart.forEach((item, index) => {
-
       html += `
         <div class="d-flex justify-content-between align-items-center border-bottom py-1">
           <div>
@@ -125,15 +121,60 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     SHOW RECEIPT
+     AJAX SAVE + SHOW RECEIPT
+  =============================== */
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () {
+      if (cart.length === 0) {
+        alert("Cart is empty! Please add items first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('cart_data', JSON.stringify(cart));
+      formData.append('discount', discountEl.value || '0');
+      formData.append('customer_id', document.getElementById('customer_id_input')?.value || '');
+
+      // Get CSRF token
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+      if (csrfToken) {
+        formData.append('csrfmiddlewaretoken', csrfToken.value);
+      }
+
+      this.disabled = true;
+      this.innerHTML = 'Saving...';
+
+      fetch('', {  // POST to same URL (packing_slip)
+        method: 'POST',
+        body: formData
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (data.success) {
+          currentPackingNo = data.packing_no;
+          showReceiptModal(parseFloat(discountEl.value || 0));
+        } else {
+          alert(data.error || 'Save failed');
+        }
+      })
+      .catch(err => {
+        console.error('Save error:', err);
+        alert('Network error or save failed. Check console.');
+      })
+      .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Save Booking';
+      });
+    });
+  }
+
+  /* ===============================
+     SHOW RECEIPT MODAL (Updated for real data)
   =============================== */
   function showReceiptModal(discount) {
-
-    if (cart.length === 0) {
-      alert("Cart is empty!");
-      return;
-    }
-
     const receiptBody = document.getElementById("receipt-body");
     if (!receiptBody) return;
 
@@ -142,7 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const billNo  = Math.floor(10000 + Math.random() * 90000);
+    const billNo = currentPackingNo || Math.floor(10000 + Math.random() * 90000);
 
     let totalQty = 0;
     let totalAmount = 0;
@@ -168,17 +209,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     receiptBody.innerHTML = `
       <div style="font-family:monospace;font-size:12px">
-        Bill No : ${billNo}<br>
-        Date : ${dateStr}<br>
-        Time : ${timeStr}<br>
+        Packing No: ${billNo}<br>
+        Date: ${dateStr}<br>
+        Time: ${timeStr}<br>
         <hr>
         <table style="width:100%">
           <tbody>${rows}</tbody>
         </table>
         <hr>
-        Sub Total : PKR ${totalAmount.toFixed(2)}<br>
-        Discount  : PKR ${discount.toFixed(2)}<br>
-        <strong>Net Total : PKR ${netAmount.toFixed(2)}</strong>
+        Sub Total: PKR ${totalAmount.toFixed(2)}<br>
+        Discount: PKR ${discount.toFixed(2)}<br>
+        <strong>Net Total: PKR ${netAmount.toFixed(2)}</strong>
       </div>
     `;
 
@@ -186,49 +227,32 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("receiptModal"),
       { backdrop: "static", keyboard: false }
     );
-
     receiptModal.show();
   }
 
   /* ===============================
-     FORM SUBMIT
-  =============================== */
-  if (saveForm) {
-    saveForm.addEventListener("submit", function (e) {
-
-      if (!allowSubmit) {
-        e.preventDefault();   // stop first submit
-        const discount = parseFloat(discountEl?.value || 0);
-        showReceiptModal(discount);
-      }
-
-    });
-  }
-
-  /* ===============================
-     OK BUTTON
+     OK BUTTON - Clear cart & close
   =============================== */
   if (okBtn) {
     okBtn.addEventListener("click", function () {
-
-      allowSubmit = true;   // ⭐ allow real submit
-
-      if (receiptModal) receiptModal.hide();
-
-      setTimeout(() => {
-        saveForm.submit();  // real submit now
-      }, 300);
-
+      cart = [];  // Clear after successful save
+      renderCart();
+      
+      if (receiptModal) {
+        receiptModal.hide();
+      }
+      
+      // Optional: Redirect to history
+      // setTimeout(() => window.location.href = "{% url 'packing_his' %}", 1000);
     });
   }
 
   /* ===============================
-     PRINT
+     PRINT BUTTON
   =============================== */
   if (printBtn) {
     printBtn.addEventListener("click", function () {
       window.print();
     });
   }
-
 });

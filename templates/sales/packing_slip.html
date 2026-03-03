@@ -115,8 +115,8 @@
   <div class="row g-2 mt-2">
     <div class="col-md-3">
       <button type="button" class="btn btn-primary w-100" id="saveBookingBtn">
-        Save Booking
-      </button>
+        Save Booking</button>
+
     </div>
     <div class="col-md-3">
       <!-- ✅ type="button" prevents it from submitting the form -->
@@ -163,12 +163,5 @@
 
 <!-- ADVANCED BOOKING SCRIPT -->
 <script src="{% static 'js/advanced_booking.js' %}"></script>
-<script>
-  function prepareFormSubmit() {
-  // cart should be your JS cart array e.g. [{id, name, qty, price}, ...]
-  document.getElementById('cart_data_input').value = JSON.stringify(cart);
-  document.getElementById('discount_input').value = document.getElementById('discount').value || 0;
-}
-</script>
 
 {% endblock %}
