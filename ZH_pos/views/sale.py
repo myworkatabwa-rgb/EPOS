@@ -176,7 +176,7 @@ def packing_slip(request):
                         continue
 
                     qty = max(1, int(float(item.get("qty", 1))))  # handle string qty
-                    price = float(item.get("price", 0) or getattr(product, 'price', 0) or 0)
+                    price = Decimal(str(item.get("price", 0) or getattr(product, 'price', 0) or 0))
 
                     print(f"✅ Adding: {product.name} x{qty} @ {price}")
 
