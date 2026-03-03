@@ -1,9 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  /* ===============================
-     GLOBAL CART
-  =============================== */
   let cart = [];
+  let allowSubmit = false;   // ⭐ IMPORTANT FLAG
 
   const cartItemsEl  = document.getElementById("cart-items");
   const totalItemsEl = document.getElementById("total-items");
@@ -19,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let receiptModal = null;
 
   /* ===============================
-     ADD PRODUCT TO CART
+     ADD TO CART
   =============================== */
   document.querySelectorAll(".add-to-cart").forEach(btn => {
     btn.addEventListener("click", function () {
@@ -32,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const existing = cart.find(item => item.id === id);
 
       if (existing) {
-        existing.qty += 1;
+        existing.qty++;
       } else {
         cart.push({ id, name, sku, price, qty: 1 });
       }
@@ -41,9 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  /* ===============================
-     RENDER CART
-  =============================== */
   function renderCart() {
 
     if (!cartItemsEl) return;
@@ -60,24 +55,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
       html += `
         <div class="d-flex justify-content-between align-items-center border-bottom py-1">
-
           <div>
             <strong>${item.name}</strong><br>
             <small>SKU: ${item.sku || "-"}</small>
           </div>
-
           <div class="text-end">
-
             <div>
               <button class="btn btn-sm btn-light minus-btn" data-index="${index}">−</button>
               <span class="mx-2">${item.qty}</span>
               <button class="btn btn-sm btn-light plus-btn" data-index="${index}">+</button>
             </div>
-
             <small>PKR ${(item.price * item.qty).toFixed(2)}</small>
-
           </div>
-
         </div>
       `;
     });
@@ -87,11 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateTotals();
   }
 
-  /* ===============================
-     QTY BUTTONS
-  =============================== */
   function attachQtyEvents() {
-
     document.querySelectorAll(".plus-btn").forEach(btn => {
       btn.onclick = function () {
         cart[parseInt(this.dataset.index)].qty++;
@@ -109,11 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* ===============================
-     TOTAL CALCULATION
-  =============================== */
   function updateTotals() {
-
     let totalQty = 0;
     let subTotal = 0;
 
@@ -135,9 +116,6 @@ document.addEventListener("DOMContentLoaded", function () {
     discountEl.addEventListener("input", updateTotals);
   }
 
-  /* ===============================
-     CLEAR CART
-  =============================== */
   if (clearCartBtn) {
     clearCartBtn.addEventListener("click", function () {
       if (!confirm("Discard booking?")) return;
@@ -147,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     SHOW RECEIPT MODAL
+     SHOW RECEIPT
   =============================== */
   function showReceiptModal(discount) {
 
@@ -190,36 +168,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     receiptBody.innerHTML = `
       <div style="font-family:monospace;font-size:12px">
-
         Bill No : ${billNo}<br>
         Date : ${dateStr}<br>
         Time : ${timeStr}<br>
-
         <hr>
-
         <table style="width:100%">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>SKU</th>
-              <th>Rate</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
           <tbody>${rows}</tbody>
         </table>
-
         <hr>
-
-        Items : ${cart.length}<br>
-        Qty   : ${totalQty}<br><br>
-
         Sub Total : PKR ${totalAmount.toFixed(2)}<br>
         Discount  : PKR ${discount.toFixed(2)}<br>
-
         <strong>Net Total : PKR ${netAmount.toFixed(2)}</strong>
-
       </div>
     `;
 
@@ -232,31 +191,39 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     FORM SUBMIT → OPEN RECEIPT
+     FORM SUBMIT
   =============================== */
   if (saveForm) {
     saveForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const discount = parseFloat(discountEl?.value || 0);
-      showReceiptModal(discount);
+
+      if (!allowSubmit) {
+        e.preventDefault();   // stop first submit
+        const discount = parseFloat(discountEl?.value || 0);
+        showReceiptModal(discount);
+      }
+
     });
   }
 
   /* ===============================
-     OK BUTTON → FINAL SUBMIT
+     OK BUTTON
   =============================== */
   if (okBtn) {
     okBtn.addEventListener("click", function () {
+
+      allowSubmit = true;   // ⭐ allow real submit
+
       if (receiptModal) receiptModal.hide();
 
       setTimeout(() => {
-        saveForm.requestSubmit();
+        saveForm.submit();  // real submit now
       }, 300);
+
     });
   }
 
   /* ===============================
-     PRINT RECEIPT
+     PRINT
   =============================== */
   if (printBtn) {
     printBtn.addEventListener("click", function () {
