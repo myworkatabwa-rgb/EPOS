@@ -175,60 +175,97 @@ document.addEventListener("DOMContentLoaded", function () {
      SHOW RECEIPT MODAL (Updated for real data)
   =============================== */
   function showReceiptModal(discount) {
-    const receiptBody = document.getElementById("receipt-body");
-    if (!receiptBody) return;
+  const receiptBody = document.getElementById("receipt-body");
+  if (!receiptBody) return;
 
-    const now = new Date();
-    const pad = n => String(n).padStart(2, "0");
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const username = document.getElementById('pos-root')?.dataset?.username || 'Staff';
 
-    const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const billNo = currentPackingNo || Math.floor(10000 + Math.random() * 90000);
+  let totalQty = 0;
+  let totalItems = cart.length;
+  let subTotal = 0;
 
-    let totalQty = 0;
-    let totalAmount = 0;
-    let rows = "";
+  // Header info
+  let html = `
+    <div style="font-size:11px; margin-bottom:8px; line-height:1.8;">
+      <div style="display:flex; justify-content:space-between;">
+        <span>Packing No:</span><span><strong>${currentPackingNo || '—'}</strong></span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>Date:</span><span>${dateStr} ${timeStr}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>Packed By:</span><span>${username}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>Branch:</span><span>Main Branch</span>
+      </div>
+    </div>
 
-    cart.forEach(item => {
-      const itemTotal = item.qty * item.price;
-      totalQty += item.qty;
-      totalAmount += itemTotal;
+    <div style="border-top:1px dashed #aaa; border-bottom:1px dashed #aaa; margin:6px 0; padding:4px 0;">
+      <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-weight:bold; font-size:11px;">
+        <span>Item</span>
+        <span style="text-align:center;">Qty</span>
+        <span style="text-align:right;">Price</span>
+        <span style="text-align:right;">Total</span>
+      </div>
+    </div>
+  `;
 
-      rows += `
-        <tr>
-          <td>${item.name}</td>
-          <td style="text-align:center;">${item.qty}</td>
-          <td style="text-align:center;">${item.sku || "-"}</td>
-          <td style="text-align:right;">${item.price.toFixed(2)}</td>
-          <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
-        </tr>
-      `;
-    });
+  // Item rows
+  cart.forEach(item => {
+    const itemTotal = item.qty * item.price;
+    totalQty += item.qty;
+    subTotal += itemTotal;
 
-    const netAmount = Math.max(totalAmount - discount, 0);
-
-    receiptBody.innerHTML = `
-      <div style="font-family:monospace;font-size:12px">
-        Packing No: ${billNo}<br>
-        Date: ${dateStr}<br>
-        Time: ${timeStr}<br>
-        <hr>
-        <table style="width:100%">
-          <tbody>${rows}</tbody>
-        </table>
-        <hr>
-        Sub Total: PKR ${totalAmount.toFixed(2)}<br>
-        Discount: PKR ${discount.toFixed(2)}<br>
-        <strong>Net Total: PKR ${netAmount.toFixed(2)}</strong>
+    html += `
+      <div style="margin-bottom:6px;">
+        <div style="font-weight:600; font-size:12px;">${item.name}</div>
+        <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-size:11px; color:#333;">
+          <span style="color:#888;">SKU: ${item.sku || '—'}</span>
+          <span style="text-align:center;">${item.qty}</span>
+          <span style="text-align:right;">${item.price.toFixed(2)}</span>
+          <span style="text-align:right;">${itemTotal.toFixed(2)}</span>
+        </div>
       </div>
     `;
+  });
 
-    receiptModal = new bootstrap.Modal(
-      document.getElementById("receiptModal"),
-      { backdrop: "static", keyboard: false }
-    );
-    receiptModal.show();
-  }
+  const netAmount = Math.max(subTotal - discount, 0);
+
+  // Totals
+  html += `
+    <div style="border-top:1px dashed #aaa; margin-top:8px; padding-top:8px; font-size:11px; line-height:2;">
+      <div style="display:flex; justify-content:space-between;">
+        <span>Total Items/Qty:</span><span>${totalItems} / ${totalQty}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>Sub Total:</span><span>Rs${subTotal.toFixed(2)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:#c00;">
+        <span>Discount:</span><span>- Rs${discount.toFixed(2)}</span>
+      </div>
+      <div style="border-top:1px dashed #aaa; margin-top:4px; padding-top:4px; display:flex; justify-content:space-between; font-size:14px; font-weight:bold;">
+        <span>Net Amount:</span><span>Rs${netAmount.toFixed(2)}</span>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:12px; font-size:10px; color:#888; border-top:1px dashed #ccc; padding-top:8px;">
+      Thank you for your business!
+    </div>
+  `;
+
+  receiptBody.innerHTML = html;
+
+  receiptModal = new bootstrap.Modal(
+    document.getElementById("receiptModal"),
+    { backdrop: "static", keyboard: false }
+  );
+  receiptModal.show();
+}
 
   /* ===============================
      OK BUTTON - Clear cart & close

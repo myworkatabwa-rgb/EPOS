@@ -129,31 +129,41 @@
 </form>
 
 <!-- ================= RECEIPT MODAL (REUSED) ================= -->
+<!-- RECEIPT MODAL -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="min-width: 400px; max-width: 500px;">
-    <div class="modal-content p-3">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+    <div class="modal-content" style="border-radius: 4px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
 
-      <div class="d-flex justify-content-end mb-2">
-        <div class="fw-bold text-success">Packing Slip Saved ✅</div>
+      <!-- TOP BAR -->
+      <div style="background:#198754; color:white; padding:8px 14px; border-radius:4px 4px 0 0; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; font-weight:600;">✅ Packing Slip Saved</span>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
       </div>
 
-      <div class="text-center mb-2">
-        <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
-        <p class="small mb-0">Contact : 0313-6330101</p>
-        <hr>
-        <strong>Packing Slip</strong>
+      <!-- RECEIPT PAPER -->
+      <div style="background:#fffef9; padding: 16px 20px; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #111; max-height: 70vh; overflow-y: auto;">
+
+        <!-- LOGO & HEADER -->
+        <div style="text-align:center; margin-bottom:10px;">
+          <img src="{% static 'media/logo-1.jpeg' %}" height="55" alt="Logo" style="margin-bottom:6px;">
+          <div style="font-size:11px; color:#555;">Contact: 0313-6330101</div>
+          <div style="border-top: 1px dashed #aaa; border-bottom: 1px dashed #aaa; margin: 8px 0; padding: 4px 0; font-weight:bold; font-size:13px; letter-spacing:1px;">
+            PACKING SLIP
+          </div>
+        </div>
+
+        <!-- RECEIPT BODY (filled by JS) -->
+        <div id="receipt-body">Loading...</div>
+
       </div>
 
-      <div id="receipt-body" class="small text-start">
-        Loading...
-      </div>
-
-      <div class="d-flex justify-content-between mt-2">
-        <button class="btn btn-secondary w-50" id="receiptOkBtn">
-          OK
+      <!-- BUTTONS -->
+      <div style="display:flex; gap:8px; padding:12px 16px; background:#f8f8f8; border-top:1px solid #eee; border-radius:0 0 4px 4px;">
+        <button class="btn btn-outline-secondary btn-sm flex-fill" id="receiptOkBtn" style="font-size:13px;">
+          Close
         </button>
-        <button class="btn btn-success w-50" id="receiptPrintBtn">
-          🖨 Print
+        <button class="btn btn-success btn-sm flex-fill" id="receiptPrintBtn" style="font-size:13px;">
+          🖨 Print Slip
         </button>
       </div>
 
