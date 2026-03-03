@@ -162,33 +162,39 @@ def packing_slip(request):
                 total_qty = 0
                 sub_total = 0.0
 
-                for item in cart_items[:10]:  # Limit to prevent crash
-                    try:
-                        pid = str(item.get("id"))
-                        product = Product.objects.filter(id=pid).first()
+                # In your packing_slip view, replace the item loop:
+            for item in cart_items[:50]:  # increase limit too
+                try:
+                    pid = item.get("id")
+                    print(f"Looking up product id: {pid}, type: {type(pid)}")
+                    
+                    product = Product.objects.filter(id=pid).first()
 
-                        if not product:
-                            print(f"Product {pid} not found")
-                            continue
-
-                        qty = max(1, int(item.get("qty", 1)))
-                        price = float(item.get("price", getattr(product, 'price', 0) or 0))
-
-                        OrderItem.objects.create(
-                            order=order,
-                            product=product,
-                            product_name=product.name,
-                            quantity=qty,
-                            price=price,
-                        )
-
-                        total_items += 1
-                        total_qty += qty
-                        sub_total += qty * price
-
-                    except Exception as item_error:
-                        print(f"ITEM ERROR {item}: {item_error}")
+                    if not product:
+                        print(f"❌ Product {pid} not found — skipping")
                         continue
+
+                    qty = max(1, int(float(item.get("qty", 1))))  # handle string qty
+                    price = float(item.get("price", 0) or getattr(product, 'price', 0) or 0)
+
+                    print(f"✅ Adding: {product.name} x{qty} @ {price}")
+
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        product_name=product.name,
+                        quantity=qty,
+                        price=price,
+                    )
+
+                    total_items += 1
+                    total_qty += qty
+                    sub_total += qty * price
+
+                except Exception as item_error:
+                    print(f"ITEM ERROR {item}: {item_error}")
+                    import traceback; traceback.print_exc()
+                    continue
 
                 # Update order totals
                 net_amount = max(sub_total - discount, 0)
