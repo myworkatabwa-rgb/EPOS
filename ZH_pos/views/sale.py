@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import permission_required
 from ZH_pos.models import Product, Packing, Category
 from django.contrib import messages
 from datetime import date
+import uuid
 import json
 from django.db import transaction
 
@@ -144,11 +145,11 @@ def packing_slip(request):
             with transaction.atomic():
                 print("TRANSACTION START")
                 
-                # Generate order ID
+                # Generate order ID (uuid now imported!)
                 order_id = f"BK-{uuid.uuid4().hex[:8].upper()}"
                 print(f"Order ID: {order_id}")
 
-                # Create ORDER (minimal safe fields)
+                # Create ORDER (minimal safe fields - NO created_by)
                 order = Order.objects.create(
                     order_id=order_id,
                     customer=customer,
@@ -212,10 +213,25 @@ def packing_slip(request):
                 )
                 print(f"Packing created: {packing.booking_no}")
 
+                print("=== SAVE SUCCESS ===")
                 return JsonResponse({
                     'success': True, 
                     'packing_no': packing.booking_no
                 })
+
+        except Exception as e:
+            print(f"CRASH ERROR: {type(e).__name__}: {str(e)}")
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False, 
+                'error': f'Server error: {str(e)}'
+            }, status=500)
+
+    # GET request - show form
+    products = Product.objects.all().order_by("name")[:100]
+    return render(request, "sales/packing_slip.html", {
+        "products": products,
+    })
 
         except Exception as e:
             print(f"CRASH ERROR: {type(e).__name__}: {str(e)}")
