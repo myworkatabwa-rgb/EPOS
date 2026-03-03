@@ -24,6 +24,7 @@ from .views.returns import (
     sale_return_history,
     fetch_sale_for_return,
     confirm_sale_return,
+    
 )
 
 # ITEMS (IMPORT ALL ITEM VIEWS HERE)
@@ -138,6 +139,8 @@ urlpatterns = [
     path("returns/fetch-sale/", fetch_sale_for_return, name="fetch_sale_for_return"),
     path("returns/confirm/", confirm_sale_return, name="confirm_sale_return"),
     path("returns/history/", sale_return_history),
+    # urls.py — add this
+    path("returns/delete/<int:return_id>/", views.delete_return, name="delete_return"),
 
     #categories
     path("categories/", list_category, name="list_category"),

@@ -102,3 +102,11 @@ def sale_return_history(request):
     return render(request, "returns/sale_return_history.html", {
         "returns": returns
     })
+# views.py — add this
+@login_required
+def delete_return(request, return_id):
+    ret = get_object_or_404(Return, id=return_id)
+    if request.method == "POST":
+        ret.delete()
+        messages.success(request, "Return deleted.")
+    return redirect("sale_return_history")
