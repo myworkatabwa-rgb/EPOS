@@ -169,29 +169,27 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ===============================
      FORM SUBMIT
   =============================== */
-  if (saveForm) {
+  const saveBtn = document.getElementById("saveBookingBtn");
 
-    saveForm.addEventListener("submit", function (e) {
+if (saveBtn) {
 
-      e.preventDefault();
+  saveBtn.addEventListener("click", function () {
 
-      if (cart.length === 0) {
+    if (cart.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
 
-        alert("Cart is empty");
+    const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
 
-        return;
-      }
+    document.getElementById("cart_data_input").value = JSON.stringify(cart);
+    document.getElementById("discount_input").value  = discount;
 
-      const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
+    showReceiptModal(discount);
 
-      document.getElementById("cart_data_input").value = JSON.stringify(cart);
-      document.getElementById("discount_input").value  = discount;
+  });
 
-      showReceiptModal(discount);
-
-    });
-
-  }
+}
 
   /* ===============================
      RECEIPT MODAL
