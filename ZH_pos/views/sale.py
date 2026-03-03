@@ -270,7 +270,7 @@ def booking_detail(request, booking_no):
         "branch": getattr(packing, 'branch', 'Main Branch'),
         "sub_total": sub_total,          # ✅ Real sub total
         "discount": discount,
-        "net_amount": item.amount,  # ✅ Correct net
+        "net_amount": item.price,  # ✅ Correct net
         "items": items,
     }
 
