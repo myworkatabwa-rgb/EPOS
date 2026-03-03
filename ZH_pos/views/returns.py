@@ -102,6 +102,31 @@ def sale_return_history(request):
     return render(request, "returns/sale_return_history.html", {
         "returns": returns
     })
+@login_required
+def return_detail(request, return_id):
+    ret = get_object_or_404(Return, id=return_id)
+    
+    # Get the original order items for this return
+    items = []
+    for item in ret.order.items.all():
+        items.append({
+            "name": item.product_name,
+            "barcode": item.product.sku if item.product else "—",
+            "qty": item.quantity,
+            "price": float(item.price),
+            "total": float(item.total),
+        })
+
+    return JsonResponse({
+        "success": True,
+        "id": ret.id,
+        "order_id": ret.order.order_id,
+        "customer": ret.order.customer.name if ret.order.customer else "Walk-in",
+        "date": ret.created_at.strftime("%Y-%m-%d %H:%M"),
+        "amount": float(ret.amount),
+        "reason": ret.reason or "—",
+        "items": items,
+    })
 # views.py — add this
 @login_required
 def delete_return(request, return_id):

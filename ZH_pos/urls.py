@@ -141,6 +141,7 @@ urlpatterns = [
     path("returns/history/", sale_return_history),
     # urls.py — add this
     path("returns/delete/<int:return_id>/", views.delete_return, name="delete_return"),
+    path("returns/detail/<int:return_id>/", views.return_detail, name="return_detail"),
 
     #categories
     path("categories/", list_category, name="list_category"),

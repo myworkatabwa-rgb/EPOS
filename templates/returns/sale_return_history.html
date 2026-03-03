@@ -40,7 +40,7 @@
             <td>{{ ret.reason|default:"—" }}</td>
             <td>
               <button class="btn btn-sm btn-primary"
-                      onclick="loadReturnDetail({{ ret.id }}, '{{ ret.order.order_id }}', '{{ ret.order.customer.name|default:'Walk-in' }}', '{{ ret.created_at|date:'Y-m-d H:i' }}', '{{ ret.amount|floatformat:2 }}', '{{ ret.reason|default:'' }}')">
+                      onclick="loadReturnDetail({{ ret.id }})">
                 <i class="bi bi-file-text"></i> Detail
               </button>
             </td>
@@ -84,8 +84,6 @@
 
       <!-- RECEIPT PAPER -->
       <div style="background:#fffef9; padding:16px 20px; font-family:'Courier New', Courier, monospace; font-size:12px; color:#111; max-height:70vh; overflow-y:auto;">
-
-        <!-- LOGO -->
         <div style="text-align:center; margin-bottom:10px;">
           <img src="{% static 'media/logo-1.jpeg' %}" height="55" alt="Logo" style="margin-bottom:6px;">
           <div style="font-size:11px; color:#555;">Contact: 0313-6330101</div>
@@ -93,10 +91,7 @@
             RETURN RECEIPT
           </div>
         </div>
-
-        <!-- RECEIPT BODY -->
         <div id="return-detail-body">Loading...</div>
-
       </div>
 
       <!-- BUTTONS -->
@@ -119,83 +114,109 @@ $(document).ready(function () {
     order: [[0, 'desc']],
     dom: 'Brtip',
     buttons: [
-      {
-        extend: 'excel',
-        className: 'btn btn-sm btn-outline-success me-1',
-        title: 'Sale Return History',
-        exportOptions: { columns: [0, 1, 2, 3, 4] }
-      },
-      {
-        extend: 'pdf',
-        className: 'btn btn-sm btn-outline-danger me-1',
-        title: 'Sale Return History',
-        exportOptions: { columns: [0, 1, 2, 3, 4] }
-      },
-      {
-        extend: 'csv',
-        className: 'btn btn-sm btn-outline-primary',
-        title: 'Sale Return History',
-        exportOptions: { columns: [0, 1, 2, 3, 4] }
-      }
+      { extend: 'excel', className: 'btn btn-sm btn-outline-success me-1', title: 'Sale Return History', exportOptions: { columns: [0,1,2,3,4] } },
+      { extend: 'pdf',   className: 'btn btn-sm btn-outline-danger me-1',  title: 'Sale Return History', exportOptions: { columns: [0,1,2,3,4] } },
+      { extend: 'csv',   className: 'btn btn-sm btn-outline-primary',       title: 'Sale Return History', exportOptions: { columns: [0,1,2,3,4] } }
     ]
   });
-
   table.buttons().container().appendTo('#export-buttons');
-
-  $('#tableSearch').on('keyup', function () {
-    table.search(this.value).draw();
-  });
+  $('#tableSearch').on('keyup', function () { table.search(this.value).draw(); });
 });
 </script>
+
 
 <!-- DETAIL + PRINT SCRIPT -->
 <script>
 let currentReturnData = null;
 
-function loadReturnDetail(id, orderId, customer, date, amount, reason) {
-  currentReturnData = { id, orderId, customer, date, amount, reason };
-
+function loadReturnDetail(returnId) {
   const body = document.getElementById('return-detail-body');
-  body.innerHTML = `
-    <div style="line-height:2; font-size:11px; margin-bottom:8px;">
-      <div style="display:flex; justify-content:space-between;">
-        <span>Return ID:</span><span><strong>#${id}</strong></span>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Order ID:</span><span>${orderId}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Customer:</span><span>${customer}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Date:</span><span>${date}</span>
-      </div>
-    </div>
-
-    <div style="border-top:1px dashed #aaa; border-bottom:1px dashed #aaa; margin:8px 0; padding:6px 0; font-size:11px;">
-      <div style="display:flex; justify-content:space-between;">
-        <span>Reason:</span><span>${reason || '—'}</span>
-      </div>
-    </div>
-
-    <div style="margin-top:10px; padding-top:6px; font-size:13px; font-weight:bold; display:flex; justify-content:space-between;">
-      <span>Return Amount:</span>
-      <span style="color:#c00;">PKR ${parseFloat(amount).toFixed(2)}</span>
-    </div>
-
-    <div style="text-align:center; margin-top:14px; font-size:10px; color:#888; border-top:1px dashed #ccc; padding-top:8px;">
-      This is a return receipt — keep for your records.
-    </div>
-  `;
+  body.innerHTML = 'Loading...';
 
   new bootstrap.Modal(document.getElementById('returnDetailModal')).show();
+
+  fetch(`/returns/detail/${returnId}/`)
+    .then(res => res.json())
+    .then(data => {
+      currentReturnData = data;
+
+      // Build items rows
+      let itemRows = '';
+      if (data.items && data.items.length > 0) {
+        data.items.forEach(item => {
+          itemRows += `
+            <div style="margin-bottom:6px;">
+              <div style="font-weight:600; font-size:12px;">${item.name}</div>
+              <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-size:11px; color:#333;">
+                <span style="color:#888;">SKU: ${item.barcode}</span>
+                <span style="text-align:center;">${item.qty}</span>
+                <span style="text-align:right;">PKR ${item.price.toFixed(2)}</span>
+                <span style="text-align:right;">PKR ${item.total.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        itemRows = '<div style="color:#888; font-size:11px;">No items found.</div>';
+      }
+
+      body.innerHTML = `
+        <!-- Order Info -->
+        <div style="line-height:2; font-size:11px; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span>Return ID:</span><span><strong>#${data.id}</strong></span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Order ID:</span><span>${data.order_id}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Customer:</span><span>${data.customer}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Date:</span><span>${data.date}</span>
+          </div>
+        </div>
+
+        <!-- Items Header -->
+        <div style="border-top:1px dashed #aaa; padding-top:6px; margin-bottom:4px;">
+          <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-weight:bold; font-size:11px; border-bottom:1px dashed #ccc; padding-bottom:4px; margin-bottom:6px;">
+            <span>Item</span>
+            <span style="text-align:center;">Qty</span>
+            <span style="text-align:right;">Price</span>
+            <span style="text-align:right;">Total</span>
+          </div>
+          ${itemRows}
+        </div>
+
+        <!-- Reason -->
+        <div style="border-top:1px dashed #aaa; padding:6px 0; font-size:11px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span>Reason:</span><span>${data.reason}</span>
+          </div>
+        </div>
+
+        <!-- Return Amount -->
+        <div style="margin-top:8px; padding-top:6px; font-size:13px; font-weight:bold; display:flex; justify-content:space-between; border-top:1px dashed #aaa;">
+          <span>Return Amount:</span>
+          <span style="color:#c00;">PKR ${data.amount.toFixed(2)}</span>
+        </div>
+
+        <div style="text-align:center; margin-top:14px; font-size:10px; color:#888; border-top:1px dashed #ccc; padding-top:8px;">
+          This is a return receipt — keep for your records.
+        </div>
+      `;
+    })
+    .catch(err => {
+      document.getElementById('return-detail-body').innerHTML =
+        '<p class="text-danger">Failed to load return details.</p>';
+      console.error(err);
+    });
 }
 
 function printReturnDetail() {
   if (!currentReturnData) return;
-
   const content = document.getElementById('return-detail-body').innerHTML;
-  const win = window.open('', '_blank', 'width=400,height=500');
+  const win = window.open('', '_blank', 'width=400,height=600');
   win.document.write(`
     <html>
       <head>
@@ -209,7 +230,7 @@ function printReturnDetail() {
         <div style="text-align:center; margin-bottom:12px;">
           <h3 style="margin:0;">RETURN RECEIPT</h3>
           <p style="margin:4px 0; font-size:11px;">Contact: 0313-6330101</p>
-          <hr style="border-top: 1px dashed #aaa;">
+          <hr style="border-top:1px dashed #aaa;">
         </div>
         ${content}
         <br>
