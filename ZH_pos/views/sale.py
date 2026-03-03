@@ -179,7 +179,7 @@ def packing_slip(request):
                 packing = Packing.objects.create(
                     order       = order,
                     customer    = customer,
-                    packed_by   = request.user,
+                    packed_by = request.user if request.user.is_authenticated else None,
                     booking_no  = f"PK-{order_id}",
                     total_items = total_items,
                     total_qty   = total_qty,
