@@ -245,22 +245,26 @@ def delete_booking(request, booking_no):
 
 
 @login_required(login_url="/login/")  # ✅ Added login check
+@login_required(login_url="/login/")
 def booking_detail(request, booking_no):
     packing = get_object_or_404(Packing, booking_no=booking_no)
 
     items = []
-    sub_total = 0  # ✅ Calculate real sub_total
+    sub_total = 0.0  # Use Decimal for precision
 
     for item in packing.items.all():
+        amount = float(item.amount) if item.amount else 0.0
         items.append({
             "name": item.product.name,
             "qty": item.qty,
             "price": float(item.price),
-            "amount": float(item.amount),
+            "amount": amount,  # Use stored amount, not recalculated
         })
-        sub_total += float(item.amount)  # ✅ Sum from items
+        sub_total += amount
 
-    discount = float(packing.discount or 0)
+    # Use STORED database values instead of recalculating
+    stored_discount = float(packing.discount or 0)
+    stored_net_amount = float(packing.net_amount or 0)
 
     data = {
         "booking_no": packing.booking_no,
@@ -268,13 +272,14 @@ def booking_detail(request, booking_no):
         "packed_by": packing.packed_by.username if packing.packed_by else "N/A",
         "customer": packing.customer.name if packing.customer else "Walk-in",
         "branch": getattr(packing, 'branch', 'Main Branch'),
-        "sub_total": sub_total,          # ✅ Real sub total
-        "discount": discount,
-        "net_amount": item.price,  # ✅ Correct net
+        "sub_total": round(sub_total, 2),      # Round for display
+        "discount": round(stored_discount, 2),
+        "net_amount": round(stored_net_amount, 2),  # Use stored value
         "items": items,
     }
 
-    return JsonResponse(data)  # ✅ Removed dead code below
+    print(f"DEBUG booking_detail: sub_total={sub_total}, discount={stored_discount}, net={stored_net_amount}")  # Debug
+    return JsonResponse(data)
 
 
 @login_required(login_url="/login/")
