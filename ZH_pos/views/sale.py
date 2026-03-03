@@ -6,7 +6,7 @@ from ZH_pos.models import Product, Packing, Category
 from django.contrib import messages
 from datetime import date
 import json
-
+from django.db import transaction
 
 
 from ZH_pos.models import Order
