@@ -1,15 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
 
+<div class="card shadow-sm">
+  <div class="card-body">
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <p>
-        Hi here you can view the sales history of all time yet 
-    </p>
-</body>
-</html>
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="text-success mb-0">Sale Return History</h5>
+      <div id="export-buttons"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="mb-3 text-end">
+      <input type="text" id="tableSearch" class="form-control w-25 d-inline" placeholder="Search...">
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-responsive">
+      <table id="returnTable" class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Return Amount</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ret in returns %}
+          <tr>
+            <td>{{ ret.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ ret.order.order_id }}</td>
+            <td>{{ ret.order.customer.name|default:"Walk-in" }}</td>
+            <td class="text-danger fw-bold">PKR {{ ret.amount|floatformat:2 }}</td>
+            <td>{{ ret.reason|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">No return records found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- DATATABLES -->
+<script>
+$(document).ready(function () {
+  const table = $('#returnTable').DataTable({
+    pageLength: 25,
+    ordering: true,
+    order: [[0, 'desc']],
+    dom: 'Brtip',
+    buttons: [
+      {
+        extend: 'excel',
+        className: 'btn btn-sm btn-outline-success me-1',
+        title: 'Sale Return History',
+        exportOptions: { columns: [0, 1, 2, 3, 4] }
+      },
+      {
+        extend: 'pdf',
+        className: 'btn btn-sm btn-outline-danger me-1',
+        title: 'Sale Return History',
+        exportOptions: { columns: [0, 1, 2, 3, 4] }
+      },
+      {
+        extend: 'csv',
+        className: 'btn btn-sm btn-outline-primary',
+        title: 'Sale Return History',
+        exportOptions: { columns: [0, 1, 2, 3, 4] }
+      }
+    ]
+  });
+
+  table.buttons().container().appendTo('#export-buttons');
+
+  $('#tableSearch').on('keyup', function () {
+    table.search(this.value).draw();
+  });
+});
+</script>
+
+{% endblock %}
