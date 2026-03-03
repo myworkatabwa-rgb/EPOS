@@ -163,12 +163,6 @@
 
 <!-- ADVANCED BOOKING SCRIPT -->
 <script src="{% static 'js/advanced_booking.js' %}"></script>
-<script>
-  function prepareFormSubmit() {
-  // cart should be your JS cart array e.g. [{id, name, qty, price}, ...]
-  document.getElementById('cart_data_input').value = JSON.stringify(cart);
-  document.getElementById('discount_input').value = document.getElementById('discount').value || 0;
-}
-</script>
+
 
 {% endblock %}
