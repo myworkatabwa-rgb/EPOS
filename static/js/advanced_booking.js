@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  let cart = [];
+  window.cart = [];
 
   const cartItemsEl  = document.getElementById("cart-items");
   const totalItemsEl = document.getElementById("total-items");
@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const clearCartBtn = document.getElementById("clearCartBtn");
   const saveForm     = document.getElementById("saveBookingForm");
 
-  let receiptModal = null;
+  window receiptModal = null;
 
   /* ===============================
      ADD TO CART
@@ -98,8 +98,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function updateTotals() {
 
-    let totalQty = 0;
-    let subTotal = 0;
+    window totalQty = 0;
+    window subTotal = 0;
 
     cart.forEach(item => {
       totalQty += item.qty;
@@ -168,9 +168,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     const billNo  = Math.floor(10000 + Math.random() * 90000);
 
-    let totalQty    = 0;
-    let totalAmount = 0;
-    let rows        = "";
+    window totalQty    = 0;
+    window totalAmount = 0;
+    window rows        = "";
 
     cart.forEach(item => {
 

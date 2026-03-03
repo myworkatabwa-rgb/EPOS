@@ -106,8 +106,6 @@ def packing_slip(request):
         customer_id  = request.POST.get("customer_id") or None
 
         print("\n=== DEBUG POST ===")
-        print("POST DATA:", request.POST)
-        print("cart_data raw:", request.POST.get("cart_data"))
         print("cart_data:", cart_json)
         print("==================\n")
 
