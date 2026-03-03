@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 import json
 
-from ZH_pos.models import Order, OrderItem, Return
+from ZH_pos.models import Order, OrderItem, Return, Sale, SaleReturn, SaleItem, SaleReturnItem
 
 
 @login_required
@@ -13,11 +13,11 @@ def sale_returns(request):
 
 @login_required
 def fetch_sale_for_return(request):
-    """
-    Fetch existing sale using bill_no OR invoice_no
-    """
-    bill_no = request.GET.get("bill_no")
-    invoice_no = request.GET.get("invoice_no")
+    bill_no = request.GET.get("bill_no", "").strip()
+    invoice_no = request.GET.get("invoice_no", "").strip()
+
+    if not bill_no and not invoice_no:
+        return JsonResponse({"success": False, "error": "Please enter a Bill No or Invoice No"})
 
     try:
         sale = None
@@ -45,18 +45,15 @@ def fetch_sale_for_return(request):
             "items": items
         })
 
-    except sale.DoesNotExist:
-        return JsonResponse({
-            "success": False,
-            "error": "Sale not found"
-        })
+    except Sale.DoesNotExist:  # ✅ class, not instance
+        return JsonResponse({"success": False, "error": "Sale not found"})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})  # ✅ catches any other crash
 
 
 @login_required
 def confirm_sale_return(request):
-    """
-    Save Sale Return
-    """
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request"}, status=400)
 
@@ -73,7 +70,10 @@ def confirm_sale_return(request):
         )
 
         for item in return_items:
-            sale_item = SaleItem.objects.get(id=item["sale_item_id"])
+            try:
+                sale_item = SaleItem.objects.get(id=item["sale_item_id"])
+            except SaleItem.DoesNotExist:
+                continue
 
             qty = int(item["qty"])
             if qty <= 0 or qty > sale_item.quantity:
@@ -86,7 +86,6 @@ def confirm_sale_return(request):
                 price=sale_item.price
             )
 
-            # reduce original sale qty
             sale_item.quantity -= qty
             sale_item.save()
 
