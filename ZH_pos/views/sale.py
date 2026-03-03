@@ -100,6 +100,7 @@ def advance_booking(request):
 @login_required(login_url="/login/")
 def packing_slip(request):
     if request.method == "POST":
+        print("Post is received")
 
         cart_json    = request.POST.get("cart_data", "[]")
         discount_raw = request.POST.get("discount", "0")

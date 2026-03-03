@@ -169,23 +169,22 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ===============================
      FORM SUBMIT
   =============================== */
-  const saveBtn = document.getElementById("saveBookingBtn");
+  const okBtn = document.getElementById("receiptOkBtn");
 
-if (saveBtn) {
+if (okBtn) {
 
-  saveBtn.addEventListener("click", function () {
+  okBtn.addEventListener("click", function () {
 
-    if (cart.length === 0) {
-      alert("Cart is empty");
-      return;
+    if (receiptModal) {
+      receiptModal.hide();
     }
 
-    const discount = discountEl ? parseFloat(discountEl.value || 0) : 0;
+    setTimeout(function () {
 
-    document.getElementById("cart_data_input").value = JSON.stringify(cart);
-    document.getElementById("discount_input").value  = discount;
+      console.log("Submitting form now...");
+      saveForm.requestSubmit();   // ✅ Better than submit()
 
-    showReceiptModal(discount);
+    }, 300);
 
   });
 
