@@ -180,11 +180,20 @@ class PriceListItem(models.Model):
     price_inclusive = models.DecimalField(max_digits=10, decimal_places=2)
     
 class Category(models.Model):
-    name = models.CharField(max_length=150, unique=True)
-    description = models.TextField(blank=True, null=True)
-    status = models.BooleanField(default=True)
-    woo_id = models.IntegerField(null=True, blank=True, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    name                = models.CharField(max_length=150, unique=True)
+    description         = models.TextField(blank=True, null=True)
+    status              = models.BooleanField(default=True)
+    woo_id              = models.IntegerField(null=True, blank=True, unique=True)
+    created_at          = models.DateTimeField(auto_now_add=True)
+    category_code       = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    display_on_pos      = models.BooleanField(default=True)
+    get_tax_from_item   = models.BooleanField(default=False)
+    editable_sale_rate  = models.BooleanField(default=False)
+    display_on_branches = models.CharField(max_length=255, blank=True, null=True)
+    days                = models.CharField(max_length=100, blank=True, null=True)
+    start_time          = models.TimeField(null=True, blank=True)
+    end_time            = models.TimeField(null=True, blank=True)
+    image               = models.ImageField(upload_to="category_images/", null=True, blank=True)
 
     class Meta:
         ordering = ['name']
@@ -193,6 +202,13 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.category_code:
+            last = Category.objects.order_by('-id').first()
+            next_id = (last.id + 1) if last else 1
+            self.category_code = str(next_id).zfill(4)
+        super().save(*args, **kwargs)
 class SubCategory(models.Model):
     category = models.ForeignKey(
         Category,
