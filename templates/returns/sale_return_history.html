@@ -36,7 +36,7 @@
             <td>{{ ret.created_at|date:"Y-m-d H:i" }}</td>
             <td>{{ ret.order.order_id }}</td>
             <td>{{ ret.order.customer.name|default:"Walk-in" }}</td>
-            <td class="text-danger fw-bold">PKR {{ ret.amount|floatformat:2 }}</td>
+            <td >{{ ret.amount|floatformat:2 }}</td>
             <td>{{ ret.reason|default:"—" }}</td>
             <td>
               <button class="btn btn-sm btn-primary"
