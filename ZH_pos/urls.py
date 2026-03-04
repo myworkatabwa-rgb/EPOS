@@ -15,6 +15,8 @@ from .views.sale import (
 from .views.category import (
     list_category,
     add_category,
+    edit_category,
+    delete_category,
 )
 # Returns
 
@@ -146,6 +148,8 @@ urlpatterns = [
     #categories
     path("categories/", list_category, name="list_category"),
     path("categories/add/", add_category, name="add_category"),
+    path("categories/edit/<int:category_id>/", edit_category,   name="edit_category"),
+    path("categories/delete/<int:category_id>/", delete_category, name="delete_category"),
 
     # SALES
     path("sales/", sell),
