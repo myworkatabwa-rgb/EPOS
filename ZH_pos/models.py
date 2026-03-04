@@ -468,7 +468,6 @@ class PhysicalStock(models.Model):
     def __str__(self):
         return self.bill_no
 
-
 class PhysicalStockItem(models.Model):
     stock         = models.ForeignKey(PhysicalStock, on_delete=models.CASCADE, related_name="items")
     product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
