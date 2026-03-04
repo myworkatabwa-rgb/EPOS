@@ -61,13 +61,43 @@ def delete_category(request, category_id):
 
 @login_required
 def add_category(request):
+    # Generate next category code for display
+    last = Category.objects.order_by('-id').first()
+    next_code = str((last.id + 1) if last else 1).zfill(4)
 
     if request.method == "POST":
-        name = request.POST.get("name")
+        name                = request.POST.get("name", "").strip()
+        display_on_branches = request.POST.get("display_on_branches", "").strip()
+        days                = request.POST.get("days", "").strip()
+        start_time          = request.POST.get("start_time") or None
+        end_time            = request.POST.get("end_time") or None
+        display_on_pos      = request.POST.get("display_on_pos") == "on"
+        get_tax_from_item   = request.POST.get("get_tax_from_item") == "on"
+        editable_sale_rate  = request.POST.get("editable_sale_rate") == "on"
+        image               = request.FILES.get("image")
 
-        if name:
-            Category.objects.create(name=name)
+        if not name:
+            messages.error(request, "Category name is required.")
+            return redirect("add_category")
 
+        if Category.objects.filter(name=name).exists():
+            messages.error(request, "A category with this name already exists.")
+            return redirect("add_category")
+
+        Category.objects.create(
+            name=name,
+            display_on_branches=display_on_branches,
+            days=days,
+            start_time=start_time,
+            end_time=end_time,
+            display_on_pos=display_on_pos,
+            get_tax_from_item=get_tax_from_item,
+            editable_sale_rate=editable_sale_rate,
+            image=image,
+        )
+        messages.success(request, f"Category '{name}' added successfully.")
         return redirect("list_category")
 
-    return render(request, "categories/add_category.html")
+    return render(request, "categories/add_category.html", {
+        "next_code": next_code
+    })
