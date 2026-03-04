@@ -458,3 +458,32 @@ class SalesTarget(models.Model):
         if self.branch:
             return f"{self.branch} - {self.month}/{self.year}"
         return f"No Branch - {self.month}/{self.year}"
+class PhysicalStock(models.Model):
+    bill_no    = models.CharField(max_length=50, unique=True)
+    date       = models.DateField()
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    branch     = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.bill_no
+
+
+class PhysicalStockItem(models.Model):
+    stock         = models.ForeignKey(PhysicalStock, on_delete=models.CASCADE, related_name="items")
+    product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name     = models.CharField(max_length=100, default="Default")
+    batch_no      = models.CharField(max_length=100, blank=True, null=True)
+    expiry        = models.DateField(null=True, blank=True)
+    system_qty    = models.IntegerField(default=0)
+    physical_qty  = models.IntegerField(default=0)
+    rate          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    short_excess  = models.IntegerField(default=0)
+    remarks       = models.CharField(max_length=255, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.short_excess = self.physical_qty - self.system_qty
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product} - {self.stock.bill_no}"

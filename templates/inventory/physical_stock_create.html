@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Physical Stock</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="card p-4">
+
+    <!-- TOP INFO ROW -->
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label class="form-label">User Name</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ request.user.get_full_name|default:request.user.username }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Bill No</label>
+        <input type="text" id="billNo" class="form-control bg-light"
+               value="{{ bill_no }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date</label>
+        <input type="text" id="stockDate" class="form-control bg-light"
+               value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-3 d-flex align-items-end gap-2">
+        <button class="btn btn-primary" onclick="unlockDate()">Unlock Date</button>
+        <button class="btn btn-primary" onclick="loadStockFromCategory()">Load Stock</button>
+      </div>
+    </div>
+
+    <!-- CATEGORY / SUBCATEGORY ROW -->
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label class="form-label">Category</label>
+        <select id="categorySelect" class="form-select" onchange="onCategoryChange()">
+          <option value="">Please select</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" id="loadItemBtn"
+                onclick="loadStockFromCategory()">Load Item</button>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">SubCategory</label>
+        <select id="subcategorySelect" class="form-select" onchange="loadStockFromCategory()">
+          <option value="">Please select</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" onclick="loadStockFromCategory()">Load Item</button>
+      </div>
+
+      <!-- EXCEL UPLOAD -->
+      <div class="col-md-2 d-flex align-items-end gap-1">
+        <input type="file" id="excelFile" class="form-control form-control-sm" accept=".xlsx,.xls">
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-sm" onclick="loadStocks()">Load Stocks</button>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-info btn-sm">Download Sample file</button>
+      </div>
+    </div>
+
+    <!-- BARCODE SCAN -->
+    <div class="mb-3">
+      <label class="form-label">Add by barcode scan</label>
+      <input type="text" id="barcodeInput" class="form-control"
+             placeholder="place cursor here for Barcode Scan"
+             onkeydown="if(event.key==='Enter') scanBarcode()">
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle" id="itemsTable">
+        <thead class="table-light">
+          <tr>
+            <th>BarCode</th>
+            <th>Item Name</th>
+            <th>Unit name</th>
+            <th>Batch No</th>
+            <th>Expiry</th>
+            <th>System Quantity</th>
+            <th>Physical quantity</th>
+            <th>Rate</th>
+            <th>Short/Excess</th>
+            <th>Remarks</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mb-3">
+      <button class="btn btn-primary btn-sm" onclick="addEmptyRow()">Add More</button>
+    </div>
+
+    <div>
+      <button class="btn btn-primary px-5" onclick="saveStock()">Save</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+let stockRows = [];
+
+// ── Unlock date ──────────────────────────────────────
+function unlockDate() {
+  const d = document.getElementById("stockDate");
+  d.readOnly = false;
+  d.type = "date";
+  d.classList.remove("bg-light");
+}
+
+// ── Category change → load subcategories ─────────────
+function onCategoryChange() {
+  const catId = document.getElementById("categorySelect").value;
+  const subSel = document.getElementById("subcategorySelect");
+  subSel.innerHTML = '<option value="">Please select</option>';
+  document.getElementById("loadItemBtn").textContent = "Loading...";
+
+  if (!catId) {
+    document.getElementById("loadItemBtn").textContent = "Load Item";
+    return;
+  }
+
+  fetch(`/inventory/load-subcategories/?category_id=${catId}`)
+    .then(r => r.json())
+    .then(data => {
+      data.forEach(s => {
+        subSel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+      });
+      document.getElementById("loadItemBtn").textContent = "Load Item";
+    });
+}
+
+// ── Load products into table ──────────────────────────
+function loadStockFromCategory() {
+  const catId = document.getElementById("categorySelect").value;
+  const subId = document.getElementById("subcategorySelect").value;
+
+  if (!catId) { alert("Please select a category first."); return; }
+
+  let url = `/inventory/load-products/?category_id=${catId}`;
+  if (subId) url += `&subcategory_id=${subId}`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(products => {
+      stockRows = products.map(p => ({
+        product_id:   p.id,
+        sku:          p.sku,
+        name:         p.name,
+        unit:         p.unit,
+        batch_no:     "",
+        expiry:       "",
+        system_qty:   p.stock,
+        physical_qty: 0,
+        rate:         p.rate,
+        remarks:      "",
+      }));
+      renderTable();
+    });
+}
+
+// ── Barcode scan ──────────────────────────────────────
+function scanBarcode() {
+  const barcode = document.getElementById("barcodeInput").value.trim();
+  if (!barcode) return;
+
+  fetch(`/inventory/load-products/?sku=${barcode}`)
+    .then(r => r.json())
+    .then(products => {
+      if (products.length === 0) {
+        alert("Product not found for barcode: " + barcode);
+        return;
+      }
+      const p = products[0];
+      stockRows.push({
+        product_id: p.id, sku: p.sku, name: p.name,
+        unit: p.unit, batch_no: "", expiry: "",
+        system_qty: p.stock, physical_qty: 0,
+        rate: p.rate, remarks: "",
+      });
+      renderTable();
+      document.getElementById("barcodeInput").value = "";
+    });
+}
+
+// ── Render table ──────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("itemsBody");
+  tbody.innerHTML = "";
+
+  stockRows.forEach((row, i) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <select class="form-select form-select-sm" onchange="onSkuChange(${i}, this.value)"
+                  style="min-width:140px;">
+            <option value="${row.product_id}">${row.sku}</option>
+          </select>
+        </td>
+        <td>${row.name}</td>
+        <td>${row.unit}</td>
+        <td><input type="text" class="form-control form-control-sm"
+                   value="${row.batch_no}"
+                   oninput="stockRows[${i}].batch_no=this.value"
+                   placeholder="BatchNo"></td>
+        <td><input type="date" class="form-control form-control-sm"
+                   value="${row.expiry}"
+                   oninput="stockRows[${i}].expiry=this.value"></td>
+        <td><input type="number" class="form-control form-control-sm bg-light"
+                   value="${row.system_qty}" readonly></td>
+        <td><input type="number" class="form-control form-control-sm"
+                   value="${row.physical_qty}"
+                   oninput="stockRows[${i}].physical_qty=parseInt(this.value)||0; updateShortExcess(${i})">
+        </td>
+        <td><input type="number" step="0.01" class="form-control form-control-sm"
+                   value="${row.rate}"
+                   oninput="stockRows[${i}].rate=parseFloat(this.value)||0"></td>
+        <td><input type="number" class="form-control form-control-sm bg-light"
+                   value="${row.physical_qty - row.system_qty}"
+                   id="short_${i}" readonly></td>
+        <td><input type="text" class="form-control form-control-sm"
+                   value="${row.remarks}"
+                   oninput="stockRows[${i}].remarks=this.value"
+                   placeholder="Remarks"></td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="removeRow(${i})">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function updateShortExcess(i) {
+  const el = document.getElementById(`short_${i}`);
+  if (el) el.value = stockRows[i].physical_qty - stockRows[i].system_qty;
+}
+
+function removeRow(i) {
+  stockRows.splice(i, 1);
+  renderTable();
+}
+
+function addEmptyRow() {
+  stockRows.push({
+    product_id: null, sku: "—", name: "—",
+    unit: "Default", batch_no: "", expiry: "",
+    system_qty: 0, physical_qty: 0, rate: 0, remarks: "",
+  });
+  renderTable();
+}
+
+function loadStocks() {
+  alert("Excel upload coming soon.");
+}
+
+// ── Save ──────────────────────────────────────────────
+function saveStock() {
+  if (stockRows.length === 0) {
+    alert("Please load items before saving.");
+    return;
+  }
+
+  const date = document.getElementById("stockDate").value;
+
+  fetch("{% url 'physical_stock_create' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      date:  date,
+      items: stockRows,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("Physical stock saved successfully.");
+      window.location.href = "{% url 'physical_stock_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  })
+  .catch(err => {
+    alert("Request failed.");
+    console.error(err);
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}

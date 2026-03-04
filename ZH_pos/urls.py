@@ -81,7 +81,11 @@ from .views.items import (
 # INVENTORY
 from .views.inventory import (
     inventory,
-    physical_stock,
+    physical_stock_list,
+    physical_stock_create,
+    physical_stock_delete,
+    load_products_by_category,
+    load_subcategories,
     stock_audit_form,
     item_conversion,
     demand_sheet,
@@ -227,8 +231,12 @@ urlpatterns = [
 
     
    # INVENTORY
-    path("inventory/", inventory, name="inventory"),
-    path("inventory/physical-stock/", physical_stock, name="physical_stock"),
+    path("inventory/",                                       inventory,                  name="inventory"),
+    path("inventory/physical-stock/",                        physical_stock_list,        name="physical_stock_list"),
+    path("inventory/physical-stock/create/",                 physical_stock_create,      name="physical_stock_create"),
+    path("inventory/physical-stock/delete/<int:stock_id>/",  physical_stock_delete,      name="physical_stock_delete"),
+    path("inventory/load-products/",                         load_products_by_category,  name="load_products_by_category"),
+    path("inventory/load-subcategories/",                    load_subcategories,         name="load_subcategories"),
     path("inventory/stock-audit-form/", stock_audit_form, name="stock_audit_form"),
     path("inventory/item-conversion/", item_conversion, name="item_conversion"),
     path("inventory/demand-sheet/", demand_sheet, name="demand_sheet"),

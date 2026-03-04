@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Physical Stock</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'physical_stock_create' %}" class="btn btn-primary">
+      Add new Physical Stock
+    </a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="stockTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>No</th>
+          <th>Date</th>
+          <th>Branch Code</th>
+          <th>View</th>
+          <th>Delete</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stock in stocks %}
+        <tr>
+          <td>{{ stock.id }}</td>
+          <td>{{ stock.bill_no }}</td>
+          <td>{{ stock.date|date:"d-m-Y" }}</td>
+          <td>{{ stock.branch.name|default:"—" }}</td>
+          <td>
+            <a href="#" class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+          <td>
+            <form action="{% url 'physical_stock_delete' stock.id %}" method="post"
+                  onsubmit="return confirm('Delete this record?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-success">
+              <i class="bi bi-download"></i>
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No data available in table</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#stockTable').DataTable({
+    pageLength: 10,
+    ordering: true,
+    order: [[0, 'desc']],
+  });
+});
+</script>
+
+{% endblock %}
