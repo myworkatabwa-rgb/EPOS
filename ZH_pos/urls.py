@@ -138,7 +138,7 @@ urlpatterns = [
     path("returns/", sale_returns),
     path("returns/fetch-sale/", fetch_sale_for_return, name="fetch_sale_for_return"),
     path("returns/confirm/", confirm_sale_return, name="confirm_sale_return"),
-    path("returns/history/", sale_return_history name="sale_return_history"),
+    path("returns/history/", sale_return_history, name="sale_return_history"),
     # urls.py — add this
     path("returns/delete/<int:return_id>/", views.delete_return, name="delete_return"),
     path("returns/detail/<int:return_id>/", views.return_detail, name="return_detail"),
