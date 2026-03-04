@@ -1,7 +1,7 @@
 from django.urls import path
 from ZH_pos import views
 
-# SALES
+# SALE
 from .views.sale import (
     sell,
     sale_history,
