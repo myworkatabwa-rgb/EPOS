@@ -53,7 +53,6 @@ def fetch_sale_for_return(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 
-
 @login_required
 def confirm_sale_return(request):
     if request.method != "POST":
@@ -64,29 +63,38 @@ def confirm_sale_return(request):
         sale_id = data["sale_id"]
         return_items = data["items"]
 
-        # 👇 ADD THIS TEMPORARILY
-        print("DEBUG return_items:", return_items)
-
         order = get_object_or_404(Order, id=sale_id)
+
+        # Calculate total return amount
         total_return_amount = 0
 
         for item in return_items:
-            print("DEBUG item keys:", item.keys())  # 👈 see exact key names
             try:
                 order_item = OrderItem.objects.get(id=item["sale_item_id"], order=order)
             except OrderItem.DoesNotExist:
-                print("DEBUG: OrderItem not found for", item)  # 👈
                 continue
 
             qty = int(item["qty"])
-            print(f"DEBUG qty={qty}, order_item.quantity={order_item.quantity}")  # 👈
             if qty <= 0 or qty > order_item.quantity:
-                print("DEBUG: qty check failed, skipping")  # 👈
                 continue
 
             total_return_amount += qty * float(order_item.price)
 
-        print("DEBUG total_return_amount:", total_return_amount)  # 👈
+            # Reduce original order item qty
+            order_item.quantity -= qty
+            order_item.save()
+
+        # Create one Return record for the whole transaction ✅ matches your Return model
+        Return.objects.create(
+            order=order,
+            amount=total_return_amount,
+            reason=data.get("reason", "POS Return")
+        )
+
+        return JsonResponse({"success": True})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 @login_required
