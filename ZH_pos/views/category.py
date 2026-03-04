@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from ZH_pos.models import Category
 from ZH_pos.woocommerce_webhook import sync_woo_categories
 import logging
