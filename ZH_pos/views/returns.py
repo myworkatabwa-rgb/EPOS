@@ -123,7 +123,7 @@ def return_detail(request, return_id):
         "order_id": ret.order.order_id,
         "customer": ret.order.customer.name if ret.order.customer else "Walk-in",
         "date": ret.created_at.strftime("%Y-%m-%d %H:%M"),
-        "amount": float(ret.amount),
+        "amount": float(item.price),
         "reason": ret.reason or "—",
         "items": items,
     })
