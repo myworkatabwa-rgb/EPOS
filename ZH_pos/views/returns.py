@@ -62,6 +62,7 @@ def confirm_sale_return(request):
         data = json.loads(request.body)
         sale_id = data["sale_id"]
         return_items = data["items"]
+        print("DEBUG return_items:", return_items)
 
         order = get_object_or_404(Order, id=sale_id)
 

@@ -39,7 +39,7 @@
             <td class="text-danger fw-bold">PKR {{ ret.amount|floatformat:2 }}</td>
             <td>{{ ret.reason|default:"—" }}</td>
             <td>
-              <button class="btn btn-sm btn-primary"></button>
+              <button class="btn btn-sm btn-primary"
                       onclick="loadReturnDetail({{ ret.id }})">
                 <i class="bi bi-file-text"></i> Detail
               </button>
