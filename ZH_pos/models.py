@@ -31,10 +31,30 @@ class Product(models.Model):
     category = models.ForeignKey(
         "Category", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
     )
-
+    subcategory = models.ForeignKey(
+        "SubCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
     unit = models.ForeignKey(
         "Unit", on_delete=models.SET_NULL, null=True, blank=True, related_name="product_units"
     )
+    supplier = models.ForeignKey(
+        "Supplier", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
+    brand = models.ForeignKey(
+        "Brand", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
+    color = models.ForeignKey(
+        "Color", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
+    size = models.ForeignKey(
+        "Size", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
+    tax = models.ForeignKey(
+        "Tax", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
+
+    discount_amount     = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    sales_rate_inc_tax  = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     tags = models.TextField(blank=True, null=True)
     weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -47,6 +67,16 @@ class Product(models.Model):
     swatches_attributes = models.TextField(blank=True, null=True)
     brands = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=50, default="Active")
+
+    # ── flags ──────────────────────────────────────────
+    display_on_pos           = models.BooleanField(default=True)
+    is_inactive              = models.BooleanField(default=False)
+    exclude_from_discount    = models.BooleanField(default=False)
+    is_batch                 = models.BooleanField(default=False)
+    auto_fill_demand_sheet   = models.BooleanField(default=False)
+    non_inventory_item       = models.BooleanField(default=False)
+    is_deal                  = models.BooleanField(default=False)
+    add_modifier_groups      = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

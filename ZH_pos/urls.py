@@ -34,6 +34,7 @@ from .views.items import import_items
 from .views.items import (
     list_items,
     add_item,
+    get_subcategories,
     delete_items,
     item_modifiers,
     search_products,
@@ -172,6 +173,7 @@ urlpatterns = [
     path("items/import/", import_items, name="import_items"),
     path('items/delete/', delete_items, name='delete_items'),
     path("items/add/", add_item, name="add_item"),
+    path("items/subcategories/",get_subcategories, name="get_subcategories"),
     path("items/modifiers/", item_modifiers, name="item_modifiers"),
     path("items/modifiers/search/", search_products, name="search_products"),
     path("items/modifiers/save/", save_modifiers, name="save_modifiers"),

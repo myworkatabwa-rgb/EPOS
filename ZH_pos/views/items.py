@@ -159,7 +159,93 @@ def delete_items(request):
 
 @login_required
 def add_item(request):
-    return render(request, "items/add_item.html")
+    categories  = Category.objects.filter(status=True).order_by('name')
+    units       = Unit.objects.all().order_by('Unit_name')
+    suppliers   = Supplier.objects.all().order_by('supplier_name')
+    brands      = Brand.objects.all().order_by('brand_name')
+    colors      = Color.objects.all().order_by('Color_name')
+    sizes       = Size.objects.all().order_by('Size_name')
+    taxes       = Tax.objects.all().order_by('name')
+
+    # Generate barcode
+    last = Product.objects.order_by('-id').first()
+    next_barcode = str((last.id + 1) if last else 1).zfill(4)
+
+    if request.method == "POST":
+        name                  = request.POST.get("name", "").strip()
+        sku                   = request.POST.get("sku", "").strip() or None
+        purchase_price        = request.POST.get("purchase_price") or None
+        price                 = request.POST.get("price") or None
+        discount_amount       = request.POST.get("discount_amount") or None
+        sales_rate_inc_tax    = request.POST.get("sales_rate_inc_tax") or None
+        category_id           = request.POST.get("category") or None
+        subcategory_id        = request.POST.get("subcategory") or None
+        unit_id               = request.POST.get("unit") or None
+        supplier_id           = request.POST.get("supplier") or None
+        brand_id              = request.POST.get("brand") or None
+        color_id              = request.POST.get("color") or None
+        size_id               = request.POST.get("size") or None
+        tax_id                = request.POST.get("tax") or None
+        image                 = request.FILES.get("image")
+        display_on_pos        = request.POST.get("display_on_pos") == "on"
+        is_inactive           = request.POST.get("is_inactive") == "on"
+        exclude_from_discount = request.POST.get("exclude_from_discount") == "on"
+        is_batch              = request.POST.get("is_batch") == "on"
+        auto_fill_demand_sheet = request.POST.get("auto_fill_demand_sheet") == "on"
+        non_inventory_item    = request.POST.get("non_inventory_item") == "on"
+        is_deal               = request.POST.get("is_deal") == "on"
+        add_modifier_groups   = request.POST.get("add_modifier_groups") == "on"
+
+        if not name:
+            messages.error(request, "Item name is required.")
+            return redirect("add_item")
+
+        Product.objects.create(
+            name=name,
+            sku=sku,
+            purchase_price=purchase_price,
+            price=price,
+            discount_amount=discount_amount,
+            sales_rate_inc_tax=sales_rate_inc_tax,
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            unit_id=unit_id,
+            supplier_id=supplier_id,
+            brand_id=brand_id,
+            color_id=color_id,
+            size_id=size_id,
+            tax_id=tax_id,
+            image=image,
+            display_on_pos=display_on_pos,
+            is_inactive=is_inactive,
+            exclude_from_discount=exclude_from_discount,
+            is_batch=is_batch,
+            auto_fill_demand_sheet=auto_fill_demand_sheet,
+            non_inventory_item=non_inventory_item,
+            is_deal=is_deal,
+            add_modifier_groups=add_modifier_groups,
+            source="manual",
+        )
+        messages.success(request, f"Item '{name}' added successfully.")
+        return redirect("list_items")
+
+    return render(request, "items/add_item.html", {
+        "next_barcode": next_barcode,
+        "categories":   categories,
+        "units":        units,
+        "suppliers":    suppliers,
+        "brands":       brands,
+        "colors":       colors,
+        "sizes":        sizes,
+        "taxes":        taxes,
+    })
+
+
+@login_required
+def get_subcategories(request):
+    category_id = request.GET.get("category_id")
+    subs = SubCategory.objects.filter(category_id=category_id).values("id", "name")
+    return JsonResponse(list(subs), safe=False)
 
 # NEW VIEWS START HERE
 
