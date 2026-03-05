@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Stock Audit</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'stock_audit_create' %}" class="btn btn-primary">
+      Add new Stock Audit
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="auditTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>No</th>
+          <th>Date</th>
+          <th>BranchCode</th>
+          <th>Posted</th>
+          <th>View</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for audit in audits %}
+        <tr>
+          <td>{{ audit.id }}</td>
+          <td>{{ audit.bill_no }}</td>
+          <td>{{ audit.date|date:"d-m-Y" }}</td>
+          <td>{{ audit.branch.name|default:"—" }}</td>
+          <td>
+            {% if audit.is_posted %}
+              <span class="text-success fw-bold">Yes</span>
+            {% else %}
+              <span class="text-danger">No</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'stock_audit_detail' audit.id %}"
+               class="text-primary fw-semibold text-decoration-none">View</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#auditTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <!-- PRINT BUTTONS -->
+  <div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success btn-sm" onclick="window.print()">Print</button>
+    <a href="{% url 'stock_audit_list' %}" class="btn btn-danger btn-sm">Back</a>
+  </div>
+
+  <!-- RECEIPT -->
+  <div id="printArea" class="card p-4" style="max-width:900px; margin:auto;">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+      <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+      <h3 class="mb-0">Stock Audit</h3>
+    </div>
+
+    <!-- META -->
+    <div class="text-end mb-3" style="font-size:13px;">
+      <div>Branch: {{ audit.branch.name|default:"Main Branch" }}</div>
+      <div>Bill Number: {{ audit.bill_no }}</div>
+      <div>Bill Date: {{ audit.date|date:"d-m-Y H:i:s" }}</div>
+      <div>User: {{ audit.created_by.get_full_name|default:audit.created_by.username }}</div>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <table class="table table-bordered" style="font-size:13px;">
+      <thead style="background:#1a7fe8; color:white; text-align:center;">
+        <tr>
+          <th>BAR CODE</th>
+          <th>ITEM NAME</th>
+          <th>QUANTITY</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.product.sku|default:"—" }}</td>
+          <td class="text-end">{{ item.product.name|default:"—" }}</td>
+          <td class="text-end">{{ item.qty }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="text-center text-muted">No items.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="fw-bold">
+          <td colspan="2">Total</td>
+          <td class="text-end">
+            {% with total=0 %}
+              {% for item in items %}
+                {% with total=total|add:item.qty %}{% endwith %}
+              {% endfor %}
+              {{ audit.total_qty }}
+            {% endwith %}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- REMARKS -->
+    <div class="mt-3">
+      <strong>Remarks</strong>
+      <hr>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="d-flex justify-content-between mt-3" style="font-size:11px; color:#888;">
+      <span>Powered by CIS website:www.cisepos.com</span>
+      <span>info@cisepos.com</span>
+    </div>
+
+  </div>
+
+</div>
+
+<style>
+@media print {
+  .btn, nav, aside, .sidebar { display: none !important; }
+  #printArea { box-shadow: none !important; border: none !important; }
+}
+</style>
+
+{% endblock %}

@@ -486,3 +486,24 @@ class PhysicalStockItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.stock.bill_no}"
+class StockAudit(models.Model):
+    bill_no    = models.CharField(max_length=50, unique=True)
+    date       = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    branch     = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    is_posted  = models.BooleanField(default=False)
+    stock_qty  = models.IntegerField(default=0)
+    total_qty  = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.bill_no
+
+
+class StockAuditItem(models.Model):
+    audit    = models.ForeignKey(StockAudit, on_delete=models.CASCADE, related_name="items")
+    product  = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    rate     = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    qty      = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.product} - {self.audit.bill_no}"

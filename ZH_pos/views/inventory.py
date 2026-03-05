@@ -6,10 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from ZH_pos.models import (
-    PhysicalStock, PhysicalStockItem,
-    Product, Category, SubCategory, Branch
-)
+from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem
+
 
 
 def generate_bill_no():
@@ -152,9 +150,100 @@ def load_subcategories(request):
     return JsonResponse(list(subs), safe=False)
 
 
+def generate_audit_bill_no():
+    last = StockAudit.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
+
+
 @login_required
-def stock_audit_form(request):
-    return render(request, "inventory/stock_audit_form.html")
+def stock_audit_list(request):
+    audits = StockAudit.objects.select_related("created_by", "branch").order_by("-date")
+    return render(request, "inventory/stock_audit_list.html", {"audits": audits})
+
+
+@login_required
+def stock_audit_create(request):
+    branches = Branch.objects.all()
+    bill_no  = generate_audit_bill_no()
+    today    = timezone.now().strftime("%d-%m-%Y")
+
+    if request.method == "POST":
+        try:
+            data      = json.loads(request.body)
+            items     = data.get("items", [])
+            branch_id = data.get("branch_id") or None
+
+            total_qty = sum(int(i.get("qty", 1)) for i in items)
+
+            audit = StockAudit.objects.create(
+                bill_no    = generate_audit_bill_no(),
+                created_by = request.user,
+                branch_id  = branch_id,
+                stock_qty  = len(items),
+                total_qty  = total_qty,
+            )
+
+            for item in items:
+                product_id = item.get("product_id")
+                qty        = int(item.get("qty", 1))
+                rate       = float(item.get("rate", 0))
+                if not product_id:
+                    continue
+                StockAuditItem.objects.create(
+                    audit_id   = audit.id,
+                    product_id = product_id,
+                    qty        = qty,
+                    rate       = rate,
+                )
+
+            return JsonResponse({"success": True, "audit_id": audit.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/stock_audit_create.html", {
+        "branches": branches,
+        "bill_no":  bill_no,
+        "today":    today,
+    })
+
+
+@login_required
+def stock_audit_detail(request, pk):
+    audit = get_object_or_404(StockAudit, id=pk)
+    items = audit.items.select_related("product").all()
+    return render(request, "inventory/stock_audit_detail.html", {
+        "audit": audit,
+        "items": items,
+    })
+
+
+@login_required
+def stock_audit_delete(request, pk):
+    audit = get_object_or_404(StockAudit, id=pk)
+    if request.method == "POST":
+        audit.delete()
+        messages.success(request, "Stock audit deleted.")
+    return redirect("stock_audit_list")
+
+
+@login_required
+def fetch_product_by_barcode(request):
+    sku = request.GET.get("sku", "").strip()
+    if not sku:
+        return JsonResponse({"success": False, "error": "No barcode provided"})
+    try:
+        product = Product.objects.get(sku=sku)
+        return JsonResponse({
+            "success":    True,
+            "product_id": product.id,
+            "name":       product.name,
+            "sku":        product.sku,
+            "rate":       float(product.price or 0),
+        })
+    except Product.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Product not found"})
 
 
 @login_required
