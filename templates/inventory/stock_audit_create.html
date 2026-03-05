@@ -24,27 +24,30 @@
         <label class="form-label">Date</label>
         <input type="text" class="form-control bg-light" value="{{ today }}" readonly>
       </div>
-    </div>
-
-    <!-- BARCODE + STOCK QTY + TOTAL QTY -->
-    <div class="row mb-3">
-      <div class="col-md-4">
-        <label class="form-label">Add by barcode scan</label>
-        <input type="text" id="barcodeInput" class="form-control"
-               placeholder="place cursor here for Barcode Scan"
-               onkeydown="if(event.key==='Enter'){ event.preventDefault(); scanBarcode(); }">
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Stock Quantity</label>
-        <input type="number" id="stockQtyInput" class="form-control" value="1" min="1">
-      </div>
-      <div class="col-md-2">
+      <div class="col-md-3">
         <label class="form-label">Total Quantity</label>
         <input type="text" id="totalQtyDisplay" class="form-control bg-light" value="0" readonly>
       </div>
     </div>
 
-    <!-- EXCEL UPLOAD -->
+    <!-- BARCODE ROW -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Add by barcode scan</label>
+        <input type="text" id="barcodeInput" class="form-control"
+               placeholder="place cursor here for Barcode Scan"
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); addBarcode(); }">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Stock Quantity</label>
+        <input type="number" id="stockQtyInput" class="form-control" value="1" min="1">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" onclick="addBarcode()">Load Items</button>
+      </div>
+    </div>
+
+    <!-- EXCEL ROW -->
     <div class="row mb-4">
       <div class="col-md-3">
         <label class="form-label">Choose Excel File</label>
@@ -58,11 +61,11 @@
       </div>
     </div>
 
-    <!-- LAST 10 BARCODES TABLE -->
+    <!-- ITEMS TABLE — hidden until items added -->
     <div id="itemsSection" style="display:none;">
       <h6 class="fw-semibold mb-2">Last 10 Barcode</h6>
       <div class="table-responsive mb-3">
-        <table class="table table-bordered align-middle" id="auditItemsTable">
+        <table class="table table-bordered align-middle">
           <thead class="table-light">
             <tr>
               <th>Item</th>
@@ -75,15 +78,15 @@
         </table>
       </div>
 
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 mb-3">
         <button class="btn btn-primary" onclick="viewAudit()">View</button>
         <button class="btn btn-primary" onclick="downloadItems()">Download Upload Item</button>
         <button class="btn btn-primary" onclick="saveAudit()">Save</button>
       </div>
     </div>
 
-    <!-- SAVE BUTTON (always visible) -->
-    <div class="mt-3">
+    <!-- SAVE always visible -->
+    <div>
       <button class="btn btn-primary px-5" onclick="saveAudit()">Save</button>
     </div>
 
@@ -91,7 +94,7 @@
 </div>
 
 
-<!-- VIEW MODAL (receipt style) -->
+<!-- VIEW MODAL -->
 <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -99,8 +102,7 @@
         <h5 class="modal-title">Stock Audit Preview</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="previewBody">
-      </div>
+      <div class="modal-body" id="previewBody"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">Back</button>
         <button class="btn btn-success" onclick="printPreview()">Print</button>
@@ -120,10 +122,12 @@ function updateTotalQty() {
 }
 
 function renderTable() {
-  const tbody = document.getElementById("auditItemsBody");
+  const tbody  = document.getElementById("auditItemsBody");
   const last10 = auditItems.slice(-10).reverse();
   tbody.innerHTML = "";
-  last10.forEach((item, i) => {
+
+  last10.forEach((item) => {
+    const realIndex = auditItems.lastIndexOf(item);
     tbody.innerHTML += `
       <tr>
         <td>${item.name}</td>
@@ -132,11 +136,12 @@ function renderTable() {
         <td>
           <input type="number" class="form-control form-control-sm" style="width:80px;"
                  value="${item.qty}" min="1"
-                 onchange="updateQty(${auditItems.length - 1 - i}, this.value)">
+                 onchange="updateQty(${realIndex}, this.value)">
         </td>
       </tr>
     `;
   });
+
   document.getElementById("itemsSection").style.display =
     auditItems.length > 0 ? "block" : "none";
   updateTotalQty();
@@ -147,19 +152,25 @@ function updateQty(index, val) {
   updateTotalQty();
 }
 
-function scanBarcode() {
+// Called when user types barcode and clicks "Load Items" or presses Enter
+function addBarcode() {
   const sku = document.getElementById("barcodeInput").value.trim();
   const qty = parseInt(document.getElementById("stockQtyInput").value) || 1;
-  if (!sku) return;
 
-  fetch(`/inventory/fetch-product-barcode/?sku=${sku}`)
+  if (!sku) {
+    alert("Please enter a barcode.");
+    return;
+  }
+
+  fetch(`/inventory/fetch-product-barcode/?sku=${encodeURIComponent(sku)}`)
     .then(r => r.json())
     .then(data => {
       if (!data.success) {
-        alert("Product not found: " + sku);
+        alert("Product not found for barcode: " + sku);
         return;
       }
-      // Check if already in list
+
+      // If already exists, increase qty
       const existing = auditItems.find(i => i.sku === sku);
       if (existing) {
         existing.qty += qty;
@@ -172,8 +183,9 @@ function scanBarcode() {
           qty:        qty,
         });
       }
-      document.getElementById("barcodeInput").value = "";
-      document.getElementById("stockQtyInput").value = 1;
+
+      document.getElementById("barcodeInput").value    = "";
+      document.getElementById("stockQtyInput").value   = 1;
       renderTable();
     })
     .catch(err => {
@@ -183,14 +195,11 @@ function scanBarcode() {
 }
 
 function viewAudit() {
-  if (auditItems.length === 0) {
-    alert("No items to preview.");
-    return;
-  }
+  if (auditItems.length === 0) { alert("No items to preview."); return; }
 
-  const today = document.querySelector('input[value="{{ today }}"]')?.value || "—";
-  const billNo = "{{ bill_no }}";
-  const user = "{{ request.user.get_full_name|default:request.user.username }}";
+  const billNo   = "{{ bill_no }}";
+  const today    = "{{ today }}";
+  const user     = "{{ request.user.get_full_name|default:request.user.username }}";
   const totalQty = auditItems.reduce((s, i) => s + i.qty, 0);
 
   let rows = auditItems.map(item => `
@@ -202,8 +211,9 @@ function viewAudit() {
   `).join("");
 
   document.getElementById("previewBody").innerHTML = `
-    <div style="font-family: Arial, sans-serif; padding: 20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #ccc; padding-bottom:12px; margin-bottom:12px;">
+    <div style="font-family:Arial,sans-serif; padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;
+                  border-bottom:2px solid #ccc; padding-bottom:12px; margin-bottom:12px;">
         <img src="/static/media/logo-1.jpeg" height="60" alt="Logo">
         <h2 style="margin:0;">Stock Audit</h2>
       </div>
@@ -229,11 +239,9 @@ function viewAudit() {
           </tr>
         </tfoot>
       </table>
-      <div style="margin-top:20px;">
-        <strong>Remarks</strong>
-        <hr>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:11px; color:#888;">
+      <div style="margin-top:20px;"><strong>Remarks</strong><hr></div>
+      <div style="display:flex; justify-content:space-between; margin-top:20px;
+                  font-size:11px; color:#888;">
         <span>Powered by CIS website:www.cisepos.com</span>
         <span>info@cisepos.com</span>
       </div>
@@ -248,30 +256,35 @@ function printPreview() {
   const win = window.open('', '_blank', 'width=800,height=600');
   win.document.write(`
     <html><head><title>Stock Audit</title>
-    <style>body{font-family:Arial,sans-serif;padding:20px;} @media print{button{display:none;}}</style>
-    </head><body>${content}<br><button onclick="window.print()">Print</button></body></html>
+    <style>body{font-family:Arial,sans-serif;padding:20px;}
+    @media print{button{display:none;}}</style>
+    </head><body>${content}
+    <br><button onclick="window.print()">Print</button>
+    </body></html>
   `);
   win.document.close();
 }
 
 function downloadItems() {
-  if (auditItems.length === 0) { alert("No items to download."); return; }
+  if (auditItems.length === 0) { alert("No items."); return; }
   let csv = "Item,Barcode,Rate,Qty\n";
   auditItems.forEach(i => {
     csv += `"${i.name}","${i.sku}",${i.rate},${i.qty}\n`;
   });
   const blob = new Blob([csv], { type: "text/csv" });
-  const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
-  a.href = url; a.download = "stock_audit_items.csv"; a.click();
+  a.href     = URL.createObjectURL(blob);
+  a.download = "stock_audit_items.csv";
+  a.click();
 }
 
 function downloadSample() {
   const csv = "Item,Barcode,Rate,Qty\nSample Item,SKU001,100.00,1\n";
   const blob = new Blob([csv], { type: "text/csv" });
-  const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
-  a.href = url; a.download = "stock_audit_sample.csv"; a.click();
+  a.href     = URL.createObjectURL(blob);
+  a.download = "stock_audit_sample.csv";
+  a.click();
 }
 
 function saveAudit() {
