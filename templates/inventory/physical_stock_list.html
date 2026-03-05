@@ -43,10 +43,10 @@
           <td>{{ stock.date|date:"d-m-Y" }}</td>
           <td>{{ stock.branch.name|default:"—" }}</td>
           <td>
-            <a href="#" class="btn btn-sm btn-info">
-              <i class="bi bi-eye"></i> View
-            </a>
-          </td>
+  <a href="{% url 'physical_stock_detail' stock.id %}" class="btn btn-sm btn-info">
+    <i class="bi bi-eye"></i> View
+  </a>
+</td>
           <td>
             <form action="{% url 'physical_stock_delete' stock.id %}" method="post"
                   onsubmit="return confirm('Delete this record?');">
