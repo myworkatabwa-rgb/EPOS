@@ -86,6 +86,7 @@ from .views.inventory import (
     physical_stock_delete,
     load_products_by_category,
     load_subcategories,
+    physical_stock_detail,
     stock_audit_form,
     item_conversion,
     demand_sheet,
