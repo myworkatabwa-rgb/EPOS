@@ -500,10 +500,13 @@ class StockAudit(models.Model):
 
 
 class StockAuditItem(models.Model):
-    audit    = models.ForeignKey(StockAudit, on_delete=models.CASCADE, related_name="items")
-    product  = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    rate     = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    qty      = models.IntegerField(default=1)
+    audit      = models.ForeignKey(StockAudit, on_delete=models.CASCADE, related_name="items")
+    product    = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    rate       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    system_qty = models.IntegerField(default=0)   # ← stock at time of audit
+    qty        = models.IntegerField(default=0)   # ← physically counted
+    difference = models.IntegerField(default=0)   # ← qty - system_qty
 
-    def __str__(self):
-        return f"{self.product} - {self.audit.bill_no}"
+    def save(self, *args, **kwargs):
+        self.difference = self.qty - self.system_qty
+        super().save(*args, **kwargs)

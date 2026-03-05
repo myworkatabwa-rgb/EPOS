@@ -25,7 +25,7 @@
         <input type="text" class="form-control bg-light" value="{{ today }}" readonly>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Total Quantity</label>
+        <label class="form-label">Total Audited Qty</label>
         <input type="text" id="totalQtyDisplay" class="form-control bg-light" value="0" readonly>
       </div>
     </div>
@@ -61,17 +61,50 @@
       </div>
     </div>
 
-    <!-- ITEMS TABLE — hidden until items added -->
+    <!-- SUMMARY BADGES -->
+    <div id="summarySection" style="display:none;" class="row mb-3">
+      <div class="col-md-3">
+        <div class="card text-center p-2 border-primary">
+          <div class="text-muted" style="font-size:12px;">Total Items</div>
+          <div class="fw-bold fs-5" id="summaryTotal">0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-2 border-success">
+          <div class="text-muted" style="font-size:12px;">Balanced</div>
+          <div class="fw-bold fs-5 text-success" id="summaryBalanced">0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-2 border-danger">
+          <div class="text-muted" style="font-size:12px;">Short (Missing)</div>
+          <div class="fw-bold fs-5 text-danger" id="summaryShort">0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-2 border-warning">
+          <div class="text-muted" style="font-size:12px;">Excess (Extra)</div>
+          <div class="fw-bold fs-5 text-warning" id="summaryExcess">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEMS TABLE -->
     <div id="itemsSection" style="display:none;">
-      <h6 class="fw-semibold mb-2">Last 10 Barcode</h6>
+      <h6 class="fw-semibold mb-2">Scanned Items</h6>
       <div class="table-responsive mb-3">
         <table class="table table-bordered align-middle">
           <thead class="table-light">
             <tr>
+              <th>#</th>
               <th>Item</th>
               <th>Barcode</th>
               <th>Rate</th>
-              <th>Qty</th>
+              <th>System Qty</th>
+              <th>Audited Qty</th>
+              <th>Difference</th>
+              <th>Status</th>
+              <th>Remove</th>
             </tr>
           </thead>
           <tbody id="auditItemsBody"></tbody>
@@ -80,12 +113,11 @@
 
       <div class="d-flex gap-2 mb-3">
         <button class="btn btn-primary" onclick="viewAudit()">View</button>
-        <button class="btn btn-primary" onclick="downloadItems()">Download Upload Item</button>
-        <button class="btn btn-primary" onclick="saveAudit()">Save</button>
+        <button class="btn btn-primary" onclick="downloadItems()">Download</button>
+        <button class="btn btn-success" onclick="saveAudit()">Save</button>
       </div>
     </div>
 
-    <!-- SAVE always visible -->
     <div>
       <button class="btn btn-primary px-5" onclick="saveAudit()">Save</button>
     </div>
@@ -116,27 +148,65 @@
 <script>
 let auditItems = [];
 
-function updateTotalQty() {
-  const total = auditItems.reduce((sum, i) => sum + i.qty, 0);
-  document.getElementById("totalQtyDisplay").value = total;
+function updateSummary() {
+  const total    = auditItems.length;
+  const balanced = auditItems.filter(i => i.difference === 0).length;
+  const short    = auditItems.filter(i => i.difference < 0).length;
+  const excess   = auditItems.filter(i => i.difference > 0).length;
+  const totalQty = auditItems.reduce((s, i) => s + i.audited_qty, 0);
+
+  document.getElementById("summaryTotal").textContent    = total;
+  document.getElementById("summaryBalanced").textContent = balanced;
+  document.getElementById("summaryShort").textContent    = short;
+  document.getElementById("summaryExcess").textContent   = excess;
+  document.getElementById("totalQtyDisplay").value       = totalQty;
+
+  document.getElementById("summarySection").style.display = total > 0 ? "flex" : "none";
 }
 
 function renderTable() {
-  const tbody  = document.getElementById("auditItemsBody");
-  const last10 = auditItems.slice(-10).reverse();
+  const tbody = document.getElementById("auditItemsBody");
   tbody.innerHTML = "";
 
-  last10.forEach((item) => {
-    const realIndex = auditItems.lastIndexOf(item);
+  auditItems.forEach((item, i) => {
+    const diff = item.audited_qty - item.system_qty;
+    item.difference = diff;
+
+    let statusBadge = "";
+    let diffDisplay = "";
+
+    if (diff === 0) {
+      statusBadge = '<span class="badge bg-success">Balanced</span>';
+      diffDisplay = '<span class="text-success fw-bold">0</span>';
+    } else if (diff < 0) {
+      statusBadge = '<span class="badge bg-danger">Short</span>';
+      diffDisplay = `<span class="text-danger fw-bold">${diff}</span>`;
+    } else {
+      statusBadge = '<span class="badge bg-warning text-dark">Excess</span>';
+      diffDisplay = `<span class="text-warning fw-bold">+${diff}</span>`;
+    }
+
     tbody.innerHTML += `
       <tr>
+        <td>${i + 1}</td>
         <td>${item.name}</td>
         <td>${item.sku}</td>
         <td>${item.rate.toFixed(2)}</td>
+        <td class="text-center">
+          <span class="badge bg-secondary">${item.system_qty}</span>
+        </td>
         <td>
-          <input type="number" class="form-control form-control-sm" style="width:80px;"
-                 value="${item.qty}" min="1"
-                 onchange="updateQty(${realIndex}, this.value)">
+          <input type="number" class="form-control form-control-sm text-center"
+                 style="width:80px;"
+                 value="${item.audited_qty}" min="0"
+                 onchange="updateAuditedQty(${i}, this.value)">
+        </td>
+        <td class="text-center">${diffDisplay}</td>
+        <td>${statusBadge}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="removeItem(${i})">
+            <i class="bi bi-x"></i>
+          </button>
         </td>
       </tr>
     `;
@@ -144,48 +214,52 @@ function renderTable() {
 
   document.getElementById("itemsSection").style.display =
     auditItems.length > 0 ? "block" : "none";
-  updateTotalQty();
+  updateSummary();
 }
 
-function updateQty(index, val) {
-  auditItems[index].qty = parseInt(val) || 1;
-  updateTotalQty();
+function updateAuditedQty(index, val) {
+  auditItems[index].audited_qty = parseInt(val) || 0;
+  auditItems[index].difference  = auditItems[index].audited_qty - auditItems[index].system_qty;
+  renderTable();
 }
 
-// Called when user types barcode and clicks "Load Items" or presses Enter
+function removeItem(index) {
+  auditItems.splice(index, 1);
+  renderTable();
+}
+
 function addBarcode() {
   const sku = document.getElementById("barcodeInput").value.trim();
   const qty = parseInt(document.getElementById("stockQtyInput").value) || 1;
 
-  if (!sku) {
-    alert("Please enter a barcode.");
-    return;
-  }
+  if (!sku) { alert("Please enter a barcode."); return; }
 
   fetch(`/inventory/fetch-product-barcode/?sku=${encodeURIComponent(sku)}`)
     .then(r => r.json())
     .then(data => {
       if (!data.success) {
-        alert("Product not found for barcode: " + sku);
+        alert("Product not found: " + sku);
         return;
       }
 
-      // If already exists, increase qty
       const existing = auditItems.find(i => i.sku === sku);
       if (existing) {
-        existing.qty += qty;
+        existing.audited_qty += qty;
+        existing.difference   = existing.audited_qty - existing.system_qty;
       } else {
         auditItems.push({
-          product_id: data.product_id,
-          name:       data.name,
-          sku:        data.sku,
-          rate:       data.rate,
-          qty:        qty,
+          product_id:  data.product_id,
+          name:        data.name,
+          sku:         data.sku,
+          rate:        data.rate,
+          system_qty:  data.system_qty,
+          audited_qty: qty,
+          difference:  qty - data.system_qty,
         });
       }
 
-      document.getElementById("barcodeInput").value    = "";
-      document.getElementById("stockQtyInput").value   = 1;
+      document.getElementById("barcodeInput").value  = "";
+      document.getElementById("stockQtyInput").value = 1;
       renderTable();
     })
     .catch(err => {
@@ -200,15 +274,22 @@ function viewAudit() {
   const billNo   = "{{ bill_no }}";
   const today    = "{{ today }}";
   const user     = "{{ request.user.get_full_name|default:request.user.username }}";
-  const totalQty = auditItems.reduce((s, i) => s + i.qty, 0);
+  const totalQty = auditItems.reduce((s, i) => s + i.audited_qty, 0);
 
-  let rows = auditItems.map(item => `
-    <tr>
-      <td style="padding:6px 10px;">${item.sku}</td>
-      <td style="text-align:right; padding:6px 10px;">${item.name}</td>
-      <td style="text-align:right; padding:6px 10px;">${item.qty}</td>
-    </tr>
-  `).join("");
+  let rows = auditItems.map(item => {
+    const diff  = item.difference;
+    const color = diff === 0 ? "#28a745" : diff < 0 ? "#dc3545" : "#ffc107";
+    const label = diff === 0 ? "Balanced" : diff < 0 ? `Short (${diff})` : `Excess (+${diff})`;
+    return `
+      <tr>
+        <td style="padding:6px 10px;">${item.sku}</td>
+        <td style="padding:6px 10px;">${item.name}</td>
+        <td style="text-align:center; padding:6px 10px;">${item.system_qty}</td>
+        <td style="text-align:center; padding:6px 10px;">${item.audited_qty}</td>
+        <td style="text-align:center; padding:6px 10px; color:${color}; font-weight:bold;">${label}</td>
+      </tr>
+    `;
+  }).join("");
 
   document.getElementById("previewBody").innerHTML = `
     <div style="font-family:Arial,sans-serif; padding:20px;">
@@ -218,7 +299,6 @@ function viewAudit() {
         <h2 style="margin:0;">Stock Audit</h2>
       </div>
       <div style="text-align:right; font-size:13px; margin-bottom:16px;">
-        <div>Branch: Main Branch</div>
         <div>Bill Number: ${billNo}</div>
         <div>Bill Date: ${today}</div>
         <div>User: ${user}</div>
@@ -228,14 +308,17 @@ function viewAudit() {
           <tr style="background:#1a7fe8; color:white; text-align:center;">
             <th style="padding:8px;">BAR CODE</th>
             <th style="padding:8px;">ITEM NAME</th>
-            <th style="padding:8px;">QUANTITY</th>
+            <th style="padding:8px;">SYSTEM QTY</th>
+            <th style="padding:8px;">AUDITED QTY</th>
+            <th style="padding:8px;">STATUS</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
         <tfoot>
           <tr style="font-weight:bold; border-top:2px solid #ccc;">
-            <td colspan="2" style="padding:6px 10px;">Total</td>
-            <td style="text-align:right; padding:6px 10px;">${totalQty}.00</td>
+            <td colspan="3" style="padding:6px 10px;">Total Audited</td>
+            <td style="text-align:center; padding:6px 10px;">${totalQty}</td>
+            <td></td>
           </tr>
         </tfoot>
       </table>
@@ -267,24 +350,29 @@ function printPreview() {
 
 function downloadItems() {
   if (auditItems.length === 0) { alert("No items."); return; }
-  let csv = "Item,Barcode,Rate,Qty\n";
+  let csv = "Item,Barcode,Rate,System Qty,Audited Qty,Difference,Status\n";
   auditItems.forEach(i => {
-    csv += `"${i.name}","${i.sku}",${i.rate},${i.qty}\n`;
+    const status = i.difference === 0 ? "Balanced" : i.difference < 0 ? "Short" : "Excess";
+    csv += `"${i.name}","${i.sku}",${i.rate},${i.system_qty},${i.audited_qty},${i.difference},${status}\n`;
   });
   const blob = new Blob([csv], { type: "text/csv" });
   const a    = document.createElement("a");
   a.href     = URL.createObjectURL(blob);
-  a.download = "stock_audit_items.csv";
+  a.download = "stock_audit.csv";
   a.click();
 }
 
 function downloadSample() {
-  const csv = "Item,Barcode,Rate,Qty\nSample Item,SKU001,100.00,1\n";
+  const csv = "Barcode,Qty\nSKU001,5\nSKU002,10\n";
   const blob = new Blob([csv], { type: "text/csv" });
   const a    = document.createElement("a");
   a.href     = URL.createObjectURL(blob);
   a.download = "stock_audit_sample.csv";
   a.click();
+}
+
+function loadFromExcel() {
+  alert("Excel import coming soon.");
 }
 
 function saveAudit() {

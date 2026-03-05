@@ -4,22 +4,20 @@
 
 <div class="container-fluid">
 
-  <!-- PRINT BUTTONS -->
   <div class="mb-3 d-flex gap-2">
-    <button class="btn btn-success btn-sm" onclick="window.print()">Print</button>
+    <button class="btn btn-success btn-sm" onclick="window.print()">
+      <i class="bi bi-printer"></i> Print
+    </button>
     <a href="{% url 'stock_audit_list' %}" class="btn btn-danger btn-sm">Back</a>
   </div>
 
-  <!-- RECEIPT -->
   <div id="printArea" class="card p-4" style="max-width:900px; margin:auto;">
 
-    <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
       <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
       <h3 class="mb-0">Stock Audit</h3>
     </div>
 
-    <!-- META -->
     <div class="text-end mb-3" style="font-size:13px;">
       <div>Branch: {{ audit.branch.name|default:"Main Branch" }}</div>
       <div>Bill Number: {{ audit.bill_no }}</div>
@@ -27,62 +25,91 @@
       <div>User: {{ audit.created_by.get_full_name|default:audit.created_by.username }}</div>
     </div>
 
-    <!-- ITEMS TABLE -->
+    <!-- SUMMARY -->
+    <div class="row mb-3 text-center">
+      <div class="col-md-3">
+        <div class="card p-2 border-primary">
+          <div class="text-muted" style="font-size:12px;">Total Items</div>
+          <div class="fw-bold fs-5">{{ items.count }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-2 border-success">
+          <div class="text-muted" style="font-size:12px;">Balanced</div>
+          <div class="fw-bold fs-5 text-success">
+            {% with count=0 %}
+              {% for item in items %}{% if item.difference == 0 %}{% with count=count|add:1 %}{% endwith %}{% endif %}{% endfor %}
+              {{ items|length }}
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <table class="table table-bordered" style="font-size:13px;">
       <thead style="background:#1a7fe8; color:white; text-align:center;">
         <tr>
+          <th>#</th>
           <th>BAR CODE</th>
           <th>ITEM NAME</th>
-          <th>QUANTITY</th>
+          <th>SYSTEM QTY</th>
+          <th>AUDITED QTY</th>
+          <th>DIFFERENCE</th>
+          <th>STATUS</th>
         </tr>
       </thead>
       <tbody>
         {% for item in items %}
         <tr>
+          <td>{{ forloop.counter }}</td>
           <td>{{ item.product.sku|default:"—" }}</td>
-          <td class="text-end">{{ item.product.name|default:"—" }}</td>
-          <td class="text-end">{{ item.qty }}</td>
+          <td>{{ item.product.name|default:"—" }}</td>
+          <td class="text-center">{{ item.system_qty }}</td>
+          <td class="text-center">{{ item.qty }}</td>
+          <td class="text-center fw-bold
+            {% if item.difference == 0 %}text-success
+            {% elif item.difference < 0 %}text-danger
+            {% else %}text-warning{% endif %}">
+            {% if item.difference > 0 %}+{% endif %}{{ item.difference }}
+          </td>
+          <td class="text-center">
+            {% if item.difference == 0 %}
+              <span class="badge bg-success">Balanced</span>
+            {% elif item.difference < 0 %}
+              <span class="badge bg-danger">Short</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Excess</span>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="3" class="text-center text-muted">No items.</td>
+          <td colspan="7" class="text-center text-muted">No items.</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr class="fw-bold">
-          <td colspan="2">Total</td>
-          <td class="text-end">
-            {% with total=0 %}
-              {% for item in items %}
-                {% with total=total|add:item.qty %}{% endwith %}
-              {% endfor %}
-              {{ audit.total_qty }}
-            {% endwith %}
-          </td>
+          <td colspan="4">Total Audited</td>
+          <td class="text-center">{{ audit.total_qty }}</td>
+          <td colspan="2"></td>
         </tr>
       </tfoot>
     </table>
 
-    <!-- REMARKS -->
-    <div class="mt-3">
-      <strong>Remarks</strong>
-      <hr>
-    </div>
+    <div class="mt-3"><strong>Remarks</strong><hr></div>
 
-    <!-- FOOTER -->
-    <div class="d-flex justify-content-between mt-3" style="font-size:11px; color:#888;">
+    <div class="d-flex justify-content:space-between mt-3" style="font-size:11px; color:#888;">
       <span>Powered by CIS website:www.cisepos.com</span>
-      <span>info@cisepos.com</span>
+      <span class="ms-auto">info@cisepos.com</span>
     </div>
 
   </div>
-
 </div>
 
 <style>
 @media print {
-  .btn, nav, aside, .sidebar { display: none !important; }
+  .btn, nav, aside { display: none !important; }
   #printArea { box-shadow: none !important; border: none !important; }
 }
 </style>

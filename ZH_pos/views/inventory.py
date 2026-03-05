@@ -174,7 +174,7 @@ def stock_audit_create(request):
             items     = data.get("items", [])
             branch_id = data.get("branch_id") or None
 
-            total_qty = sum(int(i.get("qty", 1)) for i in items)
+            total_qty = sum(int(i.get("audited_qty", 0)) for i in items)
 
             audit = StockAudit.objects.create(
                 bill_no    = generate_audit_bill_no(),
@@ -185,16 +185,16 @@ def stock_audit_create(request):
             )
 
             for item in items:
-                product_id = item.get("product_id")
-                qty        = int(item.get("qty", 1))
-                rate       = float(item.get("rate", 0))
+                product_id   = item.get("product_id")
+                audited_qty  = int(item.get("audited_qty", 0))
+                rate         = float(item.get("rate", 0))
                 if not product_id:
                     continue
                 StockAuditItem.objects.create(
-                    audit_id   = audit.id,
-                    product_id = product_id,
-                    qty        = qty,
-                    rate       = rate,
+                    audit_id    = audit.id,
+                    product_id  = product_id,
+                    qty         = audited_qty,
+                    rate        = rate,
                 )
 
             return JsonResponse({"success": True, "audit_id": audit.id})
@@ -207,7 +207,6 @@ def stock_audit_create(request):
         "bill_no":  bill_no,
         "today":    today,
     })
-
 
 @login_required
 def stock_audit_detail(request, pk):
@@ -241,6 +240,7 @@ def fetch_product_by_barcode(request):
             "name":       product.name,
             "sku":        product.sku,
             "rate":       float(product.price or 0),
+            "system_qty": product.stock,  # ← current stock in DB
         })
     except Product.DoesNotExist:
         return JsonResponse({"success": False, "error": "Product not found"})
