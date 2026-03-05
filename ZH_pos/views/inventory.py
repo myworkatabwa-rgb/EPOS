@@ -136,8 +136,8 @@ def load_products_by_category(request):
     return JsonResponse(data, safe=False)
 # views.py
 @login_required
-def physical_stock_detail(request, stock_id):
-    stock = get_object_or_404(PhysicalStock, id=stock_id)
+def physical_stock_detail(request, pk):
+    stock = get_object_or_404(PhysicalStock, id=pk)
     items = stock.items.select_related("product", "product__unit").all()
     return render(request, "inventory/physical_stock_detail.html", {
         "stock": stock,
