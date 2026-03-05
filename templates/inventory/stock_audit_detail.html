@@ -5,9 +5,10 @@
 <div class="container-fluid">
 
   <div class="mb-3 d-flex gap-2">
-    <button class="btn btn-success btn-sm" onclick="window.print()">
-      <i class="bi bi-printer"></i> Print
-    </button>
+    <!-- Replace the print button with this -->
+<button class="btn btn-success btn-sm" onclick="printDetail()">
+  <i class="bi bi-printer"></i> Print
+</button>
     <a href="{% url 'stock_audit_list' %}" class="btn btn-danger btn-sm">Back</a>
   </div>
 
@@ -128,5 +129,40 @@
   }
 }
 </style>
-
+<script>
+function printDetail() {
+  const content = document.getElementById("printArea").innerHTML;
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`
+    <html>
+      <head>
+        <title>Stock Audit - {{ audit.bill_no }}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th, td { border: 1px solid #ddd; padding: 6px 10px; }
+          thead tr { background: #1a7fe8; color: white; text-align: center; }
+          .text-success { color: #28a745; }
+          .text-danger  { color: #dc3545; }
+          .text-warning { color: #ffc107; }
+          .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+          .bg-success { background:#28a745; color:white; }
+          .bg-danger  { background:#dc3545; color:white; }
+          .bg-warning { background:#ffc107; color:#000; }
+          .text-center { text-align: center; }
+          .text-end    { text-align: right; }
+          .fw-bold     { font-weight: bold; }
+          @media print { button { display: none; } }
+        </style>
+      </head>
+      <body>
+        ${content}
+        <br>
+        <button onclick="window.print()">Print</button>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
+</script>
 {% endblock %}
