@@ -109,8 +109,23 @@
 
 <style>
 @media print {
-  .btn, nav, aside { display: none !important; }
-  #printArea { box-shadow: none !important; border: none !important; }
+  /* Hide everything */
+  body * {
+    visibility: hidden;
+  }
+  /* Show only print area */
+  #printArea, #printArea * {
+    visibility: visible;
+  }
+  #printArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 20px !important;
+  }
 }
 </style>
 
