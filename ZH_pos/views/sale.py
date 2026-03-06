@@ -235,7 +235,7 @@ def packing_slip(request):
     categories = Category.objects.all().order_by("name")
     return render(request, "sales/packing_slip.html", {
         "products": products,
-        "Categories":categories,
+        "categories":categories,
     })
 
 
