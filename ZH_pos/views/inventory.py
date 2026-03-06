@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem
+from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut
 
 
 
@@ -246,10 +246,137 @@ def fetch_product_by_barcode(request):
         return JsonResponse({"success": False, "error": "Product not found"})
 
 
-@login_required
-def item_conversion(request):
-    return render(request, "inventory/item_conversion.html")
+def generate_conversion_bill_no():
+    last = ItemConversion.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
 
+
+@login_required
+def item_conversion_list(request):
+    conversions = ItemConversion.objects.select_related(
+        "created_by", "branch"
+    ).order_by("-date")
+    return render(request, "inventory/item_conversion_list.html", {
+        "conversions": conversions
+    })
+
+
+@login_required
+def item_conversion_create(request):
+    bill_no = generate_conversion_bill_no()
+    today   = timezone.now().strftime("%d-%m-%Y")
+
+    if request.method == "POST":
+        try:
+            data            = json.loads(request.body)
+            conversion_type = data.get("conversion_type", "positive")
+            items_in        = data.get("items_in", [])
+            items_out       = data.get("items_out", [])
+
+            conversion = ItemConversion.objects.create(
+                bill_no         = generate_conversion_bill_no(),
+                created_by      = request.user,
+                conversion_type = conversion_type,
+            )
+
+            # ── ADD stock for items_in ────────────────────────
+            for item in items_in:
+                product_id = item.get("product_id")
+                quantity   = int(item.get("quantity", 0))
+                if not product_id or quantity <= 0:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                ItemConversionIn.objects.create(
+                    conversion_id = conversion.id,
+                    product_id    = product_id,
+                    unit_name     = product.unit.Unit_name if product.unit else "Default",
+                    quantity      = quantity,
+                )
+
+                # Add to stock
+                product.stock += quantity
+                product.save()
+
+            # ── SUBTRACT stock for items_out ──────────────────
+            for item in items_out:
+                product_id = item.get("product_id")
+                quantity   = int(item.get("quantity", 0))
+                rate       = float(item.get("rate", 0))
+                if not product_id or quantity <= 0:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                ItemConversionOut.objects.create(
+                    conversion_id = conversion.id,
+                    product_id    = product_id,
+                    unit_name     = product.unit.Unit_name if product.unit else "Default",
+                    quantity      = quantity,
+                    rate          = rate,
+                )
+
+                # Subtract from stock
+                product.stock = max(0, product.stock - quantity)
+                product.save()
+
+            return JsonResponse({"success": True, "id": conversion.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/item_conversion_create.html", {
+        "bill_no": bill_no,
+        "today":   today,
+    })
+
+
+@login_required
+def item_conversion_detail(request, pk):
+    conversion = get_object_or_404(ItemConversion, id=pk)
+    items_in   = conversion.items_in.select_related("product").all()
+    items_out  = conversion.items_out.select_related("product").all()
+    return render(request, "inventory/item_conversion_detail.html", {
+        "conversion": conversion,
+        "items_in":   items_in,
+        "items_out":  items_out,
+    })
+
+
+@login_required
+def item_conversion_delete(request, pk):
+    conversion = get_object_or_404(ItemConversion, id=pk)
+    if request.method == "POST":
+        conversion.delete()
+        messages.success(request, "Item conversion deleted.")
+    return redirect("item_conversion_list")
+
+
+@login_required
+def search_product_for_conversion(request):
+    sku  = request.GET.get("sku", "").strip()
+    name = request.GET.get("name", "").strip()
+
+    products = Product.objects.filter(status="Active")
+    if sku:
+        products = products.filter(sku__icontains=sku)
+    elif name:
+        products = products.filter(name__icontains=name)
+    else:
+        return JsonResponse([], safe=False)
+
+    data = [{
+        "id":       p.id,
+        "name":     p.name,
+        "sku":      p.sku or "—",
+        "stock":    p.stock,
+        "rate":     float(p.price or 0),
+        "unit":     p.unit.Unit_name if p.unit else "Default",
+    } for p in products[:20]]
+
+    return JsonResponse(data, safe=False)
 
 @login_required
 def demand_sheet(request):

@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Item Conversion</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="card p-4">
+
+    <!-- TOP INFO -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <label class="form-label">User Name</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ request.user.get_full_name|default:request.user.username }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Bill No</label>
+        <input type="text" class="form-control bg-light" value="{{ bill_no }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date</label>
+        <input type="text" class="form-control bg-light" value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Type of Conversion</label>
+        <select id="conversionType" class="form-select">
+          <option value="positive">Positive</option>
+          <option value="negative">Negative</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TOP TABLE: ITEMS IN (stock added) -->
+    <div class="table-responsive mb-2">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>BarCode</th>
+            <th>Item Name</th>
+            <th>Unit name</th>
+            <th>Quantity</th>
+            <th>Load Item Receipt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" class="fw-semibold text-primary" style="font-size:13px;">
+              The quantity in following item(s) would be added in stock
+            </td>
+          </tr>
+          <tr id="itemInRow">
+            <td>
+              <div class="input-group input-group-sm">
+                <input type="text" id="inBarcode" class="form-control"
+                       placeholder="Barcode"
+                       onkeydown="if(event.key==='Enter'){ event.preventDefault(); searchItemIn(); }">
+                <button class="btn btn-outline-secondary btn-sm" onclick="searchItemIn()">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </td>
+            <td><input type="text" id="inName" class="form-control form-control-sm bg-light"
+                       placeholder="MasterItemName" readonly></td>
+            <td><input type="text" id="inUnit" class="form-control form-control-sm bg-light"
+                       placeholder="Unit Name" readonly></td>
+            <td><input type="number" id="inQty" class="form-control form-control-sm"
+                       placeholder="Physical" min="1" value="1"></td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="addItemIn()">
+                <i class="bi bi-arrow-clockwise"></i> Load
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ITEMS IN LIST -->
+    <div id="itemsInSection" style="display:none;" class="mb-4">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+          <thead style="background:#e8f5e9;">
+            <tr>
+              <th>#</th>
+              <th>BarCode</th>
+              <th>Item Name</th>
+              <th>Unit</th>
+              <th>Quantity</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody id="itemsInBody"></tbody>
+          <tfoot>
+            <tr class="fw-bold">
+              <td colspan="4">TOTAL</td>
+              <td id="totalIn">0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOTTOM TABLE: ITEMS OUT (stock subtracted) -->
+    <div class="table-responsive mb-2">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>BarCode</th>
+            <th>Item Name</th>
+            <th>Unit name</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" class="fw-semibold text-danger" style="font-size:13px;">
+              The quantity in following item(s) would be subtracted from stock
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="input-group input-group-sm">
+                <input type="text" id="outBarcode" class="form-control"
+                       placeholder="Barcode"
+                       onkeydown="if(event.key==='Enter'){ event.preventDefault(); searchItemOut(); }">
+                <button class="btn btn-outline-secondary btn-sm" onclick="searchItemOut()">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </td>
+            <td><input type="text" id="outName" class="form-control form-control-sm bg-light"
+                       placeholder="Item Name" readonly></td>
+            <td><input type="text" id="outUnit" class="form-control form-control-sm bg-light"
+                       placeholder="Unit Name" readonly></td>
+            <td><input type="number" id="outQty" class="form-control form-control-sm"
+                       placeholder="Qty" min="1" value="1"></td>
+            <td>
+              <div class="input-group input-group-sm">
+                <input type="number" id="outRate" class="form-control form-control-sm bg-light"
+                       placeholder="Rate" readonly>
+                <button class="btn btn-primary btn-sm" onclick="addItemOut()">Add</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ITEMS OUT LIST -->
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered table-sm align-middle">
+        <thead style="background:#fdecea;">
+          <tr>
+            <th>#</th>
+            <th>BarCode</th>
+            <th>Item Name</th>
+            <th>Unit</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody id="itemsOutBody">
+          <tr id="emptyOutRow">
+            <td colspan="7" class="text-center text-muted">No items added yet.</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold">
+            <td colspan="4">TOTAL</td>
+            <td id="totalOut">0</td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div>
+      <button class="btn btn-primary px-5" onclick="saveConversion()">Save</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+let itemsIn  = [];
+let itemsOut = [];
+let currentInProduct  = null;
+let currentOutProduct = null;
+
+// ── SEARCH ITEM IN ────────────────────────────────────
+function searchItemIn() {
+  const sku = document.getElementById("inBarcode").value.trim();
+  if (!sku) { alert("Enter a barcode."); return; }
+
+  fetch(`/inventory/search-product-conversion/?sku=${encodeURIComponent(sku)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) { alert("Product not found: " + sku); return; }
+      const p = data[0];
+      currentInProduct = p;
+      document.getElementById("inName").value = p.name;
+      document.getElementById("inUnit").value = p.unit;
+    });
+}
+
+// ── ADD ITEM IN ───────────────────────────────────────
+function addItemIn() {
+  if (!currentInProduct) { alert("Search a product first."); return; }
+  const qty = parseInt(document.getElementById("inQty").value) || 1;
+
+  const existing = itemsIn.find(i => i.sku === currentInProduct.sku);
+  if (existing) {
+    existing.quantity += qty;
+  } else {
+    itemsIn.push({
+      product_id: currentInProduct.id,
+      name:       currentInProduct.name,
+      sku:        currentInProduct.sku,
+      unit:       currentInProduct.unit,
+      quantity:   qty,
+    });
+  }
+
+  // Reset
+  document.getElementById("inBarcode").value = "";
+  document.getElementById("inName").value    = "";
+  document.getElementById("inUnit").value    = "";
+  document.getElementById("inQty").value     = 1;
+  currentInProduct = null;
+
+  renderItemsIn();
+}
+
+function renderItemsIn() {
+  const tbody = document.getElementById("itemsInBody");
+  tbody.innerHTML = "";
+  let total = 0;
+
+  itemsIn.forEach((item, i) => {
+    total += item.quantity;
+    tbody.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${item.sku}</td>
+        <td>${item.name}</td>
+        <td>${item.unit}</td>
+        <td>
+          <input type="number" class="form-control form-control-sm" style="width:80px;"
+                 value="${item.quantity}" min="1"
+                 onchange="itemsIn[${i}].quantity=parseInt(this.value)||1; renderItemsIn();">
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="itemsIn.splice(${i},1); renderItemsIn();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("totalIn").textContent = total;
+  document.getElementById("itemsInSection").style.display =
+    itemsIn.length > 0 ? "block" : "none";
+}
+
+// ── SEARCH ITEM OUT ───────────────────────────────────
+function searchItemOut() {
+  const sku = document.getElementById("outBarcode").value.trim();
+  if (!sku) { alert("Enter a barcode."); return; }
+
+  fetch(`/inventory/search-product-conversion/?sku=${encodeURIComponent(sku)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) { alert("Product not found: " + sku); return; }
+      const p = data[0];
+      currentOutProduct = p;
+      document.getElementById("outName").value = p.name;
+      document.getElementById("outUnit").value = p.unit;
+      document.getElementById("outRate").value = p.rate.toFixed(2);
+    });
+}
+
+// ── ADD ITEM OUT ──────────────────────────────────────
+function addItemOut() {
+  if (!currentOutProduct) { alert("Search a product first."); return; }
+  const qty  = parseInt(document.getElementById("outQty").value) || 1;
+  const rate = parseFloat(document.getElementById("outRate").value) || 0;
+
+  const existing = itemsOut.find(i => i.sku === currentOutProduct.sku);
+  if (existing) {
+    existing.quantity += qty;
+  } else {
+    itemsOut.push({
+      product_id: currentOutProduct.id,
+      name:       currentOutProduct.name,
+      sku:        currentOutProduct.sku,
+      unit:       currentOutProduct.unit,
+      quantity:   qty,
+      rate:       rate,
+    });
+  }
+
+  document.getElementById("outBarcode").value = "";
+  document.getElementById("outName").value    = "";
+  document.getElementById("outUnit").value    = "";
+  document.getElementById("outQty").value     = 1;
+  document.getElementById("outRate").value    = "";
+  currentOutProduct = null;
+
+  renderItemsOut();
+}
+
+function renderItemsOut() {
+  const tbody = document.getElementById("itemsOutBody");
+  tbody.innerHTML = "";
+  let total = 0;
+
+  if (itemsOut.length === 0) {
+    tbody.innerHTML = `<tr id="emptyOutRow">
+      <td colspan="7" class="text-center text-muted">No items added yet.</td>
+    </tr>`;
+    document.getElementById("totalOut").textContent = 0;
+    return;
+  }
+
+  itemsOut.forEach((item, i) => {
+    total += item.quantity;
+    tbody.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${item.sku}</td>
+        <td>${item.name}</td>
+        <td>${item.unit}</td>
+        <td>
+          <input type="number" class="form-control form-control-sm" style="width:80px;"
+                 value="${item.quantity}" min="1"
+                 onchange="itemsOut[${i}].quantity=parseInt(this.value)||1; renderItemsOut();">
+        </td>
+        <td>${item.rate.toFixed(2)}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="itemsOut.splice(${i},1); renderItemsOut();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("totalOut").textContent = total;
+}
+
+// ── SAVE ─────────────────────────────────────────────
+function saveConversion() {
+  if (itemsIn.length === 0 && itemsOut.length === 0) {
+    alert("Please add at least one item.");
+    return;
+  }
+
+  const conversionType = document.getElementById("conversionType").value;
+
+  fetch("{% url 'item_conversion_create' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      conversion_type: conversionType,
+      items_in:        itemsIn,
+      items_out:       itemsOut,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("Item conversion saved successfully.");
+      window.location.href = "{% url 'item_conversion_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}

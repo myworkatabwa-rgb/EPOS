@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Item Conversion</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'item_conversion_create' %}" class="btn btn-primary">
+      Add new Item Conversion
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="conversionTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Bill No</th>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Created By</th>
+          <th>View</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for conv in conversions %}
+        <tr>
+          <td>{{ conv.id }}</td>
+          <td>{{ conv.bill_no }}</td>
+          <td>{{ conv.date|date:"d-m-Y" }}</td>
+          <td>
+            {% if conv.conversion_type == "positive" %}
+              <span class="badge bg-success">Positive</span>
+            {% else %}
+              <span class="badge bg-danger">Negative</span>
+            {% endif %}
+          </td>
+          <td>{{ conv.created_by.get_full_name|default:conv.created_by.username|default:"—" }}</td>
+          <td>
+            <a href="{% url 'item_conversion_detail' conv.id %}"
+               class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+          <td>
+            <form action="{% url 'item_conversion_delete' conv.id %}" method="post"
+                  onsubmit="return confirm('Delete this conversion?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#conversionTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+
+{% endblock %}

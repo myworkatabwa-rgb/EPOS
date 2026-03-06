@@ -510,3 +510,39 @@ class StockAuditItem(models.Model):
     def save(self, *args, **kwargs):
         self.difference = self.qty - self.system_qty
         super().save(*args, **kwargs)
+class ItemConversion(models.Model):
+    CONVERSION_TYPE = (
+        ("positive", "Positive"),
+        ("negative", "Negative"),
+    )
+    bill_no         = models.CharField(max_length=50, unique=True)
+    date            = models.DateTimeField(auto_now_add=True)
+    created_by      = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    branch          = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    conversion_type = models.CharField(max_length=10, choices=CONVERSION_TYPE, default="positive")
+
+    def __str__(self):
+        return self.bill_no
+
+
+class ItemConversionIn(models.Model):
+    """Items whose stock gets ADDED (output)"""
+    conversion = models.ForeignKey(ItemConversion, on_delete=models.CASCADE, related_name="items_in")
+    product    = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name  = models.CharField(max_length=100, default="Default")
+    quantity   = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"IN: {self.product} x {self.quantity}"
+
+
+class ItemConversionOut(models.Model):
+    """Items whose stock gets SUBTRACTED (input)"""
+    conversion = models.ForeignKey(ItemConversion, on_delete=models.CASCADE, related_name="items_out")
+    product    = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name  = models.CharField(max_length=100, default="Default")
+    quantity   = models.IntegerField(default=0)
+    rate       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"OUT: {self.product} x {self.quantity}"
