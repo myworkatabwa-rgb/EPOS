@@ -116,6 +116,8 @@ def load_products_by_category(request):
         products = products.filter(sku=sku)
     elif subcategory_id:
         products = products.filter(subcategory_id=subcategory_id)
+    elif category_id == "all":
+        pass  # return all active products
     elif category_id:
         products = products.filter(category_id=category_id)
     else:
