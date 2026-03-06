@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut
+from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem
 
 
 
@@ -378,9 +378,133 @@ def search_product_for_conversion(request):
 
     return JsonResponse(data, safe=False)
 
+def generate_demand_no():
+    from django.utils import timezone
+    today = timezone.now().strftime("%d%m%Y")
+    count = DemandSheet.objects.filter(
+        demand_date=timezone.now().date()
+    ).count() + 1
+    return f"{today}{str(count).zfill(4)}"
+
+
 @login_required
-def demand_sheet(request):
-    return render(request, "inventory/demand_sheet.html")
+def demand_sheet_list(request):
+    demands = DemandSheet.objects.select_related(
+        "created_by", "branch"
+    ).order_by("-created_at")
+    return render(request, "inventory/demand_sheet_list.html", {
+        "demands": demands
+    })
+
+
+@login_required
+def demand_sheet_create(request):
+    categories = Category.objects.filter(status=True).order_by("name")
+    branches   = Branch.objects.all()
+    demand_no  = generate_demand_no()
+    today      = timezone.now().strftime("%-d-%-m-%Y")
+
+    if request.method == "POST":
+        try:
+            data        = json.loads(request.body)
+            description = data.get("description", "")
+            from_date   = data.get("from_date") or None
+            to_date     = data.get("to_date") or None
+            branch_id   = data.get("branch_id") or None
+            items       = data.get("items", [])
+
+            demand = DemandSheet.objects.create(
+                demand_no   = generate_demand_no(),
+                created_by  = request.user,
+                branch_id   = branch_id,
+                description = description,
+                from_date   = datetime.strptime(from_date, "%Y-%m-%d").date() if from_date else None,
+                to_date     = datetime.strptime(to_date, "%Y-%m-%d").date() if to_date else None,
+            )
+
+            for item in items:
+                product_id    = item.get("product_id")
+                requested_qty = int(item.get("requested_qty", 0))
+                consumption   = int(item.get("consumption", 0))
+                remarks       = item.get("remarks", "")
+
+                if not product_id:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                DemandSheetItem.objects.create(
+                    demand_id       = demand.id,
+                    product_id      = product_id,
+                    item_unit       = product.unit.Unit_name if product.unit else "Default",
+                    requested_qty   = requested_qty,
+                    available_stock = product.stock,
+                    consumption     = consumption,
+                    remarks         = remarks,
+                )
+
+            return JsonResponse({"success": True, "id": demand.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/demand_sheet_create.html", {
+        "categories": categories,
+        "branches":   branches,
+        "demand_no":  demand_no,
+        "today":      today,
+    })
+
+
+@login_required
+def demand_sheet_detail(request, pk):
+    demand = get_object_or_404(DemandSheet, id=pk)
+    items  = demand.items.select_related("product").all()
+    return render(request, "inventory/demand_sheet_detail.html", {
+        "demand": demand,
+        "items":  items,
+    })
+
+
+@login_required
+def demand_sheet_delete(request, pk):
+    demand = get_object_or_404(DemandSheet, id=pk)
+    if request.method == "POST":
+        demand.delete()
+        messages.success(request, "Demand sheet deleted.")
+    return redirect("demand_sheet_list")
+
+
+@login_required
+def load_consumption(request):
+    """Load sales consumption between date range per product"""
+    from_date = request.GET.get("from_date")
+    to_date   = request.GET.get("to_date")
+
+    if not from_date or not to_date:
+        return JsonResponse([], safe=False)
+
+    from django.db.models import Sum
+    from ZH_pos.models import OrderItem
+
+    consumption = OrderItem.objects.filter(
+        order__created_at__date__gte=from_date,
+        order__created_at__date__lte=to_date,
+    ).values(
+        "product_id",
+        "product__name",
+        "product__sku",
+    ).annotate(total_sold=Sum("quantity"))
+
+    data = [{
+        "product_id":  c["product_id"],
+        "name":        c["product__name"],
+        "sku":         c["product__sku"] or "—",
+        "consumption": c["total_sold"],
+    } for c in consumption]
+
+    return JsonResponse(data, safe=False)
+
 
 
 @login_required

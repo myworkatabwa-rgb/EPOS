@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success btn-sm" onclick="printDetail()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+    <a href="{% url 'demand_sheet_list' %}" class="btn btn-danger btn-sm">Back</a>
+  </div>
+
+  <div id="printArea" class="card p-4" style="max-width:1000px; margin:auto;">
+
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+      <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+      <h3 class="mb-0">Demand Sheet</h3>
+    </div>
+
+    <div class="row mb-3" style="font-size:13px;">
+      <div class="col-md-6">
+        <div>Branch: {{ demand.branch.name|default:"Main Branch" }}</div>
+        <div>Demand No: {{ demand.demand_no }}</div>
+        <div>Date: {{ demand.demand_date|date:"d-m-Y" }}</div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div>From: {{ demand.from_date|date:"d-m-Y"|default:"—" }}</div>
+        <div>To: {{ demand.to_date|date:"d-m-Y"|default:"—" }}</div>
+        <div>Created By: {{ demand.created_by.get_full_name|default:demand.created_by.username }}</div>
+        {% if demand.description %}
+        <div>Description: {{ demand.description }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <table class="table table-bordered" style="font-size:13px;">
+      <thead style="background:#1a7fe8; color:white; text-align:center;">
+        <tr>
+          <th>#</th>
+          <th>BarCode</th>
+          <th>Item Name</th>
+          <th>Unit</th>
+          <th>Requested Qty</th>
+          <th>Available Stock</th>
+          <th>Consumption</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ item.product.sku|default:"—" }}</td>
+          <td>{{ item.product.name|default:"—" }}</td>
+          <td>{{ item.item_unit }}</td>
+          <td class="text-center fw-bold">{{ item.requested_qty }}</td>
+          <td class="text-center
+            {% if item.available_stock >= item.requested_qty %}text-success
+            {% else %}text-danger{% endif %}">
+            {{ item.available_stock }}
+          </td>
+          <td class="text-center">{{ item.consumption }}</td>
+          <td>{{ item.remarks|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted">No items.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between mt-3" style="font-size:11px; color:#888;">
+      <span>Developed by Abdullah Rajpoot</span>
+      <span>abmuhammad112233@gmail.com</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function printDetail() {
+  const content = document.getElementById("printArea").innerHTML;
+  const win = window.open('', '_blank', 'width=1000,height=700');
+  win.document.write(`
+    <html>
+      <head>
+        <title>Demand Sheet - {{ demand.demand_no }}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th, td { border: 1px solid #ddd; padding: 6px 10px; }
+          thead tr { background: #1a7fe8; color: white; text-align: center; }
+          .text-center { text-align: center; }
+          .text-success { color: #28a745; }
+          .text-danger  { color: #dc3545; }
+          .fw-bold { font-weight: bold; }
+          @media print { button { display: none; } }
+        </style>
+      </head>
+      <body>
+        ${content}
+        <br><button onclick="window.print()">Print</button>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
+</script>
+
+{% endblock %}

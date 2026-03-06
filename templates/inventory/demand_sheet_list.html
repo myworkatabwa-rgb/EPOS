@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Demand Sheet</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'demand_sheet_create' %}" class="btn btn-primary">
+      Add new Demand Sheet
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="demandTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Demand No</th>
+          <th>Date</th>
+          <th>Branch</th>
+          <th>Description</th>
+          <th>From</th>
+          <th>To</th>
+          <th>View</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for demand in demands %}
+        <tr>
+          <td>{{ demand.id }}</td>
+          <td>{{ demand.demand_no }}</td>
+          <td>{{ demand.demand_date|date:"d-m-Y" }}</td>
+          <td>{{ demand.branch.name|default:"Main Branch" }}</td>
+          <td>{{ demand.description|default:"—" }}</td>
+          <td>{{ demand.from_date|date:"d-m-Y"|default:"—" }}</td>
+          <td>{{ demand.to_date|date:"d-m-Y"|default:"—" }}</td>
+          <td>
+            <a href="{% url 'demand_sheet_detail' demand.id %}"
+               class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+          <td>
+            <form action="{% url 'demand_sheet_delete' demand.id %}"
+                  method="post"
+                  onsubmit="return confirm('Delete this demand sheet?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No demand sheets found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#demandTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+
+{% endblock %}

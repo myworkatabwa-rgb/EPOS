@@ -546,3 +546,28 @@ class ItemConversionOut(models.Model):
 
     def __str__(self):
         return f"OUT: {self.product} x {self.quantity}"
+class DemandSheet(models.Model):
+    demand_no   = models.CharField(max_length=50, unique=True)
+    demand_date = models.DateField(auto_now_add=True)
+    branch      = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    from_date   = models.DateField(null=True, blank=True)
+    to_date     = models.DateField(null=True, blank=True)
+    created_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.demand_no
+
+
+class DemandSheetItem(models.Model):
+    demand        = models.ForeignKey(DemandSheet, on_delete=models.CASCADE, related_name="items")
+    product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    item_unit     = models.CharField(max_length=100, default="Default")
+    requested_qty = models.IntegerField(default=0)
+    available_stock = models.IntegerField(default=0)
+    consumption   = models.IntegerField(default=0)
+    remarks       = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.product} - {self.demand.demand_no}"
