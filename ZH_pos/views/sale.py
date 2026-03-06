@@ -233,7 +233,7 @@ def packing_slip(request):
     # GET request - show form
     #products = Product.objects.all().order_by("name")[:100]
     return render(request, "sales/packing_slip.html", {
-        "products": products,
+        #"products": products,
     })
 
 
