@@ -510,19 +510,6 @@ def load_consumption(request):
 
 
 
-import json
-from datetime import datetime
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.http import JsonResponse
-from django.utils import timezone
-from ZH_pos.models import (
-    PurchaseOrder, PurchaseOrderItem,
-    Supplier, Product, Branch,
-    DemandSheet, Category, SubCategory
-)
-
 
 def generate_po_number():
     last = PurchaseOrder.objects.order_by('-id').first()
