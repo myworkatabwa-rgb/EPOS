@@ -510,9 +510,239 @@ def load_consumption(request):
 
 
 
+import json
+from datetime import datetime
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse
+from django.utils import timezone
+from ZH_pos.models import (
+    PurchaseOrder, PurchaseOrderItem,
+    Supplier, Product, Branch,
+    DemandSheet, Category, SubCategory
+)
+
+
+def generate_po_number():
+    last = PurchaseOrder.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    today = timezone.now().strftime("%d%m%Y")
+    return f"PO-{today}-{str(next_id).zfill(4)}"
+
+
+# ── LIST ─────────────────────────────────────────────
 @login_required
-def purchase_order(request):
-    return render(request, "inventory/purchase_order.html")
+def purchase_order_list(request):
+    orders = PurchaseOrder.objects.select_related(
+        "supplier", "branch", "created_by"
+    ).order_by("-created_at")
+    return render(request, "purchase/purchase_order_list.html", {
+        "orders": orders
+    })
+
+
+# ── CREATE ────────────────────────────────────────────
+@login_required
+def purchase_order_create(request):
+    suppliers     = Supplier.objects.filter(status="active").order_by("supplier_name")
+    branches      = Branch.objects.all()
+    categories    = Category.objects.filter(status=True).order_by("name")
+    demand_sheets = DemandSheet.objects.order_by("-created_at")[:20]
+    po_number     = generate_po_number()
+    today         = timezone.now().strftime("%Y-%m-%d")
+
+    if request.method == "POST":
+        try:
+            data          = json.loads(request.body)
+            supplier_id   = data.get("supplier_id") or None
+            branch_id     = data.get("branch_id") or None
+            demand_id     = data.get("demand_sheet_id") or None
+            expected_date = data.get("expected_date") or None
+            notes         = data.get("notes", "")
+            items         = data.get("items", [])
+
+            if not items:
+                return JsonResponse({"success": False, "error": "No items added."})
+
+            total_amount = sum(
+                float(i.get("rate", 0)) * int(i.get("ordered_qty", 0))
+                for i in items
+            )
+
+            po = PurchaseOrder.objects.create(
+                po_number      = generate_po_number(),
+                supplier_id    = supplier_id,
+                branch_id      = branch_id,
+                demand_sheet_id = demand_id,
+                expected_date  = expected_date,
+                notes          = notes,
+                total_amount   = total_amount,
+                created_by     = request.user,
+            )
+
+            for item in items:
+                product_id  = item.get("product_id")
+                ordered_qty = int(item.get("ordered_qty", 0))
+                rate        = float(item.get("rate", 0))
+
+                if not product_id or ordered_qty <= 0:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                PurchaseOrderItem.objects.create(
+                    po_id       = po.id,
+                    product_id  = product_id,
+                    unit_name   = product.unit.Unit_name if product.unit else "Default",
+                    ordered_qty = ordered_qty,
+                    rate        = rate,
+                    amount      = ordered_qty * rate,
+                )
+
+            return JsonResponse({"success": True, "id": po.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/purchase_order_create.html", {
+        "suppliers":     suppliers,
+        "branches":      branches,
+        "categories":    categories,
+        "demand_sheets": demand_sheets,
+        "po_number":     po_number,
+        "today":         today,
+    })
+
+
+# ── DETAIL ────────────────────────────────────────────
+@login_required
+def purchase_order_detail(request, pk):
+    po    = get_object_or_404(PurchaseOrder, id=pk)
+    items = po.items.select_related("product").all()
+    return render(request, "inventory/purchase_order_detail.html", {
+        "po":    po,
+        "items": items,
+    })
+
+
+# ── RECEIVE ───────────────────────────────────────────
+@login_required
+def purchase_order_receive(request, pk):
+    """Mark PO as received and update product stock"""
+    po = get_object_or_404(PurchaseOrder, id=pk)
+
+    if request.method == "POST":
+        try:
+            data         = json.loads(request.body)
+            received_items = data.get("items", [])
+            all_received = True
+
+            for item_data in received_items:
+                item_id      = item_data.get("item_id")
+                received_qty = int(item_data.get("received_qty", 0))
+
+                try:
+                    item = PurchaseOrderItem.objects.get(id=item_id, po=po)
+                    item.received_qty = received_qty
+                    item.save()
+
+                    # ✅ Update product stock
+                    if item.product and received_qty > 0:
+                        item.product.stock += received_qty
+                        item.product.save()
+
+                    if item.received_qty < item.ordered_qty:
+                        all_received = False
+
+                except PurchaseOrderItem.DoesNotExist:
+                    continue
+
+            # Update PO status
+            po.status = "received" if all_received else "partial"
+            po.save()
+
+            return JsonResponse({"success": True, "status": po.status})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    items = po.items.select_related("product").all()
+    return render(request, "inventory/purchase_order_receive.html", {
+        "po":    po,
+        "items": items,
+    })
+
+
+# ── DELETE ────────────────────────────────────────────
+@login_required
+def purchase_order_delete(request, pk):
+    po = get_object_or_404(PurchaseOrder, id=pk)
+    if request.method == "POST":
+        if po.status == "received":
+            messages.error(request, "Cannot delete a received purchase order.")
+        else:
+            po.delete()
+            messages.success(request, "Purchase order deleted.")
+    return redirect("purchase_order_list")
+
+
+# ── LOAD DEMAND SHEET ITEMS ───────────────────────────
+@login_required
+def load_demand_sheet_items(request):
+    demand_id = request.GET.get("demand_id")
+    if not demand_id:
+        return JsonResponse([], safe=False)
+
+    try:
+        demand = DemandSheet.objects.get(id=demand_id)
+        items  = demand.items.select_related("product").all()
+        data   = []
+        for item in items:
+            if item.product and item.requested_qty > 0:
+                data.append({
+                    "product_id":  item.product.id,
+                    "name":        item.product.name,
+                    "sku":         item.product.sku or "—",
+                    "unit":        item.item_unit,
+                    "ordered_qty": item.requested_qty,
+                    "rate":        float(item.product.purchase_price or 0),
+                    "stock":       item.product.stock,
+                })
+        return JsonResponse(data, safe=False)
+
+    except DemandSheet.DoesNotExist:
+        return JsonResponse([], safe=False)
+
+
+# ── SEARCH PRODUCT FOR PO ─────────────────────────────
+@login_required
+def search_product_for_po(request):
+    sku      = request.GET.get("sku", "").strip()
+    name     = request.GET.get("name", "").strip()
+    cat_id   = request.GET.get("category_id", "").strip()
+
+    products = Product.objects.filter(status="Active")
+
+    if sku:
+        products = products.filter(sku__icontains=sku)
+    elif name:
+        products = products.filter(name__icontains=name)
+    elif cat_id:
+        products = products.filter(category_id=cat_id)
+    else:
+        return JsonResponse([], safe=False)
+
+    data = [{
+        "id":    p.id,
+        "name":  p.name,
+        "sku":   p.sku or "—",
+        "unit":  p.unit.Unit_name if p.unit else "Default",
+        "rate":  float(p.purchase_price or 0),
+        "stock": p.stock,
+    } for p in products[:20]]
+
+    return JsonResponse(data, safe=False)
 
 
 @login_required

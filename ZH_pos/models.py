@@ -571,3 +571,42 @@ class DemandSheetItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.demand.demand_no}"
+class PurchaseOrder(models.Model):
+    STATUS_CHOICES = (
+        ("pending",   "Pending"),
+        ("received",  "Received"),
+        ("partial",   "Partial"),
+        ("cancelled", "Cancelled"),
+    )
+
+    po_number        = models.CharField(max_length=50, unique=True)
+    date             = models.DateField(auto_now_add=True)
+    expected_date    = models.DateField(null=True, blank=True)
+    supplier         = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    branch           = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    demand_sheet     = models.ForeignKey(DemandSheet, on_delete=models.SET_NULL, null=True, blank=True, related_name="purchase_orders")
+    status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    notes            = models.TextField(blank=True, null=True)
+    total_amount     = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by       = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at       = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.po_number
+
+
+class PurchaseOrderItem(models.Model):
+    po            = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
+    product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name     = models.CharField(max_length=100, default="Default")
+    ordered_qty   = models.IntegerField(default=0)
+    received_qty  = models.IntegerField(default=0)
+    rate          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount        = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def save(self, *args, **kwargs):
+        self.amount = self.ordered_qty * self.rate
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product} - {self.po.po_number}"
