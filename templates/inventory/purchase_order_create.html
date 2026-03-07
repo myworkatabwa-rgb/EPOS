@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">New Purchase Order</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="card p-4">
+
+    <!-- ROW 1: PO info -->
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label class="form-label">PO Number</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ po_number }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Expected Delivery Date</label>
+        <input type="date" id="expectedDate" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Supplier</label>
+        <select id="supplierSelect" class="form-select">
+          <option value="">Select Supplier</option>
+          {% for s in suppliers %}
+            <option value="{{ s.id }}">{{ s.supplier_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- ROW 2: Demand Sheet + Notes -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <label class="form-label">
+          Convert from Demand Sheet
+          <small class="text-muted">(optional)</small>
+        </label>
+        <div class="input-group">
+          <select id="demandSheetSelect" class="form-select">
+            <option value="">Select Demand Sheet</option>
+            {% for d in demand_sheets %}
+              <option value="{{ d.id }}">
+                {{ d.demand_no }} — {{ d.demand_date|date:"d-m-Y" }}
+              </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary" onclick="loadFromDemand()">
+            Load
+          </button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Notes</label>
+        <textarea id="notes" class="form-control" rows="2"
+                  placeholder="Optional notes..."></textarea>
+      </div>
+    </div>
+
+    <!-- MANUAL SEARCH -->
+    <div class="card bg-light p-3 mb-4">
+      <h6 class="fw-semibold mb-3">Add Items Manually</h6>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Search by Barcode/SKU</label>
+          <input type="text" id="searchSku" class="form-control"
+                 placeholder="Enter SKU..."
+                 onkeydown="if(event.key==='Enter'){ event.preventDefault(); searchProduct(); }">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Or Search by Name</label>
+          <input type="text" id="searchName" class="form-control"
+                 placeholder="Enter product name...">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Or by Category</label>
+          <select id="searchCategory" class="form-select">
+            <option value="">Select Category</option>
+            {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100" onclick="searchProduct()">
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- SEARCH RESULTS -->
+      <div id="searchResults" class="mt-3" style="display:none;">
+        <table class="table table-sm table-bordered bg-white">
+          <thead class="table-light">
+            <tr>
+              <th>SKU</th>
+              <th>Name</th>
+              <th>Unit</th>
+              <th>Purchase Rate</th>
+              <th>Current Stock</th>
+              <th>Add</th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PO ITEMS TABLE -->
+    <h6 class="fw-semibold mb-2">Purchase Order Items</h6>
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle">
+        <thead style="background:#1a7fe8; color:white;">
+          <tr>
+            <th>#</th>
+            <th>SKU</th>
+            <th>Item Name</th>
+            <th>Unit</th>
+            <th>Current Stock</th>
+            <th>Ordered Qty</th>
+            <th>Rate (PKR)</th>
+            <th>Amount (PKR)</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody id="poItemsBody">
+          <tr id="emptyRow">
+            <td colspan="9" class="text-center text-muted py-3">
+              No items added yet.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold">
+            <td colspan="7" class="text-end">Grand Total:</td>
+            <td id="grandTotal" class="text-primary">PKR 0.00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div>
+      <button class="btn btn-primary px-5" onclick="savePO()">
+        Save Purchase Order
+      </button>
+      <a href="{% url 'purchase_order_list' %}"
+         class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+let poItems = [];
+
+// ── LOAD FROM DEMAND SHEET ────────────────────────────
+function loadFromDemand() {
+  const demandId = document.getElementById("demandSheetSelect").value;
+  if (!demandId) { alert("Please select a demand sheet."); return; }
+
+  fetch(`/purchase/load-demand-items/?demand_id=${demandId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.length === 0) {
+        alert("No items found in this demand sheet.");
+        return;
+      }
+      data.forEach(item => {
+        const exists = poItems.find(i => i.product_id === item.product_id);
+        if (!exists) {
+          poItems.push({
+            product_id:  item.product_id,
+            sku:         item.sku,
+            name:        item.name,
+            unit:        item.unit,
+            stock:       item.stock,
+            ordered_qty: item.ordered_qty,
+            rate:        item.rate,
+          });
+        }
+      });
+      renderTable();
+      alert(`${data.length} items loaded from demand sheet.`);
+    });
+}
+
+// ── SEARCH PRODUCT ────────────────────────────────────
+function searchProduct() {
+  const sku     = document.getElementById("searchSku").value.trim();
+  const name    = document.getElementById("searchName").value.trim();
+  const catId   = document.getElementById("searchCategory").value;
+
+  let url = "/purchase/search-product/?";
+  if (sku)   url += `sku=${encodeURIComponent(sku)}`;
+  else if (name)  url += `name=${encodeURIComponent(name)}`;
+  else if (catId) url += `category_id=${catId}`;
+  else { alert("Enter SKU, name or select category."); return; }
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      const tbody = document.getElementById("searchResultsBody");
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"
+          class="text-center text-muted">No products found.</td></tr>`;
+      } else {
+        data.forEach(p => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${p.sku}</td>
+              <td>${p.name}</td>
+              <td>${p.unit}</td>
+              <td>PKR ${p.rate.toFixed(2)}</td>
+              <td>${p.stock}</td>
+              <td>
+                <button class="btn btn-sm btn-success"
+                        onclick="addItemToPO(${p.id}, '${p.sku}',
+                        '${p.name.replace(/'/g,"\\'")}',
+                        '${p.unit}', ${p.stock}, ${p.rate})">
+                  + Add
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      document.getElementById("searchResults").style.display = "block";
+    });
+}
+
+// ── ADD ITEM TO PO ────────────────────────────────────
+function addItemToPO(id, sku, name, unit, stock, rate) {
+  const exists = poItems.find(i => i.product_id === id);
+  if (exists) {
+    exists.ordered_qty += 1;
+  } else {
+    poItems.push({
+      product_id:  id,
+      sku:         sku,
+      name:        name,
+      unit:        unit,
+      stock:       stock,
+      ordered_qty: 1,
+      rate:        rate,
+    });
+  }
+  renderTable();
+}
+
+// ── RENDER TABLE ──────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("poItemsBody");
+  tbody.innerHTML = "";
+  let grandTotal = 0;
+
+  if (poItems.length === 0) {
+    tbody.innerHTML = `<tr id="emptyRow">
+      <td colspan="9" class="text-center text-muted py-3">
+        No items added yet.
+      </td>
+    </tr>`;
+    document.getElementById("grandTotal").textContent = "PKR 0.00";
+    return;
+  }
+
+  poItems.forEach((item, i) => {
+    const amount = item.ordered_qty * item.rate;
+    grandTotal  += amount;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${item.sku}</td>
+        <td>${item.name}</td>
+        <td>${item.unit}</td>
+        <td class="text-center">
+          <span class="badge bg-secondary">${item.stock}</span>
+        </td>
+        <td>
+          <input type="number" class="form-control form-control-sm"
+                 style="width:90px;" value="${item.ordered_qty}" min="1"
+                 oninput="poItems[${i}].ordered_qty=parseInt(this.value)||1;
+                          renderTable();">
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:110px;" value="${item.rate}"
+                 oninput="poItems[${i}].rate=parseFloat(this.value)||0;
+                          renderTable();">
+        </td>
+        <td class="fw-bold text-primary">
+          PKR ${amount.toFixed(2)}
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger"
+                  onclick="poItems.splice(${i},1); renderTable();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("grandTotal").textContent =
+    `PKR ${grandTotal.toFixed(2)}`;
+}
+
+// ── SAVE PO ───────────────────────────────────────────
+function savePO() {
+  if (poItems.length === 0) {
+    alert("Please add at least one item.");
+    return;
+  }
+
+  const supplierId = document.getElementById("supplierSelect").value;
+  if (!supplierId) {
+    alert("Please select a supplier.");
+    return;
+  }
+
+  fetch("{% url 'purchase_order_create' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      supplier_id:     supplierId,
+      demand_sheet_id: document.getElementById("demandSheetSelect").value || null,
+      expected_date:   document.getElementById("expectedDate").value || null,
+      notes:           document.getElementById("notes").value,
+      items:           poItems,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("Purchase Order saved successfully.");
+      window.location.href = "{% url 'purchase_order_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}

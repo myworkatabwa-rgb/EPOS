@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Purchase Orders</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'purchase_order_create' %}" class="btn btn-primary">
+      + New Purchase Order
+    </a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="poTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>PO Number</th>
+          <th>Date</th>
+          <th>Supplier</th>
+          <th>Expected Date</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th>View</th>
+          <th>Receive</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td>{{ order.id }}</td>
+          <td>{{ order.po_number }}</td>
+          <td>{{ order.date|date:"d-m-Y" }}</td>
+          <td>{{ order.supplier.supplier_name|default:"—" }}</td>
+          <td>{{ order.expected_date|date:"d-m-Y"|default:"—" }}</td>
+          <td class="fw-bold">PKR {{ order.total_amount|floatformat:2 }}</td>
+          <td>
+            {% if order.status == "pending" %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% elif order.status == "received" %}
+              <span class="badge bg-success">Received</span>
+            {% elif order.status == "partial" %}
+              <span class="badge bg-info">Partial</span>
+            {% else %}
+              <span class="badge bg-danger">Cancelled</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'purchase_order_detail' order.id %}"
+               class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+          <td>
+            {% if order.status != "received" %}
+            <a href="{% url 'purchase_order_receive' order.id %}"
+               class="btn btn-sm btn-success">
+              <i class="bi bi-box-arrow-in-down"></i> Receive
+            </a>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if order.status != "received" %}
+            <form action="{% url 'purchase_order_delete' order.id %}"
+                  method="post"
+                  onsubmit="return confirm('Delete PO {{ order.po_number }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center text-muted py-4">
+            No purchase orders found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#poTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+
+{% endblock %}

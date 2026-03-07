@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <h5 class="mb-1 fw-semibold">Receive Stock — {{ po.po_number }}</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#0d6efd; border-width:2px; width:60px; opacity:1;">
+
+  <div class="card p-4">
+
+    <div class="row mb-3" style="font-size:13px;">
+      <div class="col-md-3">
+        <strong>Supplier:</strong>
+        {{ po.supplier.supplier_name|default:"—" }}
+      </div>
+      <div class="col-md-3">
+        <strong>PO Date:</strong> {{ po.date|date:"d-m-Y" }}
+      </div>
+      <div class="col-md-3">
+        <strong>Expected:</strong>
+        {{ po.expected_date|date:"d-m-Y"|default:"—" }}
+      </div>
+      <div class="col-md-3">
+        <strong>Status:</strong>
+        <span class="badge bg-warning text-dark">{{ po.get_status_display }}</span>
+      </div>
+    </div>
+
+    <div class="alert alert-info" style="font-size:13px;">
+      <i class="bi bi-info-circle"></i>
+      Enter the <strong>actual received quantity</strong> for each item.
+      Stock will be updated automatically when you save.
+    </div>
+
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered align-middle">
+        <thead style="background:#198754; color:white;">
+          <tr>
+            <th>#</th>
+            <th>SKU</th>
+            <th>Item Name</th>
+            <th>Unit</th>
+            <th>Ordered Qty</th>
+            <th>Current Stock</th>
+            <th>Received Qty</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.product.sku|default:"—" }}</td>
+            <td>{{ item.product.name|default:"—" }}</td>
+            <td>{{ item.unit_name }}</td>
+            <td class="text-center fw-bold">{{ item.ordered_qty }}</td>
+            <td class="text-center">
+              <span class="badge bg-secondary">
+                {{ item.product.stock|default:0 }}
+              </span>
+            </td>
+            <td>
+              <input type="number"
+                     class="form-control form-control-sm received-qty"
+                     style="width:100px;"
+                     data-item-id="{{ item.id }}"
+                     data-ordered="{{ item.ordered_qty }}"
+                     value="{{ item.ordered_qty }}"
+                     min="0"
+                     max="{{ item.ordered_qty }}"
+                     onchange="updateStatus(this)">
+            </td>
+            <td class="item-status">
+              <span class="badge bg-success">Full</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success px-5" onclick="saveReceiving()">
+        <i class="bi bi-box-arrow-in-down"></i> Confirm Receiving
+      </button>
+      <a href="{% url 'purchase_order_detail' po.id %}"
+         class="btn btn-secondary">Cancel</a>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+function updateStatus(input) {
+  const ordered  = parseInt(input.dataset.ordered);
+  const received = parseInt(input.value) || 0;
+  const statusCell = input.closest("tr").querySelector(".item-status");
+
+  if (received >= ordered) {
+    statusCell.innerHTML = '<span class="badge bg-success">Full</span>';
+  } else if (received > 0) {
+    statusCell.innerHTML = '<span class="badge bg-warning text-dark">Partial</span>';
+  } else {
+    statusCell.innerHTML = '<span class="badge bg-danger">Not Received</span>';
+  }
+}
+
+function saveReceiving() {
+  const inputs = document.querySelectorAll(".received-qty");
+  const items  = [];
+
+  inputs.forEach(input => {
+    items.push({
+      item_id:      parseInt(input.dataset.itemId),
+      received_qty: parseInt(input.value) || 0,
+    });
+  });
+
+  fetch("{% url 'purchase_order_receive' po.id %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ items: items }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const status = data.status === "received" ? "fully received" : "partially received";
+      alert(`Stock ${status} successfully. Stock has been updated.`);
+      window.location.href = "{% url 'purchase_order_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}

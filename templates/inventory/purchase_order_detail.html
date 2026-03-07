@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success btn-sm" onclick="printDetail()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+    {% if po.status != "received" %}
+    <a href="{% url 'purchase_order_receive' po.id %}"
+       class="btn btn-primary btn-sm">
+      <i class="bi bi-box-arrow-in-down"></i> Receive Stock
+    </a>
+    {% endif %}
+    <a href="{% url 'purchase_order_list' %}"
+       class="btn btn-danger btn-sm">Back</a>
+  </div>
+
+  <div id="printArea" class="card p-4" style="max-width:1000px; margin:auto;">
+
+    <div class="d-flex justify-content-between align-items-center
+                border-bottom pb-3 mb-3">
+      <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+      <h3 class="mb-0">Purchase Order</h3>
+    </div>
+
+    <div class="row mb-3" style="font-size:13px;">
+      <div class="col-md-6">
+        <div><strong>PO Number:</strong> {{ po.po_number }}</div>
+        <div><strong>Date:</strong> {{ po.date|date:"d-m-Y" }}</div>
+        <div><strong>Expected Date:</strong>
+          {{ po.expected_date|date:"d-m-Y"|default:"—" }}
+        </div>
+        <div><strong>Created By:</strong>
+          {{ po.created_by.get_full_name|default:po.created_by.username }}
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div><strong>Supplier:</strong>
+          {{ po.supplier.supplier_name|default:"—" }}
+        </div>
+        <div><strong>Phone:</strong>
+          {{ po.supplier.phone|default:"—" }}
+        </div>
+        <div><strong>Status:</strong>
+          {% if po.status == "pending" %}
+            <span class="badge bg-warning text-dark">Pending</span>
+          {% elif po.status == "received" %}
+            <span class="badge bg-success">Received</span>
+          {% elif po.status == "partial" %}
+            <span class="badge bg-info">Partial</span>
+          {% else %}
+            <span class="badge bg-danger">Cancelled</span>
+          {% endif %}
+        </div>
+        {% if po.demand_sheet %}
+        <div><strong>From Demand Sheet:</strong>
+          {{ po.demand_sheet.demand_no }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <table class="table table-bordered" style="font-size:13px;">
+      <thead style="background:#1a7fe8; color:white; text-align:center;">
+        <tr>
+          <th>#</th>
+          <th>SKU</th>
+          <th>Item Name</th>
+          <th>Unit</th>
+          <th>Ordered Qty</th>
+          <th>Received Qty</th>
+          <th>Rate</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ item.product.sku|default:"—" }}</td>
+          <td>{{ item.product.name|default:"—" }}</td>
+          <td>{{ item.unit_name }}</td>
+          <td class="text-center">{{ item.ordered_qty }}</td>
+          <td class="text-center
+            {% if item.received_qty == item.ordered_qty %}text-success
+            {% elif item.received_qty > 0 %}text-warning
+            {% else %}text-danger{% endif %}">
+            {{ item.received_qty }}
+          </td>
+          <td class="text-end">PKR {{ item.rate }}</td>
+          <td class="text-end fw-bold">PKR {{ item.amount }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted">No items.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="fw-bold">
+          <td colspan="7" class="text-end">Grand Total:</td>
+          <td class="text-end text-primary">
+            PKR {{ po.total_amount|floatformat:2 }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    {% if po.notes %}
+    <div class="mt-2">
+      <strong>Notes:</strong> {{ po.notes }}
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between mt-4"
+         style="font-size:11px; color:#888;">
+      <span>Developed by Abdullah Rajpoot</span>
+      <span>abmuhammad112233@gmail.com</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function printDetail() {
+  const content = document.getElementById("printArea").innerHTML;
+  const win = window.open('', '_blank', 'width=1000,height=700');
+  win.document.write(`
+    <html>
+      <head>
+        <title>Purchase Order - {{ po.po_number }}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          table { width:100%; border-collapse:collapse; font-size:13px; }
+          th, td { border:1px solid #ddd; padding:6px 10px; }
+          thead tr { background:#1a7fe8; color:white; text-align:center; }
+          .text-end    { text-align:right; }
+          .text-center { text-align:center; }
+          .text-success { color:#28a745; }
+          .text-warning { color:#ffc107; }
+          .text-danger  { color:#dc3545; }
+          .fw-bold { font-weight:bold; }
+          @media print { button { display:none; } }
+        </style>
+      </head>
+      <body>
+        ${content}
+        <br><button onclick="window.print()">Print</button>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
+</script>
+
+{% endblock %}
