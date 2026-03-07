@@ -532,7 +532,7 @@ def purchase_order_list(request):
 # ── CREATE ────────────────────────────────────────────
 @login_required
 def purchase_order_create(request):
-    suppliers     = Supplier.objects.filter(status="active").order_by("supplier_name")
+    suppliers = Supplier.objects.filter(status__iexact="active").order_by("supplier_name")
     branches      = Branch.objects.all()
     categories    = Category.objects.filter(status=True).order_by("name")
     demand_sheets = DemandSheet.objects.order_by("-created_at")[:20]
