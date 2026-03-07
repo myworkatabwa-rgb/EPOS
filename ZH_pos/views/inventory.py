@@ -537,7 +537,7 @@ def purchase_order_list(request):
     orders = PurchaseOrder.objects.select_related(
         "supplier", "branch", "created_by"
     ).order_by("-created_at")
-    return render(request, "purchase/purchase_order_list.html", {
+    return render(request, "inventory/purchase_order_list.html", {
         "orders": orders
     })
 
