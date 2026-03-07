@@ -167,7 +167,7 @@ function loadFromDemand() {
   const demandId = document.getElementById("demandSheetSelect").value;
   if (!demandId) { alert("Please select a demand sheet."); return; }
 
-  fetch(`/purchase/load-demand-items/?demand_id=${demandId}`)
+  fetch(`/inventory/purchase/load-demand-items/?demand_id=${demandId}`)
     .then(r => r.json())
     .then(data => {
       if (data.length === 0) {
