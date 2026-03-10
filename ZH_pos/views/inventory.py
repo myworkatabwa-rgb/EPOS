@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
-from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem
+from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem
 
 
 
@@ -905,9 +905,153 @@ def goods_receive_note(request):
 
 
 
+def generate_return_no():
+    last = GRNReturnNote.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"GRN-RET-{str(next_id).zfill(5)}"
+
+
 @login_required
 def goods_receive_return_note(request):
-    return render(request, "inventory/goods_receive_return_note.html")
+    suppliers = Supplier.objects.filter(status="Active").order_by("supplier_name")
+    grns      = GoodsReceiveNote.objects.select_related("supplier").order_by("-created_at")[:30]
+    return_no = generate_return_no()
+    today     = timezone.now().strftime("%-d-%-m-%Y")
+
+    if request.method == "POST":
+        try:
+            data        = json.loads(request.body)
+            supplier_id = data.get("supplier_id") or None
+            grn_id      = data.get("grn_id") or None
+            reason      = data.get("reason", "")
+            description = data.get("description", "")
+            items       = data.get("items", [])
+
+            if not items:
+                return JsonResponse({"success": False, "error": "No items added."})
+
+            total_amount = sum(float(i.get("amount", 0)) for i in items)
+
+            ret = GRNReturnNote.objects.create(
+                return_no    = generate_return_no(),
+                supplier_id  = supplier_id,
+                grn_id       = grn_id,
+                reason       = reason,
+                description  = description,
+                total_amount = total_amount,
+                created_by   = request.user,
+            )
+
+            for item in items:
+                product_id       = item.get("product_id")
+                return_qty       = int(item.get("return_qty", 0))
+                rate             = float(item.get("rate", 0))
+                tax_percentage   = float(item.get("tax_percentage", 0))
+                discount_percent = float(item.get("discount_percent", 0))
+                batch_no         = item.get("batch_no", "")
+                expiry           = item.get("expiry") or None
+                grn_qty          = int(item.get("grn_qty", 0))
+                grn_no           = item.get("grn_no", "")
+                item_reason      = item.get("reason", "")
+
+                if not product_id or return_qty <= 0:
+                    continue
+
+                product        = Product.objects.get(id=product_id)
+                base_amount    = return_qty * rate
+                disc_amount    = base_amount * (discount_percent / 100)
+                taxable_amount = base_amount - disc_amount
+                tax_amount     = taxable_amount * (tax_percentage / 100)
+                final_amount   = taxable_amount + tax_amount
+
+                GRNReturnNoteItem.objects.create(
+                    return_note_id   = ret.id,
+                    product_id       = product_id,
+                    grn_no           = grn_no,
+                    unit_name        = product.unit.Unit_name if product.unit else "Default",
+                    batch_no         = batch_no,
+                    expiry           = expiry,
+                    grn_qty          = grn_qty,
+                    return_qty       = return_qty,
+                    rate             = rate,
+                    amount           = final_amount,
+                    tax_percentage   = tax_percentage,
+                    tax_amount       = tax_amount,
+                    discount_percent = discount_percent,
+                    reason           = item_reason,
+                )
+
+                # ✅ Deduct stock
+                product.stock = max(0, product.stock - return_qty)
+                product.save()
+
+            return JsonResponse({"success": True, "id": ret.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/goods_receive_return_note.html", {
+        "suppliers": suppliers,
+        "grns":      grns,
+        "return_no": return_no,
+        "today":     today,
+    })
+
+
+@login_required
+def grn_return_list(request):
+    returns = GRNReturnNote.objects.select_related(
+        "supplier", "grn", "created_by"
+    ).order_by("-created_at")
+    return render(request, "inventory/grn_return_list.html", {
+        "returns": returns
+    })
+
+
+@login_required
+def grn_return_detail(request, pk):
+    ret   = get_object_or_404(GRNReturnNote, id=pk)
+    items = ret.items.select_related("product").all()
+    return render(request, "inventory/grn_return_detail.html", {
+        "ret":   ret,
+        "items": items,
+    })
+
+
+@login_required
+def grn_return_delete(request, pk):
+    ret = get_object_or_404(GRNReturnNote, id=pk)
+    if request.method == "POST":
+        ret.delete()
+        messages.success(request, "GRN Return Note deleted.")
+    return redirect("grn_return_list")
+
+
+@login_required
+def load_grn_items(request):
+    grn_id = request.GET.get("grn_id")
+    if not grn_id:
+        return JsonResponse([], safe=False)
+    try:
+        grn   = GoodsReceiveNote.objects.get(id=grn_id)
+        items = grn.items.select_related("product").all()
+        data  = [{
+            "product_id": i.product.id if i.product else None,
+            "name":       i.product.name if i.product else "—",
+            "sku":        i.product.sku if i.product else "—",
+            "unit":       i.unit_name,
+            "grn_qty":    i.quantity,
+            "grn_no":     grn.grn_no,
+            "batch_no":   i.batch_no or "",
+            "expiry":     str(i.expiry) if i.expiry else "",
+            "rate":       float(i.rate),
+            "tax_percentage":   float(i.tax_percentage),
+            "discount_percent": float(i.discount_percent),
+            "stock":      i.product.stock if i.product else 0,
+        } for i in items]
+        return JsonResponse(data, safe=False)
+    except GoodsReceiveNote.DoesNotExist:
+        return JsonResponse([], safe=False)
 
 
 @login_required

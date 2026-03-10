@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">GRN Return Notes</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'goods_receive_return_note' %}" class="btn btn-primary">
+      + New GRN Return
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="returnTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Return No</th>
+          <th>Date</th>
+          <th>Supplier</th>
+          <th>GRN Reference</th>
+          <th>Reason</th>
+          <th>Total Amount</th>
+          <th>View</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ret in returns %}
+        <tr>
+          <td>{{ ret.id }}</td>
+          <td>{{ ret.return_no }}</td>
+          <td>{{ ret.return_date|date:"d-m-Y" }}</td>
+          <td>{{ ret.supplier.supplier_name|default:"—" }}</td>
+          <td>{{ ret.grn.grn_no|default:"—" }}</td>
+          <td>
+            {% if ret.reason %}
+              <span class="badge bg-warning text-dark">
+                {{ ret.get_reason_display }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="fw-bold text-danger">
+            PKR {{ ret.total_amount|floatformat:2 }}
+          </td>
+          <td>
+            <a href="{% url 'grn_return_detail' ret.id %}"
+               class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+          <td>
+            <form action="{% url 'grn_return_delete' ret.id %}"
+                  method="post"
+                  onsubmit="return confirm('Delete {{ ret.return_no }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">
+            No return notes found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#returnTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+{% endblock %}

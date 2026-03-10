@@ -650,3 +650,46 @@ class GoodsReceiveNoteItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.grn.grn_no}"
+class GRNReturnNote(models.Model):
+    REASON_CHOICES = (
+        ("damaged",   "Damaged"),
+        ("wrong",     "Wrong Item"),
+        ("excess",    "Excess Quantity"),
+        ("expired",   "Expired"),
+        ("quality",   "Quality Issue"),
+        ("other",     "Other"),
+    )
+
+    return_no    = models.CharField(max_length=50, unique=True)
+    return_date  = models.DateField(auto_now_add=True)
+    branch       = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    supplier     = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    grn          = models.ForeignKey(GoodsReceiveNote, on_delete=models.SET_NULL, null=True, blank=True, related_name="returns")
+    reason       = models.CharField(max_length=20, choices=REASON_CHOICES, blank=True, null=True)
+    description  = models.TextField(blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by   = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.return_no
+
+
+class GRNReturnNoteItem(models.Model):
+    return_note      = models.ForeignKey(GRNReturnNote, on_delete=models.CASCADE, related_name="items")
+    product          = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    grn_no           = models.CharField(max_length=50, blank=True, null=True)
+    unit_name        = models.CharField(max_length=100, default="Default")
+    batch_no         = models.CharField(max_length=100, blank=True, null=True)
+    expiry           = models.DateField(null=True, blank=True)
+    grn_qty          = models.IntegerField(default=0)
+    return_qty       = models.IntegerField(default=0)
+    rate             = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount           = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_percentage   = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_amount       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    reason           = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.product} - {self.return_note.return_no}"
