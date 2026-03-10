@@ -3,71 +3,451 @@
 {% block content %}
 
 <div class="container-fluid">
-  <h5 class="mb-1 fw-semibold">Goods Receive Note</h5>
-  <hr class="mt-1 mb-3" style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+  <h5 class="mb-1 fw-semibold">Goods Receive Return Note</h5>
+  <hr class="mt-1 mb-3" style="border-color:#dc3545;border-width:2px;width:60px;opacity:1;">
 
-  <div class="mb-3">
-    <a href="{% url 'grn_create' %}" class="btn btn-primary">
-      + New GRN
-    </a>
-  </div>
+  <div class="card p-4">
 
-  <div class="card p-3">
-    <table class="table table-bordered table-hover" id="grnTable">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>GRN No</th>
-          <th>Date</th>
-          <th>Supplier</th>
-          <th>Invoice No</th>
-          <th>PO No</th>
-          <th>Total Amount</th>
-          <th>View</th>
-          <th>Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for grn in grns %}
-        <tr>
-          <td>{{ grn.id }}</td>
-          <td>{{ grn.grn_no }}</td>
-          <td>{{ grn.grn_date|date:"d-m-Y" }}</td>
-          <td>{{ grn.supplier.supplier_name|default:"—" }}</td>
-          <td>{{ grn.invoice_number|default:"—" }}</td>
-          <td>{{ grn.purchase_order.po_number|default:"—" }}</td>
-          <td class="fw-bold">PKR {{ grn.total_amount|floatformat:2 }}</td>
-          <td>
-            <a href="{% url 'grn_detail' grn.id %}"
-               class="btn btn-sm btn-info">
-              <i class="bi bi-eye"></i> View
-            </a>
-          </td>
-          <td>
-            <form action="{% url 'grn_delete' grn.id %}" method="post"
-                  onsubmit="return confirm('Delete GRN {{ grn.grn_no }}?');">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-danger">
-                <i class="bi bi-trash"></i>
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="9" class="text-center text-muted py-4">
-            No GRNs found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <!-- ROW 1 -->
+    <div class="row mb-3">
+      <div class="col-md-2">
+        <label class="form-label">Branch</label>
+        <input type="text" class="form-control bg-light"
+               value="Main Branch" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Return No</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ return_no }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Return Date</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Supplier</label>
+        <select id="supplierSelect" class="form-select">
+          <option value="">Select Supplier</option>
+          {% for s in suppliers %}
+            <option value="{{ s.id }}">{{ s.supplier_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Reason</label>
+        <select id="reasonSelect" class="form-select">
+          <option value="">Select Reason</option>
+          <option value="damaged">Damaged</option>
+          <option value="wrong">Wrong Item</option>
+          <option value="excess">Excess Quantity</option>
+          <option value="expired">Expired</option>
+          <option value="quality">Quality Issue</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Description</label>
+        <textarea id="description" class="form-control" rows="1"
+                  placeholder="Description"></textarea>
+      </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="row mb-4 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">GRN Reference</label>
+        <div class="input-group">
+          <select id="grnSelect" class="form-select">
+            <option value="">Select GRN</option>
+            {% for grn in grns %}
+              <option value="{{ grn.id }}">
+                {{ grn.grn_no }} —
+                {{ grn.supplier.supplier_name|default:"" }} —
+                {{ grn.grn_date|date:"d-m-Y" }}
+              </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary" onclick="loadGRNItems()">
+            Load GRN
+          </button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Choose Excel File</label>
+        <div class="input-group">
+          <input type="file" class="form-control" accept=".xlsx,.xls">
+          <button class="btn btn-info" onclick="downloadSample()">
+            Download Sample
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BARCODE SCAN -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Add by barcode scan</label>
+      <input type="text" id="barcodeInput" class="form-control"
+             style="max-width:350px;"
+             placeholder="place cursor here to Scan Barcode"
+             onkeydown="if(event.key==='Enter'){
+               event.preventDefault(); addByBarcode(); }">
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle"
+             style="font-size:13px; min-width:1200px;">
+        <thead style="background:#dc3545; color:white; text-align:center;">
+          <tr>
+            <th>GRN No</th>
+            <th style="min-width:100px;">BarCode</th>
+            <th style="min-width:160px;">Item Name</th>
+            <th>Unit</th>
+            <th>Batch No</th>
+            <th>Expiry</th>
+            <th>GRN Qty</th>
+            <th>Return Qty</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Tax %</th>
+            <th>Tax Amt</th>
+            <th>Disc %</th>
+            <th>Reason</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody id="returnItemsBody">
+          <tr id="emptyRow">
+            <td colspan="15" class="text-center text-muted py-3">
+              No items added yet.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold" style="background:#f8f9fa;">
+            <td colspan="9" class="text-end">Total:</td>
+            <td id="grandTotal" class="text-danger fw-bold">0.00</td>
+            <td></td>
+            <td id="totalTax" class="text-danger">0.00</td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-secondary" onclick="addEmptyRow()">
+        Add More
+      </button>
+    </div>
+
+    <div>
+      <button class="btn btn-danger px-5" onclick="saveReturn()">
+        Save Return Note
+      </button>
+      <a href="{% url 'grn_return_list' %}"
+         class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+
   </div>
 </div>
 
+
 <script>
-$(document).ready(function () {
-  $('#grnTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
-});
+let returnItems = [];
+
+// ── LOAD GRN ITEMS ────────────────────────────────────
+function loadGRNItems() {
+  const grnId = document.getElementById("grnSelect").value;
+  if (!grnId) { alert("Please select a GRN."); return; }
+
+  fetch(`{% url 'load_grn_items' %}?grn_id=${grnId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) {
+        alert("No items found in this GRN.");
+        return;
+      }
+      data.forEach(item => {
+        const exists = returnItems.find(
+          i => i.product_id === item.product_id
+        );
+        if (!exists) {
+          returnItems.push({
+            product_id:       item.product_id,
+            sku:              item.sku,
+            name:             item.name,
+            unit:             item.unit,
+            grn_no:           item.grn_no,
+            grn_qty:          item.grn_qty,
+            batch_no:         item.batch_no,
+            expiry:           item.expiry,
+            return_qty:       0,
+            rate:             item.rate,
+            tax_percentage:   item.tax_percentage,
+            discount_percent: item.discount_percent,
+            reason:           "",
+          });
+        }
+      });
+
+      // Auto-fill supplier from GRN
+      const grnOption = document.getElementById("grnSelect");
+      renderTable();
+      alert(`${data.length} items loaded from GRN.`);
+    });
+}
+
+// ── BARCODE SCAN ──────────────────────────────────────
+function addByBarcode() {
+  const sku = document.getElementById("barcodeInput").value.trim();
+  if (!sku) return;
+
+  fetch(`{% url 'fetch_product_for_grn' %}?sku=${encodeURIComponent(sku)}`)
+    .then(r => r.json())
+    .then(p => {
+      if (!p.product_id) {
+        alert("Product not found: " + sku);
+        return;
+      }
+      const exists = returnItems.find(i => i.product_id === p.product_id);
+      if (exists) {
+        exists.return_qty += 1;
+      } else {
+        returnItems.push({
+          product_id:       p.product_id,
+          sku:              p.sku,
+          name:             p.name,
+          unit:             p.unit,
+          grn_no:           "",
+          grn_qty:          p.stock,
+          batch_no:         "",
+          expiry:           "",
+          return_qty:       1,
+          rate:             p.rate,
+          tax_percentage:   0,
+          discount_percent: 0,
+          reason:           "",
+        });
+      }
+      document.getElementById("barcodeInput").value = "";
+      renderTable();
+    });
+}
+
+// ── ADD EMPTY ROW ─────────────────────────────────────
+function addEmptyRow() {
+  returnItems.push({
+    product_id: null, sku: "", name: "", unit: "Default",
+    grn_no: "", grn_qty: 0, batch_no: "", expiry: "",
+    return_qty: 0, rate: 0, tax_percentage: 0,
+    discount_percent: 0, reason: "",
+  });
+  renderTable();
+}
+
+// ── RENDER TABLE ──────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("returnItemsBody");
+  tbody.innerHTML = "";
+  let grandTotal = 0;
+  let totalTax   = 0;
+
+  if (returnItems.length === 0) {
+    tbody.innerHTML = `<tr id="emptyRow">
+      <td colspan="15" class="text-center text-muted py-3">
+        No items added yet.
+      </td>
+    </tr>`;
+    document.getElementById("grandTotal").textContent = "0.00";
+    document.getElementById("totalTax").textContent   = "0.00";
+    return;
+  }
+
+  returnItems.forEach((item, i) => {
+    const base     = item.return_qty * item.rate;
+    const disc     = base * (item.discount_percent / 100);
+    const taxable  = base - disc;
+    const taxAmt   = taxable * (item.tax_percentage / 100);
+    const amount   = taxable + taxAmt;
+    grandTotal    += amount;
+    totalTax      += taxAmt;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 style="width:110px;" value="${item.grn_no}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 value="${item.sku}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 value="${item.name}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 style="width:80px;" value="${item.unit}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm"
+                 style="width:90px;" value="${item.batch_no}"
+                 oninput="returnItems[${i}].batch_no=this.value"
+                 placeholder="Batch">
+        </td>
+        <td>
+          <input type="date" class="form-control form-control-sm"
+                 style="width:130px;" value="${item.expiry}"
+                 oninput="returnItems[${i}].expiry=this.value">
+        </td>
+        <td class="text-center">
+          <span class="badge bg-secondary">${item.grn_qty}</span>
+        </td>
+        <td>
+          <input type="number" class="form-control form-control-sm"
+                 style="width:80px;" value="${item.return_qty}" min="0"
+                 max="${item.grn_qty}"
+                 oninput="
+                   const val = parseInt(this.value)||0;
+                   if(val > ${item.grn_qty}){
+                     this.value=${item.grn_qty};
+                     returnItems[${i}].return_qty=${item.grn_qty};
+                   } else {
+                     returnItems[${i}].return_qty=val;
+                   }
+                   renderTable();">
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:100px;" value="${item.rate}"
+                 oninput="returnItems[${i}].rate=parseFloat(this.value)||0;
+                          renderTable();">
+        </td>
+        <td class="fw-bold text-danger text-end">
+          ${amount.toFixed(2)}
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:70px;" value="${item.tax_percentage}"
+                 oninput="returnItems[${i}].tax_percentage=
+                          parseFloat(this.value)||0; renderTable();">
+        </td>
+        <td class="text-danger text-end">${taxAmt.toFixed(2)}</td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:70px;" value="${item.discount_percent}"
+                 oninput="returnItems[${i}].discount_percent=
+                          parseFloat(this.value)||0; renderTable();">
+        </td>
+        <td>
+          <select class="form-select form-select-sm"
+                  style="width:110px;"
+                  onchange="returnItems[${i}].reason=this.value">
+            <option value="">—</option>
+            <option value="damaged"  ${item.reason==='damaged'  ?'selected':''}>Damaged</option>
+            <option value="wrong"    ${item.reason==='wrong'    ?'selected':''}>Wrong</option>
+            <option value="excess"   ${item.reason==='excess'   ?'selected':''}>Excess</option>
+            <option value="expired"  ${item.reason==='expired'  ?'selected':''}>Expired</option>
+            <option value="quality"  ${item.reason==='quality'  ?'selected':''}>Quality</option>
+            <option value="other"    ${item.reason==='other'    ?'selected':''}>Other</option>
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger"
+                  onclick="returnItems.splice(${i},1); renderTable();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
+  document.getElementById("totalTax").textContent   = totalTax.toFixed(2);
+}
+
+// ── DOWNLOAD SAMPLE ───────────────────────────────────
+function downloadSample() {
+  const csv  = "BarCode,Batch No,Expiry,Return Qty,Rate,Tax %,Discount %,Reason\nSKU001,,2026-12-31,5,500,0,0,damaged\n";
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a    = document.createElement("a");
+  a.href     = URL.createObjectURL(blob);
+  a.download = "grn_return_sample.csv";
+  a.click();
+}
+
+// ── SAVE RETURN ───────────────────────────────────────
+function saveReturn() {
+  if (returnItems.length === 0) {
+    alert("Please add at least one item.");
+    return;
+  }
+
+  const supplierId = document.getElementById("supplierSelect").value;
+  if (!supplierId) {
+    alert("Please select a supplier.");
+    return;
+  }
+
+  const hasQty = returnItems.some(i => i.return_qty > 0);
+  if (!hasQty) {
+    alert("Please enter return quantity for at least one item.");
+    return;
+  }
+
+  const itemsWithAmount = returnItems.map(item => {
+    const base     = item.return_qty * item.rate;
+    const disc     = base * (item.discount_percent / 100);
+    const taxable  = base - disc;
+    const taxAmt   = taxable * (item.tax_percentage / 100);
+    return {
+      ...item,
+      amount:     taxable + taxAmt,
+      tax_amount: taxAmt,
+    };
+  });
+
+  fetch("{% url 'goods_receive_return_note' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      supplier_id: supplierId,
+      grn_id:      document.getElementById("grnSelect").value || null,
+      reason:      document.getElementById("reasonSelect").value,
+      description: document.getElementById("description").value,
+      items:       itemsWithAmount,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("GRN Return Note saved. Stock has been deducted.");
+      window.location.href = "{% url 'grn_return_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
 </script>
+
 {% endblock %}
