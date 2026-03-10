@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success btn-sm" onclick="printDetail()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+    <a href="{% url 'grn_list' %}" class="btn btn-danger btn-sm">Back</a>
+  </div>
+
+  <div id="printArea" class="card p-4" style="max-width:1100px; margin:auto;">
+
+    <div class="d-flex justify-content-between align-items-center
+                border-bottom pb-3 mb-3">
+      <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+      <h3 class="mb-0">Goods Receive Note</h3>
+    </div>
+
+    <div class="row mb-3" style="font-size:13px;">
+      <div class="col-md-6">
+        <div><strong>GRN No:</strong> {{ grn.grn_no }}</div>
+        <div><strong>Date:</strong> {{ grn.grn_date|date:"d-m-Y" }}</div>
+        <div><strong>Invoice No:</strong>
+          {{ grn.invoice_number|default:"—" }}
+        </div>
+        <div><strong>Terms:</strong>
+          {{ grn.get_terms_display|default:"—" }}
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div><strong>Supplier:</strong>
+          {{ grn.supplier.supplier_name|default:"—" }}
+        </div>
+        <div><strong>PO Reference:</strong>
+          {{ grn.purchase_order.po_number|default:"—" }}
+        </div>
+        <div><strong>Created By:</strong>
+          {{ grn.created_by.get_full_name|default:grn.created_by.username }}
+        </div>
+        {% if grn.description %}
+        <div><strong>Description:</strong> {{ grn.description }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered"
+             style="font-size:12px; min-width:1000px;">
+        <thead style="background:#1a7fe8; color:white; text-align:center;">
+          <tr>
+            <th>#</th>
+            <th>PO No</th>
+            <th>BarCode</th>
+            <th>Item Name</th>
+            <th>Unit</th>
+            <th>Batch No</th>
+            <th>Expiry</th>
+            <th>PO Qty</th>
+            <th>Received Qty</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Tax %</th>
+            <th>Tax Amt</th>
+            <th>Disc %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.po_no|default:"—" }}</td>
+            <td>{{ item.product.sku|default:"—" }}</td>
+            <td>{{ item.product.name|default:"—" }}</td>
+            <td>{{ item.unit_name }}</td>
+            <td>{{ item.batch_no|default:"—" }}</td>
+            <td>{{ item.expiry|date:"d-m-Y"|default:"—" }}</td>
+            <td class="text-center">{{ item.po_qty }}</td>
+            <td class="text-center fw-bold">{{ item.quantity }}</td>
+            <td class="text-end">{{ item.rate }}</td>
+            <td class="text-end fw-bold text-primary">
+              {{ item.amount|floatformat:2 }}
+            </td>
+            <td class="text-center">{{ item.tax_percentage }}%</td>
+            <td class="text-end text-danger">
+              {{ item.tax_amount|floatformat:2 }}
+            </td>
+            <td class="text-center">{{ item.discount_percent }}%</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="14" class="text-center text-muted">No items.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold">
+            <td colspan="10" class="text-end">Grand Total:</td>
+            <td class="text-primary text-end">
+              PKR {{ grn.total_amount|floatformat:2 }}
+            </td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4"
+         style="font-size:11px; color:#888;">
+      <span>Developed by Abdullah Rajpoot</span>
+      <span>abmuhammad112233@gmail.com</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function printDetail() {
+  const content = document.getElementById("printArea").innerHTML;
+  const win = window.open('', '_blank', 'width=1100,height=750');
+  win.document.write(`
+    <html><head>
+      <title>GRN - {{ grn.grn_no }}</title>
+      <style>
+        body { font-family:Arial,sans-serif; padding:20px; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th,td { border:1px solid #ddd; padding:5px 8px; }
+        thead tr { background:#1a7fe8; color:white; text-align:center; }
+        .text-end { text-align:right; }
+        .text-center { text-align:center; }
+        .text-primary { color:#0d6efd; }
+        .text-danger { color:#dc3545; }
+        .fw-bold { font-weight:bold; }
+        @media print { button { display:none; } }
+      </style>
+    </head><body>
+      ${content}
+      <br><button onclick="window.print()">Print</button>
+    </body></html>
+  `);
+  win.document.close();
+}
+</script>
+
+{% endblock %}

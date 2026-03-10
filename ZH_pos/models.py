@@ -610,3 +610,43 @@ class PurchaseOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.po.po_number}"
+class GoodsReceiveNote(models.Model):
+    TERMS_CHOICES = (
+        ("cash",   "Cash"),
+        ("credit", "Credit"),
+        ("advance","Advance"),
+    )
+
+    grn_no         = models.CharField(max_length=50, unique=True)
+    grn_date       = models.DateField(auto_now_add=True)
+    branch         = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    supplier       = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name="grns")
+    invoice_number = models.CharField(max_length=100, blank=True, null=True)
+    terms          = models.CharField(max_length=20, choices=TERMS_CHOICES, blank=True, null=True)
+    description    = models.TextField(blank=True, null=True)
+    total_amount   = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.grn_no
+
+
+class GoodsReceiveNoteItem(models.Model):
+    grn              = models.ForeignKey(GoodsReceiveNote, on_delete=models.CASCADE, related_name="items")
+    product          = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    po_no            = models.CharField(max_length=50, blank=True, null=True)
+    unit_name        = models.CharField(max_length=100, default="Default")
+    batch_no         = models.CharField(max_length=100, blank=True, null=True)
+    expiry           = models.DateField(null=True, blank=True)
+    po_qty           = models.IntegerField(default=0)
+    quantity         = models.IntegerField(default=0)
+    rate             = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount           = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_percentage   = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_amount       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.product} - {self.grn.grn_no}"

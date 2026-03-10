@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Goods Receive Note</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'grn_create' %}" class="btn btn-primary">
+      + New GRN
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="grnTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>GRN No</th>
+          <th>Date</th>
+          <th>Supplier</th>
+          <th>Invoice No</th>
+          <th>PO No</th>
+          <th>Total Amount</th>
+          <th>View</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grn in grns %}
+        <tr>
+          <td>{{ grn.id }}</td>
+          <td>{{ grn.grn_no }}</td>
+          <td>{{ grn.grn_date|date:"d-m-Y" }}</td>
+          <td>{{ grn.supplier.supplier_name|default:"—" }}</td>
+          <td>{{ grn.invoice_number|default:"—" }}</td>
+          <td>{{ grn.purchase_order.po_number|default:"—" }}</td>
+          <td class="fw-bold">PKR {{ grn.total_amount|floatformat:2 }}</td>
+          <td>
+            <a href="{% url 'grn_detail' grn.id %}"
+               class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+          <td>
+            <form action="{% url 'grn_delete' grn.id %}" method="post"
+                  onsubmit="return confirm('Delete GRN {{ grn.grn_no }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">
+            No GRNs found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#grnTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+{% endblock %}

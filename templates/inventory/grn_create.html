@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Goods Receive Note</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="card p-4">
+
+    <!-- ROW 1 -->
+    <div class="row mb-3">
+      <div class="col-md-2">
+        <label class="form-label">Branch</label>
+        <input type="text" class="form-control bg-light" value="Main Branch" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">GRN No</label>
+        <input type="text" class="form-control bg-light" value="{{ grn_no }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">GRN Date</label>
+        <input type="text" class="form-control bg-light" value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Invoice Number</label>
+        <input type="text" id="invoiceNumber" class="form-control"
+               placeholder="Invoice Number">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Supplier</label>
+        <select id="supplierSelect" class="form-select">
+          <option value="">Select Supplier</option>
+          {% for s in suppliers %}
+            <option value="{{ s.id }}">{{ s.supplier_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Description</label>
+        <textarea id="description" class="form-control" rows="1"
+                  placeholder="Description"></textarea>
+      </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="row mb-4 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label">Terms</label>
+        <select id="termsSelect" class="form-select">
+          <option value="">Select</option>
+          <option value="cash">Cash</option>
+          <option value="credit">Credit</option>
+          <option value="advance">Advance</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">PO No</label>
+        <div class="input-group">
+          <select id="poSelect" class="form-select">
+            <option value="">Select PO</option>
+            {% for po in pos %}
+              <option value="{{ po.id }}">
+                {{ po.po_number }}
+              </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary" onclick="loadPOItems()">
+            Load PO
+          </button>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Choose Excel File</label>
+        <div class="input-group">
+          <input type="file" class="form-control" accept=".xlsx,.xls">
+          <button class="btn btn-info" onclick="downloadSampleGRN()">
+            Download Sample file
+          </button>
+        </div>
+      </div>
+      <div class="col-md-2 d-flex align-items-end gap-2">
+        <button class="btn btn-success" onclick="loadStocks()">
+          Load Stocks
+        </button>
+        <div class="form-check ms-2">
+          <input class="form-check-input" type="checkbox"
+                 id="getPurchaseRate">
+          <label class="form-check-label" style="font-size:12px;">
+            Get Item Purchase Rate
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- BARCODE SCAN -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Add by barcode scan</label>
+      <input type="text" id="barcodeInput" class="form-control"
+             style="max-width:350px;"
+             placeholder="place cursor here to Scan Barcode"
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); addByBarcode(); }">
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle"
+             style="font-size:13px; min-width:1200px;">
+        <thead style="background:#1a7fe8; color:white; text-align:center;">
+          <tr>
+            <th>PO No</th>
+            <th style="min-width:100px;">BarCode</th>
+            <th style="min-width:160px;">Item Name</th>
+            <th>Unit</th>
+            <th>Batch No</th>
+            <th>Expiry</th>
+            <th>Po Qty</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Tax %</th>
+            <th>Tax Amount</th>
+            <th>Disc %</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody id="grnItemsBody">
+          <tr id="emptyRow">
+            <td colspan="14" class="text-center text-muted py-3">
+              No items added yet.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold" style="background:#f8f9fa;">
+            <td colspan="9" class="text-end">Total:</td>
+            <td id="grandTotal" class="text-primary fw-bold">0.00</td>
+            <td></td>
+            <td id="totalTax" class="text-danger">0.00</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-secondary" onclick="addEmptyRow()">
+        Add More
+      </button>
+    </div>
+
+    <div>
+      <button class="btn btn-primary px-5" onclick="saveGRN()">Save</button>
+      <a href="{% url 'grn_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+let grnItems = [];
+
+// ── LOAD PO ITEMS ─────────────────────────────────────
+function loadPOItems() {
+  const poId = document.getElementById("poSelect").value;
+  if (!poId) { alert("Please select a PO."); return; }
+
+  fetch(`{% url 'load_po_items' %}?po_id=${poId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) {
+        alert("No items found in this PO.");
+        return;
+      }
+      data.forEach(item => {
+        const exists = grnItems.find(i => i.product_id === item.product_id);
+        if (!exists) {
+          grnItems.push({
+            product_id:      item.product_id,
+            sku:             item.sku,
+            name:            item.name,
+            unit:            item.unit,
+            po_no:           item.po_no,
+            po_qty:          item.po_qty,
+            batch_no:        "",
+            expiry:          "",
+            quantity:        item.po_qty,
+            rate:            item.rate,
+            tax_percentage:  0,
+            discount_percent: 0,
+          });
+        }
+      });
+      renderTable();
+      alert(`${data.length} items loaded from PO.`);
+    });
+}
+
+// ── BARCODE SCAN ──────────────────────────────────────
+function addByBarcode() {
+  const sku = document.getElementById("barcodeInput").value.trim();
+  if (!sku) return;
+
+  fetch(`{% url 'fetch_product_for_grn' %}?sku=${encodeURIComponent(sku)}`)
+    .then(r => r.json())
+    .then(p => {
+      if (!p.product_id) {
+        alert("Product not found: " + sku);
+        return;
+      }
+      const exists = grnItems.find(i => i.product_id === p.product_id);
+      if (exists) {
+        exists.quantity += 1;
+      } else {
+        grnItems.push({
+          product_id:      p.product_id,
+          sku:             p.sku,
+          name:            p.name,
+          unit:            p.unit,
+          po_no:           "",
+          po_qty:          0,
+          batch_no:        "",
+          expiry:          "",
+          quantity:        1,
+          rate:            p.rate,
+          tax_percentage:  0,
+          discount_percent: 0,
+        });
+      }
+      document.getElementById("barcodeInput").value = "";
+      renderTable();
+    });
+}
+
+// ── ADD EMPTY ROW ─────────────────────────────────────
+function addEmptyRow() {
+  grnItems.push({
+    product_id: null, sku: "", name: "", unit: "Default",
+    po_no: "", po_qty: 0, batch_no: "", expiry: "",
+    quantity: 1, rate: 0, tax_percentage: 0, discount_percent: 0,
+  });
+  renderTable();
+}
+
+// ── RENDER TABLE ──────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("grnItemsBody");
+  tbody.innerHTML = "";
+  let grandTotal = 0;
+  let totalTax   = 0;
+
+  if (grnItems.length === 0) {
+    tbody.innerHTML = `<tr id="emptyRow">
+      <td colspan="14" class="text-center text-muted py-3">
+        No items added yet.
+      </td>
+    </tr>`;
+    document.getElementById("grandTotal").textContent = "0.00";
+    document.getElementById("totalTax").textContent   = "0.00";
+    return;
+  }
+
+  grnItems.forEach((item, i) => {
+    const base     = item.quantity * item.rate;
+    const disc     = base * (item.discount_percent / 100);
+    const taxable  = base - disc;
+    const taxAmt   = taxable * (item.tax_percentage / 100);
+    const amount   = taxable + taxAmt;
+    grandTotal    += amount;
+    totalTax      += taxAmt;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 style="width:100px;" value="${item.po_no}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 value="${item.sku}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 value="${item.name}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm bg-light"
+                 style="width:80px;" value="${item.unit}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm"
+                 style="width:90px;" value="${item.batch_no}"
+                 oninput="grnItems[${i}].batch_no=this.value"
+                 placeholder="Batch">
+        </td>
+        <td>
+          <input type="date" class="form-control form-control-sm"
+                 style="width:130px;" value="${item.expiry}"
+                 oninput="grnItems[${i}].expiry=this.value">
+        </td>
+        <td class="text-center">
+          <span class="badge bg-secondary">${item.po_qty}</span>
+        </td>
+        <td>
+          <input type="number" class="form-control form-control-sm"
+                 style="width:80px;" value="${item.quantity}" min="1"
+                 oninput="grnItems[${i}].quantity=parseInt(this.value)||1;
+                          renderTable();">
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:100px;" value="${item.rate}"
+                 oninput="grnItems[${i}].rate=parseFloat(this.value)||0;
+                          renderTable();">
+        </td>
+        <td class="fw-bold text-primary text-end">
+          ${amount.toFixed(2)}
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:70px;" value="${item.tax_percentage}"
+                 oninput="grnItems[${i}].tax_percentage=parseFloat(this.value)||0;
+                          renderTable();">
+        </td>
+        <td class="text-danger text-end">${taxAmt.toFixed(2)}</td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:70px;" value="${item.discount_percent}"
+                 oninput="grnItems[${i}].discount_percent=parseFloat(this.value)||0;
+                          renderTable();">
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger"
+                  onclick="grnItems.splice(${i},1); renderTable();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
+  document.getElementById("totalTax").textContent   = totalTax.toFixed(2);
+}
+
+// ── LOAD STOCKS ───────────────────────────────────────
+function loadStocks() {
+  const getPurchaseRate = document.getElementById("getPurchaseRate").checked;
+  grnItems.forEach(item => {
+    if (getPurchaseRate && item.product_id) {
+      fetch(`{% url 'fetch_product_for_grn' %}?sku=${item.sku}`)
+        .then(r => r.json())
+        .then(p => {
+          if (p.product_id) {
+            item.rate = p.rate;
+            renderTable();
+          }
+        });
+    }
+  });
+  if (!getPurchaseRate) {
+    alert("Check 'Get Item Purchase Rate' to update rates from system.");
+  }
+}
+
+function downloadSampleGRN() {
+  const csv  = "BarCode,Batch No,Expiry,Quantity,Rate,Tax %,Discount %\nSKU001,,2026-12-31,10,500,0,0\n";
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a    = document.createElement("a");
+  a.href     = URL.createObjectURL(blob);
+  a.download = "grn_sample.csv";
+  a.click();
+}
+
+// ── SAVE GRN ──────────────────────────────────────────
+function saveGRN() {
+  if (grnItems.length === 0) {
+    alert("Please add at least one item.");
+    return;
+  }
+
+  const supplierId = document.getElementById("supplierSelect").value;
+  if (!supplierId) {
+    alert("Please select a supplier.");
+    return;
+  }
+
+  const itemsWithAmount = grnItems.map(item => {
+    const base   = item.quantity * item.rate;
+    const disc   = base * (item.discount_percent / 100);
+    const taxable = base - disc;
+    const taxAmt  = taxable * (item.tax_percentage / 100);
+    return {
+      ...item,
+      amount:     taxable + taxAmt,
+      tax_amount: taxAmt,
+    };
+  });
+
+  fetch("{% url 'grn_create' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      supplier_id:    supplierId,
+      po_id:          document.getElementById("poSelect").value || null,
+      invoice_number: document.getElementById("invoiceNumber").value,
+      terms:          document.getElementById("termsSelect").value,
+      description:    document.getElementById("description").value,
+      items:          itemsWithAmount,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("GRN saved successfully. Stock has been updated.");
+      window.location.href = "{% url 'grn_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}
