@@ -745,7 +745,7 @@ def grn_list(request):
     grns = GoodsReceiveNote.objects.select_related(
         "supplier", "branch", "created_by", "purchase_order"
     ).order_by("-created_at")
-    return render(request, "inventory/grn_list.html", {"grns": grns})
+    return render(request, "inventory/goods-receive-note.html", {"grns": grns})
 
 
 @login_required
@@ -898,7 +898,7 @@ def fetch_product_for_grn(request):
         })
     except Product.DoesNotExist:
         return JsonResponse({}, safe=False)
-        
+
 @login_required
 def goods_receive_note(request):
     return render(request, "inventory/goods_receive_note.html")
