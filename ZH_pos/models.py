@@ -693,3 +693,28 @@ class GRNReturnNoteItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.return_note.return_no}"
+class ItemRecipe(models.Model):
+    product    = models.OneToOneField(
+        Product, on_delete=models.CASCADE,
+        related_name="recipe"
+    )
+    yield_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Recipe: {self.product.name}"
+
+
+class ItemRecipeIngredient(models.Model):
+    recipe        = models.ForeignKey(ItemRecipe, on_delete=models.CASCADE, related_name="ingredients")
+    raw_material  = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="used_in_recipes")
+    actual_qty    = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    unit_name     = models.CharField(max_length=100, default="Default")
+    rate          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount        = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    stop_recipe   = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.raw_material} → {self.recipe.product.name}"

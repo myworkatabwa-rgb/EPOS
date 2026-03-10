@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Item Recipes</h5>
+  <hr class="mt-1 mb-3" style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'item_recipe_create' %}" class="btn btn-primary">
+      + New Recipe
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover" id="recipeTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Finished Product</th>
+          <th>SKU</th>
+          <th>Ingredients</th>
+          <th>Yield Cost</th>
+          <th>Created By</th>
+          <th>View</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for recipe in recipes %}
+        <tr>
+          <td>{{ recipe.id }}</td>
+          <td>{{ recipe.product.name }}</td>
+          <td>{{ recipe.product.sku|default:"—" }}</td>
+          <td class="text-center">
+            <span class="badge bg-info">
+              {{ recipe.ingredients.count }}
+            </span>
+          </td>
+          <td class="fw-bold text-success">
+            PKR {{ recipe.yield_cost|floatformat:2 }}
+          </td>
+          <td>
+            {{ recipe.created_by.get_full_name|default:recipe.created_by.username|default:"—" }}
+          </td>
+          <td>
+            <a href="{% url 'item_recipe_detail' recipe.id %}"
+               class="btn btn-sm btn-info">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+          <td>
+            <a href="{% url 'item_recipe_edit' recipe.id %}"
+               class="btn btn-sm btn-warning">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </td>
+          <td>
+            <form action="{% url 'item_recipe_delete' recipe.id %}"
+                  method="post"
+                  onsubmit="return confirm('Delete recipe for {{ recipe.product.name }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">
+            No recipes found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#recipeTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+{% endblock %}

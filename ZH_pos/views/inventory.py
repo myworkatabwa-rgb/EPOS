@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
-from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem
+from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem, ItemRecipe, ItemRecipeIngredient
 
 
 
@@ -1055,9 +1055,176 @@ def load_grn_items(request):
 
 
 @login_required
-def item_recipe(request):
-    return render(request, "inventory/item_recipe.html")
+def item_recipe_list(request):
+    recipes = ItemRecipe.objects.select_related(
+        "product", "created_by"
+    ).order_by("-created_at")
+    return render(request, "inventory/item_recipe_list.html", {
+        "recipes": recipes
+    })
 
+
+@login_required
+def item_recipe_create(request):
+    products   = Product.objects.filter(
+        status="Active", is_inactive=False
+    ).order_by("name")
+    categories = Category.objects.filter(status=True).order_by("name")
+
+    if request.method == "POST":
+        try:
+            data        = json.loads(request.body)
+            product_id  = data.get("product_id")
+            ingredients = data.get("ingredients", [])
+
+            if not product_id:
+                return JsonResponse({"success": False, "error": "Please select a product."})
+
+            if not ingredients:
+                return JsonResponse({"success": False, "error": "Please add at least one ingredient."})
+
+            # Calculate yield cost (only non-stopped ingredients)
+            yield_cost = sum(
+                float(i.get("amount", 0))
+                for i in ingredients
+                if not i.get("stop_recipe", False)
+            )
+
+            # Update or create recipe
+            recipe, created = ItemRecipe.objects.update_or_create(
+                product_id = product_id,
+                defaults   = {
+                    "yield_cost": yield_cost,
+                    "created_by": request.user,
+                }
+            )
+
+            # Delete old ingredients and recreate
+            recipe.ingredients.all().delete()
+
+            for ing in ingredients:
+                raw_id    = ing.get("raw_material_id")
+                qty       = float(ing.get("actual_qty", 0))
+                rate      = float(ing.get("rate", 0))
+                amount    = qty * rate
+                stop      = ing.get("stop_recipe", False)
+
+                if not raw_id or qty <= 0:
+                    continue
+
+                raw = Product.objects.get(id=raw_id)
+
+                ItemRecipeIngredient.objects.create(
+                    recipe_id       = recipe.id,
+                    raw_material_id = raw_id,
+                    actual_qty      = qty,
+                    unit_name       = raw.unit.Unit_name if raw.unit else "Default",
+                    rate            = rate,
+                    amount          = amount,
+                    stop_recipe     = stop,
+                )
+
+            return JsonResponse({"success": True, "id": recipe.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/item_recipe_create.html", {
+        "products":   products,
+        "categories": categories,
+    })
+
+
+@login_required
+def item_recipe_edit(request, pk):
+    recipe      = get_object_or_404(ItemRecipe, id=pk)
+    ingredients = recipe.ingredients.select_related("raw_material").all()
+    products    = Product.objects.filter(
+        status="Active", is_inactive=False
+    ).order_by("name")
+    categories  = Category.objects.filter(status=True).order_by("name")
+
+    return render(request, "inventory/item_recipe_edit.html", {
+        "recipe":      recipe,
+        "ingredients": ingredients,
+        "products":    products,
+        "categories":  categories,
+    })
+
+
+@login_required
+def item_recipe_detail(request, pk):
+    recipe      = get_object_or_404(ItemRecipe, id=pk)
+    ingredients = recipe.ingredients.select_related("raw_material").all()
+    return render(request, "inventory/item_recipe_detail.html", {
+        "recipe":      recipe,
+        "ingredients": ingredients,
+    })
+
+
+@login_required
+def item_recipe_delete(request, pk):
+    recipe = get_object_or_404(ItemRecipe, id=pk)
+    if request.method == "POST":
+        recipe.delete()
+        messages.success(request, "Recipe deleted.")
+    return redirect("item_recipe_list")
+
+
+@login_required
+def search_raw_material(request):
+    """Search products to use as raw materials/ingredients"""
+    sku    = request.GET.get("sku", "").strip()
+    name   = request.GET.get("name", "").strip()
+    cat_id = request.GET.get("category_id", "").strip()
+
+    products = Product.objects.filter(status="Active")
+
+    if sku:
+        products = products.filter(sku__icontains=sku)
+    elif name:
+        products = products.filter(name__icontains=name)
+    elif cat_id:
+        products = products.filter(category_id=cat_id)
+    else:
+        return JsonResponse([], safe=False)
+
+    data = [{
+        "id":    p.id,
+        "name":  p.name,
+        "sku":   p.sku or "—",
+        "unit":  p.unit.Unit_name if p.unit else "Default",
+        "rate":  float(p.purchase_price or p.price or 0),
+        "stock": p.stock,
+    } for p in products[:20]]
+
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def get_recipe_for_product(request):
+    """Load recipe ingredients for a product — used in Item Conversion"""
+    product_id = request.GET.get("product_id")
+    if not product_id:
+        return JsonResponse([], safe=False)
+    try:
+        recipe      = ItemRecipe.objects.get(product_id=product_id)
+        ingredients = recipe.ingredients.filter(
+            stop_recipe=False
+        ).select_related("raw_material")
+        data = [{
+            "raw_material_id": i.raw_material.id if i.raw_material else None,
+            "name":            i.raw_material.name if i.raw_material else "—",
+            "sku":             i.raw_material.sku if i.raw_material else "—",
+            "unit":            i.unit_name,
+            "actual_qty":      float(i.actual_qty),
+            "rate":            float(i.rate),
+            "amount":          float(i.amount),
+            "stock":           i.raw_material.stock if i.raw_material else 0,
+        } for i in ingredients]
+        return JsonResponse({"yield_cost": float(recipe.yield_cost), "ingredients": data})
+    except ItemRecipe.DoesNotExist:
+        return JsonResponse({"yield_cost": 0, "ingredients": []})
 
 @login_required
 def transfer_out(request):
