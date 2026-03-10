@@ -107,7 +107,7 @@ from .views.inventory import (
     purchase_order_delete,
     load_demand_sheet_items,
     search_product_for_po,
-    goods-receive-note,
+    goods_receive_note,
     grn_list,
     grn_create,
     grn_detail,
