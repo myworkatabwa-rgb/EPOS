@@ -7,8 +7,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
-from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem, ItemRecipe, ItemRecipeIngredient
-
+from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem, ItemRecipe, ItemRecipeIngredient, Branch, Department, TransferOut, TransferOutItem
 
 
 def generate_bill_no():
@@ -1226,10 +1225,180 @@ def get_recipe_for_product(request):
     except ItemRecipe.DoesNotExist:
         return JsonResponse({"yield_cost": 0, "ingredients": []})
 
-@login_required
-def transfer_out(request):
-    return render(request, "inventory/transfer_out.html")
+def generate_bin_no():
+    last = TransferOut.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
 
+
+@login_required
+def transfer_out_list(request):
+    transfers = TransferOut.objects.select_related(
+        "branch", "destination_branch", "department", "created_by"
+    ).order_by("-created_at")
+    return render(request, "inventory/transfer_out_list.html", {
+        "transfers": transfers
+    })
+
+
+@login_required
+def transfer_out_create(request):
+    branches     = Branch.objects.all().order_by("name")
+    departments  = Department.objects.all().order_by("name")
+    demand_sheets = DemandSheet.objects.order_by("-created_at")[:20]
+    grns         = GoodsReceiveNote.objects.select_related(
+        "supplier"
+    ).order_by("-created_at")[:20]
+    bin_no       = generate_bin_no()
+    today        = timezone.now().strftime("%-d-%-m-%Y")
+    main_branch  = Branch.objects.filter(is_main=True).first()
+
+    if request.method == "POST":
+        try:
+            data           = json.loads(request.body)
+            dest_branch_id = data.get("destination_branch_id") or None
+            department_id  = data.get("department_id") or None
+            demand_id      = data.get("demand_sheet_id") or None
+            grn_id         = data.get("grn_id") or None
+            description    = data.get("description", "")
+            items          = data.get("items", [])
+
+            if not items:
+                return JsonResponse({"success": False, "error": "No items added."})
+
+            if not dest_branch_id:
+                return JsonResponse({"success": False, "error": "Please select destination branch."})
+
+            total_qty         = sum(float(i.get("quantity", 0)) for i in items)
+            total_amount      = sum(float(i.get("amount", 0)) for i in items)
+            total_retail_rate = sum(float(i.get("retail_rate", 0)) for i in items)
+
+            transfer = TransferOut.objects.create(
+                bin_no                = generate_bin_no(),
+                branch                = main_branch,
+                destination_branch_id = dest_branch_id,
+                department_id         = department_id,
+                demand_sheet_id       = demand_id,
+                grn_id                = grn_id,
+                description           = description,
+                total_quantity        = total_qty,
+                total_amount          = total_amount,
+                total_retail_rate     = total_retail_rate,
+                created_by            = request.user,
+            )
+
+            for item in items:
+                product_id  = item.get("product_id")
+                quantity    = float(item.get("quantity", 0))
+                rate        = float(item.get("rate", 0))
+                retail_rate = float(item.get("retail_rate", 0))
+                batch_no    = item.get("batch_no", "")
+                expiry      = item.get("expiry") or None
+                remarks     = item.get("remarks", "")
+
+                if not product_id or quantity <= 0:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                TransferOutItem.objects.create(
+                    transfer_id = transfer.id,
+                    product_id  = product_id,
+                    unit_name   = product.unit.Unit_name if product.unit else "Default",
+                    batch_no    = batch_no,
+                    expiry      = expiry,
+                    quantity    = quantity,
+                    rate        = rate,
+                    amount      = quantity * rate,
+                    retail_rate = retail_rate,
+                    remarks     = remarks,
+                )
+
+                # ✅ Deduct stock from source branch
+                product.stock = max(0, product.stock - int(quantity))
+                product.save()
+
+            return JsonResponse({"success": True, "id": transfer.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/transfer_out_create.html", {
+        "branches":      branches,
+        "departments":   departments,
+        "demand_sheets": demand_sheets,
+        "grns":          grns,
+        "bin_no":        bin_no,
+        "today":         today,
+        "main_branch":   main_branch,
+    })
+
+
+@login_required
+def transfer_out_detail(request, pk):
+    transfer = get_object_or_404(TransferOut, id=pk)
+    items    = transfer.items.select_related("product").all()
+    return render(request, "inventory/transfer_out_detail.html", {
+        "transfer": transfer,
+        "items":    items,
+    })
+
+
+@login_required
+def transfer_out_delete(request, pk):
+    transfer = get_object_or_404(TransferOut, id=pk)
+    if request.method == "POST":
+        transfer.delete()
+        messages.success(request, "Transfer deleted.")
+    return redirect("transfer_out_list")
+
+
+@login_required
+def load_demand_for_transfer(request):
+    demand_id = request.GET.get("demand_id")
+    if not demand_id:
+        return JsonResponse([], safe=False)
+    try:
+        demand = DemandSheet.objects.get(id=demand_id)
+        items  = demand.items.select_related("product").all()
+        data   = [{
+            "product_id":  i.product.id if i.product else None,
+            "name":        i.product.name if i.product else "—",
+            "sku":         i.product.sku if i.product else "—",
+            "unit":        i.item_unit,
+            "quantity":    i.requested_qty,
+            "rate":        float(i.product.purchase_price or 0) if i.product else 0,
+            "retail_rate": float(i.product.price or 0) if i.product else 0,
+            "stock":       i.product.stock if i.product else 0,
+        } for i in items if i.product]
+        return JsonResponse(data, safe=False)
+    except DemandSheet.DoesNotExist:
+        return JsonResponse([], safe=False)
+
+
+@login_required
+def load_grn_for_transfer(request):
+    grn_id = request.GET.get("grn_id")
+    if not grn_id:
+        return JsonResponse([], safe=False)
+    try:
+        grn   = GoodsReceiveNote.objects.get(id=grn_id)
+        items = grn.items.select_related("product").all()
+        data  = [{
+            "product_id":  i.product.id if i.product else None,
+            "name":        i.product.name if i.product else "—",
+            "sku":         i.product.sku if i.product else "—",
+            "unit":        i.unit_name,
+            "batch_no":    i.batch_no or "",
+            "expiry":      str(i.expiry) if i.expiry else "",
+            "quantity":    i.quantity,
+            "rate":        float(i.rate),
+            "retail_rate": float(i.product.price or 0) if i.product else 0,
+            "stock":       i.product.stock if i.product else 0,
+        } for i in items if i.product]
+        return JsonResponse(data, safe=False)
+    except GoodsReceiveNote.DoesNotExist:
+        return JsonResponse([], safe=False)
 
 @login_required
 def transfer_in(request):

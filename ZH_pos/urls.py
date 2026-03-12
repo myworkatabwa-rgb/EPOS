@@ -126,7 +126,12 @@ from .views.inventory import (
     item_recipe_delete,
     search_raw_material,
     get_recipe_for_product,
-    transfer_out,
+    transfer_out_list,
+    transfer_out_create,
+    transfer_out_detail,
+    transfer_out_delete,
+    load_demand_for_transfer,
+    load_grn_for_transfer,
     transfer_in,
 )
 # ACCOUNTS
@@ -313,7 +318,12 @@ urlpatterns = [
     path("inventory/item-recipe/delete/<int:pk>/",  item_recipe_delete,     name="item_recipe_delete"),
     path("inventory/item-recipe/edit/<int:pk>/",    item_recipe_edit,       name="item_recipe_edit"),
     path("inventory/item-recipe/<int:pk>/",         item_recipe_detail,     name="item_recipe_detail"),
-    path("inventory/transfer-out/", transfer_out, name="transfer_out"),
+    path("inventory/transfer-out/",                  transfer_out_list,         name="transfer_out_list"),
+    path("inventory/transfer-out/create/",           transfer_out_create,       name="transfer_out_create"),
+    path("inventory/transfer-out/load-demand/",      load_demand_for_transfer,  name="load_demand_for_transfer"),
+    path("inventory/transfer-out/load-grn/",         load_grn_for_transfer,     name="load_grn_for_transfer"),
+    path("inventory/transfer-out/delete/<int:pk>/",  transfer_out_delete,       name="transfer_out_delete"),
+    path("inventory/transfer-out/<int:pk>/",         transfer_out_detail,       name="transfer_out_detail"),
     path("inventory/transfer-in/", transfer_in, name="transfer_in"),
 
     # ACCOUNTS
