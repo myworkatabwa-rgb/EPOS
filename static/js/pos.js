@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("receiptPrintBtn")?.addEventListener("click", () => {
-        window.print();
+        printReceipt();
     });
 
     // SHORTCUTS
@@ -57,6 +57,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "F7") {
             e.preventDefault();
             handlePayFlow();
+        }
+
+        if (e.key === "F9") {
+            e.preventDefault();
+            const receiptModal = document.getElementById("receiptModal");
+            if (receiptModal && receiptModal.classList.contains("show")) {
+                printReceipt();
+            }
         }
 
         if (e.key === "Escape") {
@@ -199,17 +207,18 @@ function showReceipt(data) {
     let totalQty = 0;
     let totalAmount = 0;
 
+    const cashPaid = Number(document.getElementById("cashTendered")?.value || 0);
+
     let html = `
         <div style="font-family: monospace; font-size:12px; padding:10px;">
-            
-            <!-- Sale Complete Title Top Right -->
+
             <div style="text-align:right; font-weight:bold; color:green; margin-bottom:5px;">
                 Sale Complete ✅
             </div>
 
             <div style="text-align:center; margin-bottom:10px;">
                 <div>Contact : 0313-6330101</div>
-                <h5>Sales Receipt</h5>
+                <h5 style="margin:4px 0;">Sales Receipt</h5>
             </div>
 
             <div>
@@ -251,6 +260,8 @@ function showReceipt(data) {
         `;
     });
 
+    const cashBalance = Math.max(cashPaid - totalAmount, 0);
+
     html += `
                 </tbody>
             </table>
@@ -269,16 +280,16 @@ function showReceipt(data) {
 
             <div style="display:flex; justify-content:space-between;">
                 <span>Cash Paid:</span>
-                <span>${Number(document.getElementById("cashTendered")?.value || totalAmount).toFixed(2)}</span>
+                <span>${cashPaid.toFixed(2)}</span>
             </div>
 
             <div style="display:flex; justify-content:space-between;">
                 <span>Cash Balance:</span>
-                <span>${Math.max(Number(document.getElementById("cashTendered")?.value || totalAmount) - totalAmount,0).toFixed(2)}</span>
+                <span>${cashBalance.toFixed(2)}</span>
             </div>
 
             <div style="text-align:center; margin:10px 0;">
-                <svg id="barcode"></svg>
+                <svg id="barcode" data-bill="${data.bill_no}"></svg>
                 <div>${data.bill_no}</div>
             </div>
 
@@ -306,6 +317,72 @@ function showReceipt(data) {
         document.getElementById("receiptModal"),
         { backdrop: "static", keyboard: true }
     ).show();
+}
+
+// =======================
+// PRINT RECEIPT (CLEAN POPUP)
+// =======================
+function printReceipt() {
+    const receiptContent = document.getElementById("receipt-body").innerHTML;
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Receipt</title>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body {
+                    width: 80mm;
+                    font-family: monospace;
+                    font-size: 12px;
+                    color: #000;
+                    background: #fff;
+                    padding: 8px;
+                }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th, td { padding: 2px 0; }
+                hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+                svg { display: block; margin: 0 auto; }
+                @media print {
+                    @page {
+                        size: 80mm auto;
+                        margin: 0;
+                    }
+                    body {
+                        width: 80mm;
+                        padding: 4px;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${receiptContent}
+            <script>
+                window.onload = function() {
+                    if (typeof JsBarcode !== 'undefined') {
+                        const barcodeSvg = document.querySelector('#barcode');
+                        const billNo = barcodeSvg?.getAttribute('data-bill') || '00001';
+                        JsBarcode("#barcode", billNo, {
+                            format: "CODE128",
+                            lineColor: "#000",
+                            width: 2,
+                            height: 40,
+                            displayValue: false
+                        });
+                    }
+                    setTimeout(() => {
+                        window.print();
+                        window.close();
+                    }, 300);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 // =======================

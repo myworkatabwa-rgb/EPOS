@@ -222,7 +222,7 @@ body {
     padding: 8px 0;
     border-bottom: 1px dashed #ddd;
 }
-@media print {
+/*@media print {
 
   body * {
     visibility: hidden !important;
@@ -246,4 +246,4 @@ body {
     display: none !important;
   }
 
-}
+} */
