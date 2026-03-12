@@ -114,8 +114,7 @@ from .views.inventory import (
     grn_delete,
     load_po_items, 
     fetch_product_for_grn,
-
-    goods_receive_note,
+    #goods_receive_note,
     grn_list,
     grn_create,
     grn_detail,
