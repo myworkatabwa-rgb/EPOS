@@ -135,7 +135,6 @@ document.addEventListener("DOMContentLoaded", function () {
       formData.append('discount', discountEl.value || '0');
       formData.append('customer_id', document.getElementById('customer_id_input')?.value || '');
 
-      // Get CSRF token
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
       if (csrfToken) {
         formData.append('csrfmiddlewaretoken', csrfToken.value);
@@ -144,7 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
       this.disabled = true;
       this.innerHTML = 'Saving...';
 
-      fetch('', {  // POST to same URL (packing_slip)
+      fetch('', {
         method: 'POST',
         body: formData
       })
@@ -172,124 +171,166 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===============================
-     SHOW RECEIPT MODAL (Updated for real data)
+     SHOW RECEIPT MODAL
   =============================== */
   function showReceiptModal(discount) {
-  const receiptBody = document.getElementById("receipt-body");
-  if (!receiptBody) return;
+    const receiptBody = document.getElementById("receipt-body");
+    if (!receiptBody) return;
 
-  const now = new Date();
-  const pad = n => String(n).padStart(2, "0");
-  const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const username = document.getElementById('pos-root')?.dataset?.username || 'Staff';
+    const now = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const username = document.getElementById('pos-root')?.dataset?.username || 'Staff';
 
-  let totalQty = 0;
-  let totalItems = cart.length;
-  let subTotal = 0;
+    let totalQty = 0;
+    let totalItems = cart.length;
+    let subTotal = 0;
 
-  // Header info
-  let html = `
-    <div style="font-size:11px; margin-bottom:8px; line-height:1.8;">
-      <div style="display:flex; justify-content:space-between;">
-        <span>Packing No:</span><span><strong>${currentPackingNo || '—'}</strong></span>
+    let html = `
+      <div style="font-size:11px; margin-bottom:8px; line-height:1.8;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Packing No:</span><span><strong>${currentPackingNo || '—'}</strong></span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Date:</span><span>${dateStr} ${timeStr}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Packed By:</span><span>${username}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Branch:</span><span>Main Branch</span>
+        </div>
       </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Date:</span><span>${dateStr} ${timeStr}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Packed By:</span><span>${username}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Branch:</span><span>Main Branch</span>
-      </div>
-    </div>
 
-    <div style="border-top:1px dashed #aaa; border-bottom:1px dashed #aaa; margin:6px 0; padding:4px 0;">
-      <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-weight:bold; font-size:11px;">
-        <span>Item</span>
-        <span style="text-align:center;">Qty</span>
-        <span style="text-align:right;">Price</span>
-        <span style="text-align:right;">Total</span>
-      </div>
-    </div>
-  `;
-
-  // Item rows
-  cart.forEach(item => {
-    const itemTotal = item.qty * item.price;
-    totalQty += item.qty;
-    subTotal += itemTotal;
-
-    html += `
-      <div style="margin-bottom:6px;">
-        <div style="font-weight:600; font-size:12px;">${item.name}</div>
-        <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-size:11px; color:#333;">
-          <span style="color:#888;">SKU: ${item.sku || '—'}</span>
-          <span style="text-align:center;">${item.qty}</span>
-          <span style="text-align:right;">${item.price.toFixed(2)}</span>
-          <span style="text-align:right;">${itemTotal.toFixed(2)}</span>
+      <div style="border-top:1px dashed #aaa; border-bottom:1px dashed #aaa; margin:6px 0; padding:4px 0;">
+        <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-weight:bold; font-size:11px;">
+          <span>Item</span>
+          <span style="text-align:center;">Qty</span>
+          <span style="text-align:right;">Price</span>
+          <span style="text-align:right;">Total</span>
         </div>
       </div>
     `;
-  });
 
-  const netAmount = Math.max(subTotal - discount, 0);
+    cart.forEach(item => {
+      const itemTotal = item.qty * item.price;
+      totalQty += item.qty;
+      subTotal += itemTotal;
 
-  // Totals
-  html += `
-    <div style="border-top:1px dashed #aaa; margin-top:8px; padding-top:8px; font-size:11px; line-height:2;">
-      <div style="display:flex; justify-content:space-between;">
-        <span>Total Items/Qty:</span><span>${totalItems} / ${totalQty}</span>
+      html += `
+        <div style="margin-bottom:6px;">
+          <div style="font-weight:600; font-size:12px;">${item.name}</div>
+          <div style="display:grid; grid-template-columns:1fr auto auto auto; gap:4px; font-size:11px; color:#333;">
+            <span style="color:#888;">SKU: ${item.sku || '—'}</span>
+            <span style="text-align:center;">${item.qty}</span>
+            <span style="text-align:right;">${item.price.toFixed(2)}</span>
+            <span style="text-align:right;">${itemTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    const netAmount = Math.max(subTotal - discount, 0);
+
+    html += `
+      <div style="border-top:1px dashed #aaa; margin-top:8px; padding-top:8px; font-size:11px; line-height:2;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Total Items/Qty:</span><span>${totalItems} / ${totalQty}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Sub Total:</span><span>Rs${subTotal.toFixed(2)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; color:#c00;">
+          <span>Discount:</span><span>- Rs${discount.toFixed(2)}</span>
+        </div>
+        <div style="border-top:1px dashed #aaa; margin-top:4px; padding-top:4px; display:flex; justify-content:space-between; font-size:14px; font-weight:bold;">
+          <span>Net Amount:</span><span>Rs${netAmount.toFixed(2)}</span>
+        </div>
       </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span>Sub Total:</span><span>Rs${subTotal.toFixed(2)}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between; color:#c00;">
-        <span>Discount:</span><span>- Rs${discount.toFixed(2)}</span>
-      </div>
-      <div style="border-top:1px dashed #aaa; margin-top:4px; padding-top:4px; display:flex; justify-content:space-between; font-size:14px; font-weight:bold;">
-        <span>Net Amount:</span><span>Rs${netAmount.toFixed(2)}</span>
-      </div>
-    </div>
 
-    <div style="text-align:center; margin-top:12px; font-size:10px; color:#888; border-top:1px dashed #ccc; padding-top:8px;">
-      Thank you for your business!
-    </div>
-  `;
+      <div style="text-align:center; margin-top:12px; font-size:10px; color:#888; border-top:1px dashed #ccc; padding-top:8px;">
+        Thank you for your business!
+      </div>
+    `;
 
-  receiptBody.innerHTML = html;
+    receiptBody.innerHTML = html;
 
-  receiptModal = new bootstrap.Modal(
-    document.getElementById("receiptModal"),
-    { backdrop: "static", keyboard: false }
-  );
-  receiptModal.show();
-}
+    receiptModal = new bootstrap.Modal(
+      document.getElementById("receiptModal"),
+      { backdrop: "static", keyboard: false }
+    );
+    receiptModal.show();
+  }
 
   /* ===============================
      OK BUTTON - Clear cart & close
   =============================== */
   if (okBtn) {
     okBtn.addEventListener("click", function () {
-      cart = [];  // Clear after successful save
+      cart = [];
       renderCart();
-      
+
       if (receiptModal) {
         receiptModal.hide();
       }
-      
-      // Optional: Redirect to history
-      // setTimeout(() => window.location.href = "{% url 'packing_his' %}", 1000);
     });
   }
 
   /* ===============================
-     PRINT BUTTON
+     PRINT RECEIPT (CLEAN POPUP)
   =============================== */
+  function printReceipt() {
+    const receiptContent = document.getElementById("receipt-body").innerHTML;
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Packing Slip</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            width: 80mm;
+            font-family: monospace;
+            font-size: 12px;
+            color: #000;
+            background: #fff;
+            padding: 8px;
+          }
+          @media print {
+            @page {
+              size: 80mm auto;
+              margin: 0;
+            }
+            body {
+              width: 80mm;
+              padding: 4px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${receiptContent}
+        <script>
+          window.onload = function() {
+            setTimeout(() => {
+              window.print();
+              window.close();
+            }, 300);
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
   if (printBtn) {
     printBtn.addEventListener("click", function () {
-      window.print();
+      printReceipt();
     });
   }
+
 });
