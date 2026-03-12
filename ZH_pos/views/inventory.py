@@ -1,15 +1,30 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
-#from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem, Supplier, Product, Branch,PurchaseOrder, PurchaseOrderItem
-from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem, ItemRecipe, ItemRecipeIngredient, Branch, Department, TransferOut, TransferOutItem
+import json
 
+from ZH_pos.models import (
+    PhysicalStock, PhysicalStockItem,
+    Product, Category, SubCategory,
+    Branch, Department,
+    StockAudit, StockAuditItem,
+    ItemConversion, ItemConversionIn, ItemConversionOut,
+    DemandSheet, DemandSheetItem,
+    PurchaseOrder, PurchaseOrderItem,
+    Supplier,
+    GoodsReceiveNote, GoodsReceiveNoteItem,
+    GRNReturnNote, GRNReturnNoteItem,
+    ItemRecipe, ItemRecipeIngredient,
+    TransferOut, TransferOutItem,
+)
+
+
+# ─────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────
 
 def generate_bill_no():
     last = PhysicalStock.objects.order_by('-id').first()
@@ -17,17 +32,68 @@ def generate_bill_no():
     return f"{str(next_id).zfill(5)}/2Ab"
 
 
+def generate_audit_bill_no():
+    last = StockAudit.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
+
+
+def generate_conversion_bill_no():
+    last = ItemConversion.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
+
+
+def generate_demand_no():
+    today = timezone.now().strftime("%d%m%Y")
+    count = DemandSheet.objects.filter(
+        demand_date=timezone.now().date()
+    ).count() + 1
+    return f"{today}{str(count).zfill(4)}"
+
+
+def generate_po_number():
+    last = PurchaseOrder.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    today = timezone.now().strftime("%d%m%Y")
+    return f"PO-{today}-{str(next_id).zfill(4)}"
+
+
+def generate_grn_number():
+    last = GoodsReceiveNote.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
+
+
+def generate_return_no():
+    last = GRNReturnNote.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"GRN-RET-{str(next_id).zfill(5)}"
+
+
+def generate_bin_no():
+    last = TransferOut.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
+
+
+# ─────────────────────────────────────────────────────────────
+# INVENTORY DASHBOARD
+# ─────────────────────────────────────────────────────────────
+
 @login_required
 def inventory(request):
     return render(request, "inventory/inventory.html")
 
 
+# ─────────────────────────────────────────────────────────────
+# PHYSICAL STOCK
+# ─────────────────────────────────────────────────────────────
+
 @login_required
 def physical_stock_list(request):
     stocks = PhysicalStock.objects.select_related("created_by", "branch").order_by("-created_at")
-    return render(request, "inventory/physical_stock_list.html", {
-        "stocks": stocks
-    })
+    return render(request, "inventory/physical_stock_list.html", {"stocks": stocks})
 
 
 @login_required
@@ -44,7 +110,6 @@ def physical_stock_create(request):
             branch_id = data.get("branch_id") or None
             items     = data.get("items", [])
 
-            from datetime import datetime
             date = datetime.strptime(date_str, "%d-%m-%Y").date()
 
             stock = PhysicalStock.objects.create(
@@ -78,7 +143,6 @@ def physical_stock_create(request):
                     remarks      = remarks,
                 )
 
-                # Update product stock to physical count
                 product.stock = physical_qty
                 product.save()
 
@@ -92,6 +156,16 @@ def physical_stock_create(request):
         "branches":   branches,
         "bill_no":    bill_no,
         "today":      today,
+    })
+
+
+@login_required
+def physical_stock_detail(request, pk):
+    stock = get_object_or_404(PhysicalStock, id=pk)
+    items = stock.items.select_related("product", "product__unit").all()
+    return render(request, "inventory/physical_stock_detail.html", {
+        "stock": stock,
+        "items": items,
     })
 
 
@@ -117,33 +191,22 @@ def load_products_by_category(request):
     elif subcategory_id:
         products = products.filter(subcategory_id=subcategory_id)
     elif category_id == "all":
-        pass  # return all active products
+        pass
     elif category_id:
         products = products.filter(category_id=category_id)
     else:
         products = Product.objects.none()
 
-    data = []
-    for p in products:
-        data.append({
-            "id":    p.id,
-            "name":  p.name,
-            "sku":   p.sku or "—",
-            "stock": p.stock,
-            "rate":  float(p.price or 0),
-            "unit":  p.unit.Unit_name if p.unit else "Default",
-        })
+    data = [{
+        "id":    p.id,
+        "name":  p.name,
+        "sku":   p.sku or "—",
+        "stock": p.stock,
+        "rate":  float(p.price or 0),
+        "unit":  p.unit.Unit_name if p.unit else "Default",
+    } for p in products]
 
     return JsonResponse(data, safe=False)
-# views.py
-@login_required
-def physical_stock_detail(request, pk):
-    stock = get_object_or_404(PhysicalStock, id=pk)
-    items = stock.items.select_related("product", "product__unit").all()
-    return render(request, "inventory/physical_stock_detail.html", {
-        "stock": stock,
-        "items": items,
-    })
 
 
 @login_required
@@ -153,11 +216,9 @@ def load_subcategories(request):
     return JsonResponse(list(subs), safe=False)
 
 
-def generate_audit_bill_no():
-    last = StockAudit.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    return f"{str(next_id).zfill(5)}/2Ab"
-
+# ─────────────────────────────────────────────────────────────
+# STOCK AUDIT
+# ─────────────────────────────────────────────────────────────
 
 @login_required
 def stock_audit_list(request):
@@ -188,16 +249,16 @@ def stock_audit_create(request):
             )
 
             for item in items:
-                product_id   = item.get("product_id")
-                audited_qty  = int(item.get("audited_qty", 0))
-                rate         = float(item.get("rate", 0))
+                product_id  = item.get("product_id")
+                audited_qty = int(item.get("audited_qty", 0))
+                rate        = float(item.get("rate", 0))
                 if not product_id:
                     continue
                 StockAuditItem.objects.create(
-                    audit_id    = audit.id,
-                    product_id  = product_id,
-                    qty         = audited_qty,
-                    rate        = rate,
+                    audit_id   = audit.id,
+                    product_id = product_id,
+                    qty        = audited_qty,
+                    rate       = rate,
                 )
 
             return JsonResponse({"success": True, "audit_id": audit.id})
@@ -210,6 +271,7 @@ def stock_audit_create(request):
         "bill_no":  bill_no,
         "today":    today,
     })
+
 
 @login_required
 def stock_audit_detail(request, pk):
@@ -243,17 +305,15 @@ def fetch_product_by_barcode(request):
             "name":       product.name,
             "sku":        product.sku,
             "rate":       float(product.price or 0),
-            "system_qty": product.stock,  # ← current stock in DB
+            "system_qty": product.stock,
         })
     except Product.DoesNotExist:
         return JsonResponse({"success": False, "error": "Product not found"})
 
 
-def generate_conversion_bill_no():
-    last = ItemConversion.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    return f"{str(next_id).zfill(5)}/2Ab"
-
+# ─────────────────────────────────────────────────────────────
+# ITEM CONVERSION
+# ─────────────────────────────────────────────────────────────
 
 @login_required
 def item_conversion_list(request):
@@ -283,7 +343,6 @@ def item_conversion_create(request):
                 conversion_type = conversion_type,
             )
 
-            # ── ADD stock for items_in ────────────────────────
             for item in items_in:
                 product_id = item.get("product_id")
                 quantity   = int(item.get("quantity", 0))
@@ -291,19 +350,15 @@ def item_conversion_create(request):
                     continue
 
                 product = Product.objects.get(id=product_id)
-
                 ItemConversionIn.objects.create(
                     conversion_id = conversion.id,
                     product_id    = product_id,
                     unit_name     = product.unit.Unit_name if product.unit else "Default",
                     quantity      = quantity,
                 )
-
-                # Add to stock
                 product.stock += quantity
                 product.save()
 
-            # ── SUBTRACT stock for items_out ──────────────────
             for item in items_out:
                 product_id = item.get("product_id")
                 quantity   = int(item.get("quantity", 0))
@@ -312,7 +367,6 @@ def item_conversion_create(request):
                     continue
 
                 product = Product.objects.get(id=product_id)
-
                 ItemConversionOut.objects.create(
                     conversion_id = conversion.id,
                     product_id    = product_id,
@@ -320,8 +374,6 @@ def item_conversion_create(request):
                     quantity      = quantity,
                     rate          = rate,
                 )
-
-                # Subtract from stock
                 product.stock = max(0, product.stock - quantity)
                 product.save()
 
@@ -371,33 +423,27 @@ def search_product_for_conversion(request):
         return JsonResponse([], safe=False)
 
     data = [{
-        "id":       p.id,
-        "name":     p.name,
-        "sku":      p.sku or "—",
-        "stock":    p.stock,
-        "rate":     float(p.price or 0),
-        "unit":     p.unit.Unit_name if p.unit else "Default",
+        "id":    p.id,
+        "name":  p.name,
+        "sku":   p.sku or "—",
+        "stock": p.stock,
+        "rate":  float(p.price or 0),
+        "unit":  p.unit.Unit_name if p.unit else "Default",
     } for p in products[:20]]
 
     return JsonResponse(data, safe=False)
 
-def generate_demand_no():
-    from django.utils import timezone
-    today = timezone.now().strftime("%d%m%Y")
-    count = DemandSheet.objects.filter(
-        demand_date=timezone.now().date()
-    ).count() + 1
-    return f"{today}{str(count).zfill(4)}"
 
+# ─────────────────────────────────────────────────────────────
+# DEMAND SHEET
+# ─────────────────────────────────────────────────────────────
 
 @login_required
 def demand_sheet_list(request):
     demands = DemandSheet.objects.select_related(
         "created_by", "branch"
     ).order_by("-created_at")
-    return render(request, "inventory/demand_sheet_list.html", {
-        "demands": demands
-    })
+    return render(request, "inventory/demand_sheet_list.html", {"demands": demands})
 
 
 @login_required
@@ -480,7 +526,6 @@ def demand_sheet_delete(request, pk):
 
 @login_required
 def load_consumption(request):
-    """Load sales consumption between date range per product"""
     from_date = request.GET.get("from_date")
     to_date   = request.GET.get("to_date")
 
@@ -509,30 +554,21 @@ def load_consumption(request):
     return JsonResponse(data, safe=False)
 
 
+# ─────────────────────────────────────────────────────────────
+# PURCHASE ORDER
+# ─────────────────────────────────────────────────────────────
 
-
-def generate_po_number():
-    last = PurchaseOrder.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    today = timezone.now().strftime("%d%m%Y")
-    return f"PO-{today}-{str(next_id).zfill(4)}"
-
-
-# ── LIST ─────────────────────────────────────────────
 @login_required
 def purchase_order_list(request):
     orders = PurchaseOrder.objects.select_related(
         "supplier", "branch", "created_by"
     ).order_by("-created_at")
-    return render(request, "inventory/purchase_order_list.html", {
-        "orders": orders
-    })
+    return render(request, "inventory/purchase_order_list.html", {"orders": orders})
 
 
-# ── CREATE ────────────────────────────────────────────
 @login_required
 def purchase_order_create(request):
-    suppliers = Supplier.objects.filter(status__iexact="active").order_by("supplier_name")
+    suppliers     = Supplier.objects.filter(status__iexact="active").order_by("supplier_name")
     branches      = Branch.objects.all()
     categories    = Category.objects.filter(status=True).order_by("name")
     demand_sheets = DemandSheet.objects.order_by("-created_at")[:20]
@@ -558,14 +594,14 @@ def purchase_order_create(request):
             )
 
             po = PurchaseOrder.objects.create(
-                po_number      = generate_po_number(),
-                supplier_id    = supplier_id,
-                branch_id      = branch_id,
+                po_number       = generate_po_number(),
+                supplier_id     = supplier_id,
+                branch_id       = branch_id,
                 demand_sheet_id = demand_id,
-                expected_date  = expected_date,
-                notes          = notes,
-                total_amount   = total_amount,
-                created_by     = request.user,
+                expected_date   = expected_date,
+                notes           = notes,
+                total_amount    = total_amount,
+                created_by      = request.user,
             )
 
             for item in items:
@@ -602,7 +638,6 @@ def purchase_order_create(request):
     })
 
 
-# ── DETAIL ────────────────────────────────────────────
 @login_required
 def purchase_order_detail(request, pk):
     po    = get_object_or_404(PurchaseOrder, id=pk)
@@ -613,17 +648,15 @@ def purchase_order_detail(request, pk):
     })
 
 
-# ── RECEIVE ───────────────────────────────────────────
 @login_required
 def purchase_order_receive(request, pk):
-    """Mark PO as received and update product stock"""
     po = get_object_or_404(PurchaseOrder, id=pk)
 
     if request.method == "POST":
         try:
-            data         = json.loads(request.body)
+            data           = json.loads(request.body)
             received_items = data.get("items", [])
-            all_received = True
+            all_received   = True
 
             for item_data in received_items:
                 item_id      = item_data.get("item_id")
@@ -634,7 +667,6 @@ def purchase_order_receive(request, pk):
                     item.received_qty = received_qty
                     item.save()
 
-                    # ✅ Update product stock
                     if item.product and received_qty > 0:
                         item.product.stock += received_qty
                         item.product.save()
@@ -645,7 +677,6 @@ def purchase_order_receive(request, pk):
                 except PurchaseOrderItem.DoesNotExist:
                     continue
 
-            # Update PO status
             po.status = "received" if all_received else "partial"
             po.save()
 
@@ -661,7 +692,6 @@ def purchase_order_receive(request, pk):
     })
 
 
-# ── DELETE ────────────────────────────────────────────
 @login_required
 def purchase_order_delete(request, pk):
     po = get_object_or_404(PurchaseOrder, id=pk)
@@ -674,7 +704,6 @@ def purchase_order_delete(request, pk):
     return redirect("purchase_order_list")
 
 
-# ── LOAD DEMAND SHEET ITEMS ───────────────────────────
 @login_required
 def load_demand_sheet_items(request):
     demand_id = request.GET.get("demand_id")
@@ -702,12 +731,11 @@ def load_demand_sheet_items(request):
         return JsonResponse([], safe=False)
 
 
-# ── SEARCH PRODUCT FOR PO ─────────────────────────────
 @login_required
 def search_product_for_po(request):
-    sku      = request.GET.get("sku", "").strip()
-    name     = request.GET.get("name", "").strip()
-    cat_id   = request.GET.get("category_id", "").strip()
+    sku    = request.GET.get("sku", "").strip()
+    name   = request.GET.get("name", "").strip()
+    cat_id = request.GET.get("category_id", "").strip()
 
     products = Product.objects.filter(status="Active")
 
@@ -731,37 +759,17 @@ def search_product_for_po(request):
 
     return JsonResponse(data, safe=False)
 
-def generate_grn_number():
-    from ZH_pos.models import GoodsReceiveNote
-    last = GoodsReceiveNote.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    return f"{str(next_id).zfill(5)}/2Ab"
 
-<<<<<<< HEAD
-def generate_grn_number():
-    last = GoodsReceiveNote.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    return f"{str(next_id).zfill(5)}/2Ab"
+# ─────────────────────────────────────────────────────────────
+# GOODS RECEIVE NOTE (GRN)
+# ─────────────────────────────────────────────────────────────
 
-
-=======
-
-
-
->>>>>>> 37884d6abdec653dfd538315762842496a6d11ae
 @login_required
-<<<<<<< HEAD
 def grn_list(request):
     grns = GoodsReceiveNote.objects.select_related(
         "supplier", "branch", "created_by", "purchase_order"
     ).order_by("-created_at")
     return render(request, "inventory/grn_list.html", {"grns": grns})
-=======
-def grn_list(request):
-    grns = GoodsReceiveNote.objects.select_related(
-        "supplier", "branch", "created_by", "purchase_order"
-    ).order_by("-created_at")
-    return render(request, "inventory/goods-receive-note.html", {"grns": grns})
 
 
 @login_required
@@ -837,186 +845,15 @@ def grn_create(request):
                     discount_percent = discount_percent,
                 )
 
-                # ✅ Update stock
                 product.stock += quantity
                 product.save()
 
-            return JsonResponse({"success": True, "id": grn.id})
-
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-    return render(request, "inventory/grn_create.html", {
-        "suppliers": suppliers,
-        "branches":  branches,
-        "pos":       pos,
-        "grn_no":    grn_no,
-        "today":     today,
-    })
-
-
-@login_required
-def grn_detail(request, pk):
-    grn   = get_object_or_404(GoodsReceiveNote, id=pk)
-    items = grn.items.select_related("product").all()
-    return render(request, "inventory/grn_detail.html", {
-        "grn":   grn,
-        "items": items,
-    })
-
-
-@login_required
-def grn_delete(request, pk):
-    grn = get_object_or_404(GoodsReceiveNote, id=pk)
-    if request.method == "POST":
-        grn.delete()
-        messages.success(request, "GRN deleted.")
-    return redirect("grn_list")
-
-
-@login_required
-def load_po_items(request):
-    po_id = request.GET.get("po_id")
-    if not po_id:
-        return JsonResponse([], safe=False)
-    try:
-        po    = PurchaseOrder.objects.get(id=po_id)
-        items = po.items.select_related("product").all()
-        data  = [{
-            "product_id": i.product.id if i.product else None,
-            "name":       i.product.name if i.product else "—",
-            "sku":        i.product.sku if i.product else "—",
-            "unit":       i.unit_name,
-            "po_qty":     i.ordered_qty,
-            "po_no":      po.po_number,
-            "rate":       float(i.rate),
-            "stock":      i.product.stock if i.product else 0,
-        } for i in items]
-        return JsonResponse(data, safe=False)
-    except PurchaseOrder.DoesNotExist:
-        return JsonResponse([], safe=False)
-
-
-@login_required
-def fetch_product_for_grn(request):
-    sku = request.GET.get("sku", "").strip()
-    if not sku:
-        return JsonResponse({}, safe=False)
-    try:
-        p = Product.objects.get(sku=sku)
-        return JsonResponse({
-            "product_id": p.id,
-            "name":       p.name,
-            "sku":        p.sku,
-            "unit":       p.unit.Unit_name if p.unit else "Default",
-            "rate":       float(p.price or 0),
-            "stock":      p.stock,
-        })
-    except Product.DoesNotExist:
-        return JsonResponse({}, safe=False)
-
-@login_required
-def goods_receive_note(request):
-    return render(request, "inventory/goods_receive_note.html")
->>>>>>> 37884d6abdec653dfd538315762842496a6d11ae
-
-
-
-def generate_return_no():
-    last = GRNReturnNote.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    return f"GRN-RET-{str(next_id).zfill(5)}"
-
-
-@login_required
-def grn_create(request):
-    suppliers = Supplier.objects.filter(status="Active").order_by("supplier_name")
-    branches  = Branch.objects.all()
-    pos       = PurchaseOrder.objects.filter(
-        status__in=["pending", "partial"]
-    ).order_by("-date")
-    grn_no    = generate_grn_number()
-    today     = timezone.now().strftime("%-d-%-m-%Y")
-
-    if request.method == "POST":
-        try:
-            data           = json.loads(request.body)
-            supplier_id    = data.get("supplier_id") or None
-            po_id          = data.get("po_id") or None
-            invoice_number = data.get("invoice_number", "")
-            terms          = data.get("terms", "")
-            description    = data.get("description", "")
-            items          = data.get("items", [])
-
-            if not items:
-                return JsonResponse({"success": False, "error": "No items added."})
-
-            total_amount = sum(
-                float(i.get("amount", 0)) for i in items
-            )
-
-            grn = GoodsReceiveNote.objects.create(
-                grn_no         = generate_grn_number(),
-                supplier_id    = supplier_id,
-                purchase_order_id = po_id,
-                invoice_number = invoice_number,
-                terms          = terms,
-                description    = description,
-                total_amount   = total_amount,
-                created_by     = request.user,
-            )
-
-            for item in items:
-                product_id       = item.get("product_id")
-                quantity         = int(item.get("quantity", 0))
-                rate             = float(item.get("rate", 0))
-                tax_percentage   = float(item.get("tax_percentage", 0))
-                discount_percent = float(item.get("discount_percent", 0))
-                batch_no         = item.get("batch_no", "")
-                expiry           = item.get("expiry") or None
-                po_qty           = int(item.get("po_qty", 0))
-                po_no            = item.get("po_no", "")
-
-                if not product_id or quantity <= 0:
-                    continue
-
-                product = Product.objects.get(id=product_id)
-
-                # Calculate amounts
-                base_amount    = quantity * rate
-                disc_amount    = base_amount * (discount_percent / 100)
-                taxable_amount = base_amount - disc_amount
-                tax_amount     = taxable_amount * (tax_percentage / 100)
-                final_amount   = taxable_amount + tax_amount
-
-                GoodsReceiveNoteItem.objects.create(
-                    grn_id           = grn.id,
-                    product_id       = product_id,
-                    po_no            = po_no,
-                    unit_name        = product.unit.Unit_name if product.unit else "Default",
-                    batch_no         = batch_no,
-                    expiry           = expiry,
-                    po_qty           = po_qty,
-                    quantity         = quantity,
-                    rate             = rate,
-                    amount           = final_amount,
-                    tax_percentage   = tax_percentage,
-                    tax_amount       = tax_amount,
-                    discount_percent = discount_percent,
-                )
-
-                # ✅ Update product stock
-                product.stock += quantity
-                product.save()
-
-            # Update PO status if linked
+            # Update linked PO status
             if po_id:
                 po = PurchaseOrder.objects.get(id=po_id)
-                all_items = po.items.all()
-                all_received = all(
-                    i.received_qty >= i.ordered_qty for i in all_items
-                )
-                po.status = "received" if all_received else "partial"
+                all_items    = po.items.all()
+                all_received = all(i.received_qty >= i.ordered_qty for i in all_items)
+                po.status    = "received" if all_received else "partial"
                 po.save()
 
             return JsonResponse({"success": True, "id": grn.id})
@@ -1094,6 +931,10 @@ def fetch_product_for_grn(request):
         return JsonResponse({}, safe=False)
 
 
+# ─────────────────────────────────────────────────────────────
+# GRN RETURN NOTE
+# ─────────────────────────────────────────────────────────────
+
 @login_required
 def goods_receive_return_note(request):
     suppliers = Supplier.objects.filter(status="Active").order_by("supplier_name")
@@ -1164,7 +1005,6 @@ def goods_receive_return_note(request):
                     reason           = item_reason,
                 )
 
-                # ✅ Deduct stock
                 product.stock = max(0, product.stock - return_qty)
                 product.save()
 
@@ -1186,9 +1026,7 @@ def grn_return_list(request):
     returns = GRNReturnNote.objects.select_related(
         "supplier", "grn", "created_by"
     ).order_by("-created_at")
-    return render(request, "inventory/grn_return_list.html", {
-        "returns": returns
-    })
+    return render(request, "inventory/grn_return_list.html", {"returns": returns})
 
 
 @login_required
@@ -1219,39 +1057,39 @@ def load_grn_items(request):
         grn   = GoodsReceiveNote.objects.get(id=grn_id)
         items = grn.items.select_related("product").all()
         data  = [{
-            "product_id": i.product.id if i.product else None,
-            "name":       i.product.name if i.product else "—",
-            "sku":        i.product.sku if i.product else "—",
-            "unit":       i.unit_name,
-            "grn_qty":    i.quantity,
-            "grn_no":     grn.grn_no,
-            "batch_no":   i.batch_no or "",
-            "expiry":     str(i.expiry) if i.expiry else "",
-            "rate":       float(i.rate),
-            "tax_percentage":   float(i.tax_percentage),
-            "discount_percent": float(i.discount_percent),
-            "stock":      i.product.stock if i.product else 0,
+            "product_id":        i.product.id if i.product else None,
+            "name":              i.product.name if i.product else "—",
+            "sku":               i.product.sku if i.product else "—",
+            "unit":              i.unit_name,
+            "grn_qty":           i.quantity,
+            "grn_no":            grn.grn_no,
+            "batch_no":          i.batch_no or "",
+            "expiry":            str(i.expiry) if i.expiry else "",
+            "rate":              float(i.rate),
+            "tax_percentage":    float(i.tax_percentage),
+            "discount_percent":  float(i.discount_percent),
+            "stock":             i.product.stock if i.product else 0,
         } for i in items]
         return JsonResponse(data, safe=False)
     except GoodsReceiveNote.DoesNotExist:
         return JsonResponse([], safe=False)
 
 
+# ─────────────────────────────────────────────────────────────
+# ITEM RECIPE
+# ─────────────────────────────────────────────────────────────
+
 @login_required
 def item_recipe_list(request):
     recipes = ItemRecipe.objects.select_related(
         "product", "created_by"
     ).order_by("-created_at")
-    return render(request, "inventory/item_recipe_list.html", {
-        "recipes": recipes
-    })
+    return render(request, "inventory/item_recipe_list.html", {"recipes": recipes})
 
 
 @login_required
 def item_recipe_create(request):
-    products   = Product.objects.filter(
-        status="Active", is_inactive=False
-    ).order_by("name")
+    products   = Product.objects.filter(status="Active", is_inactive=False).order_by("name")
     categories = Category.objects.filter(status=True).order_by("name")
 
     if request.method == "POST":
@@ -1266,14 +1104,12 @@ def item_recipe_create(request):
             if not ingredients:
                 return JsonResponse({"success": False, "error": "Please add at least one ingredient."})
 
-            # Calculate yield cost (only non-stopped ingredients)
             yield_cost = sum(
                 float(i.get("amount", 0))
                 for i in ingredients
                 if not i.get("stop_recipe", False)
             )
 
-            # Update or create recipe
             recipe, created = ItemRecipe.objects.update_or_create(
                 product_id = product_id,
                 defaults   = {
@@ -1282,15 +1118,14 @@ def item_recipe_create(request):
                 }
             )
 
-            # Delete old ingredients and recreate
             recipe.ingredients.all().delete()
 
             for ing in ingredients:
-                raw_id    = ing.get("raw_material_id")
-                qty       = float(ing.get("actual_qty", 0))
-                rate      = float(ing.get("rate", 0))
-                amount    = qty * rate
-                stop      = ing.get("stop_recipe", False)
+                raw_id = ing.get("raw_material_id")
+                qty    = float(ing.get("actual_qty", 0))
+                rate   = float(ing.get("rate", 0))
+                amount = qty * rate
+                stop   = ing.get("stop_recipe", False)
 
                 if not raw_id or qty <= 0:
                     continue
@@ -1322,9 +1157,7 @@ def item_recipe_create(request):
 def item_recipe_edit(request, pk):
     recipe      = get_object_or_404(ItemRecipe, id=pk)
     ingredients = recipe.ingredients.select_related("raw_material").all()
-    products    = Product.objects.filter(
-        status="Active", is_inactive=False
-    ).order_by("name")
+    products    = Product.objects.filter(status="Active", is_inactive=False).order_by("name")
     categories  = Category.objects.filter(status=True).order_by("name")
 
     return render(request, "inventory/item_recipe_edit.html", {
@@ -1356,7 +1189,6 @@ def item_recipe_delete(request, pk):
 
 @login_required
 def search_raw_material(request):
-    """Search products to use as raw materials/ingredients"""
     sku    = request.GET.get("sku", "").strip()
     name   = request.GET.get("name", "").strip()
     cat_id = request.GET.get("category_id", "").strip()
@@ -1386,7 +1218,6 @@ def search_raw_material(request):
 
 @login_required
 def get_recipe_for_product(request):
-    """Load recipe ingredients for a product — used in Item Conversion"""
     product_id = request.GET.get("product_id")
     if not product_id:
         return JsonResponse([], safe=False)
@@ -1409,33 +1240,28 @@ def get_recipe_for_product(request):
     except ItemRecipe.DoesNotExist:
         return JsonResponse({"yield_cost": 0, "ingredients": []})
 
-def generate_bin_no():
-    last = TransferOut.objects.order_by('-id').first()
-    next_id = (last.id + 1) if last else 1
-    return f"{str(next_id).zfill(5)}/2Ab"
 
+# ─────────────────────────────────────────────────────────────
+# TRANSFER OUT
+# ─────────────────────────────────────────────────────────────
 
 @login_required
 def transfer_out_list(request):
     transfers = TransferOut.objects.select_related(
         "branch", "destination_branch", "department", "created_by"
     ).order_by("-created_at")
-    return render(request, "inventory/transfer_out_list.html", {
-        "transfers": transfers
-    })
+    return render(request, "inventory/transfer_out_list.html", {"transfers": transfers})
 
 
 @login_required
 def transfer_out_create(request):
-    branches     = Branch.objects.all().order_by("name")
-    departments  = Department.objects.all().order_by("name")
+    branches      = Branch.objects.all().order_by("name")
+    departments   = Department.objects.all().order_by("name")
     demand_sheets = DemandSheet.objects.order_by("-created_at")[:20]
-    grns         = GoodsReceiveNote.objects.select_related(
-        "supplier"
-    ).order_by("-created_at")[:20]
-    bin_no       = generate_bin_no()
-    today        = timezone.now().strftime("%-d-%-m-%Y")
-    main_branch  = Branch.objects.filter(is_main=True).first()
+    grns          = GoodsReceiveNote.objects.select_related("supplier").order_by("-created_at")[:20]
+    bin_no        = generate_bin_no()
+    today         = timezone.now().strftime("%-d-%-m-%Y")
+    main_branch   = Branch.objects.filter(is_main=True).first()
 
     if request.method == "POST":
         try:
@@ -1498,7 +1324,6 @@ def transfer_out_create(request):
                     remarks     = remarks,
                 )
 
-                # ✅ Deduct stock from source branch
                 product.stock = max(0, product.stock - int(quantity))
                 product.save()
 
@@ -1583,6 +1408,7 @@ def load_grn_for_transfer(request):
         return JsonResponse(data, safe=False)
     except GoodsReceiveNote.DoesNotExist:
         return JsonResponse([], safe=False)
+
 
 @login_required
 def transfer_in(request):
