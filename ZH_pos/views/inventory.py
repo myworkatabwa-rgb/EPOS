@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
+#from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem, Supplier, Product, Branch,PurchaseOrder, PurchaseOrderItem
 from ZH_pos.models import PhysicalStock, PhysicalStockItem, Product, Category, SubCategory, Branch, StockAudit, StockAuditItem, ItemConversion, ItemConversionIn, ItemConversionOut, DemandSheet, DemandSheetItem,PurchaseOrder, PurchaseOrderItem, Supplier, Product, Branch,DemandSheet, Category, SubCategory, GoodsReceiveNote, GoodsReceiveNoteItem,GRNReturnNote, GRNReturnNoteItem, ItemRecipe, ItemRecipeIngredient, Branch, Department, TransferOut, TransferOutItem
 
 
@@ -736,10 +737,26 @@ def generate_grn_number():
     next_id = (last.id + 1) if last else 1
     return f"{str(next_id).zfill(5)}/2Ab"
 
+<<<<<<< HEAD
+def generate_grn_number():
+    last = GoodsReceiveNote.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"{str(next_id).zfill(5)}/2Ab"
+
+
+=======
 
 
 
+>>>>>>> 37884d6abdec653dfd538315762842496a6d11ae
 @login_required
+<<<<<<< HEAD
+def grn_list(request):
+    grns = GoodsReceiveNote.objects.select_related(
+        "supplier", "branch", "created_by", "purchase_order"
+    ).order_by("-created_at")
+    return render(request, "inventory/grn_list.html", {"grns": grns})
+=======
 def grn_list(request):
     grns = GoodsReceiveNote.objects.select_related(
         "supplier", "branch", "created_by", "purchase_order"
@@ -901,6 +918,7 @@ def fetch_product_for_grn(request):
 @login_required
 def goods_receive_note(request):
     return render(request, "inventory/goods_receive_note.html")
+>>>>>>> 37884d6abdec653dfd538315762842496a6d11ae
 
 
 
@@ -908,6 +926,172 @@ def generate_return_no():
     last = GRNReturnNote.objects.order_by('-id').first()
     next_id = (last.id + 1) if last else 1
     return f"GRN-RET-{str(next_id).zfill(5)}"
+
+
+@login_required
+def grn_create(request):
+    suppliers = Supplier.objects.filter(status="Active").order_by("supplier_name")
+    branches  = Branch.objects.all()
+    pos       = PurchaseOrder.objects.filter(
+        status__in=["pending", "partial"]
+    ).order_by("-date")
+    grn_no    = generate_grn_number()
+    today     = timezone.now().strftime("%-d-%-m-%Y")
+
+    if request.method == "POST":
+        try:
+            data           = json.loads(request.body)
+            supplier_id    = data.get("supplier_id") or None
+            po_id          = data.get("po_id") or None
+            invoice_number = data.get("invoice_number", "")
+            terms          = data.get("terms", "")
+            description    = data.get("description", "")
+            items          = data.get("items", [])
+
+            if not items:
+                return JsonResponse({"success": False, "error": "No items added."})
+
+            total_amount = sum(
+                float(i.get("amount", 0)) for i in items
+            )
+
+            grn = GoodsReceiveNote.objects.create(
+                grn_no         = generate_grn_number(),
+                supplier_id    = supplier_id,
+                purchase_order_id = po_id,
+                invoice_number = invoice_number,
+                terms          = terms,
+                description    = description,
+                total_amount   = total_amount,
+                created_by     = request.user,
+            )
+
+            for item in items:
+                product_id       = item.get("product_id")
+                quantity         = int(item.get("quantity", 0))
+                rate             = float(item.get("rate", 0))
+                tax_percentage   = float(item.get("tax_percentage", 0))
+                discount_percent = float(item.get("discount_percent", 0))
+                batch_no         = item.get("batch_no", "")
+                expiry           = item.get("expiry") or None
+                po_qty           = int(item.get("po_qty", 0))
+                po_no            = item.get("po_no", "")
+
+                if not product_id or quantity <= 0:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                # Calculate amounts
+                base_amount    = quantity * rate
+                disc_amount    = base_amount * (discount_percent / 100)
+                taxable_amount = base_amount - disc_amount
+                tax_amount     = taxable_amount * (tax_percentage / 100)
+                final_amount   = taxable_amount + tax_amount
+
+                GoodsReceiveNoteItem.objects.create(
+                    grn_id           = grn.id,
+                    product_id       = product_id,
+                    po_no            = po_no,
+                    unit_name        = product.unit.Unit_name if product.unit else "Default",
+                    batch_no         = batch_no,
+                    expiry           = expiry,
+                    po_qty           = po_qty,
+                    quantity         = quantity,
+                    rate             = rate,
+                    amount           = final_amount,
+                    tax_percentage   = tax_percentage,
+                    tax_amount       = tax_amount,
+                    discount_percent = discount_percent,
+                )
+
+                # ✅ Update product stock
+                product.stock += quantity
+                product.save()
+
+            # Update PO status if linked
+            if po_id:
+                po = PurchaseOrder.objects.get(id=po_id)
+                all_items = po.items.all()
+                all_received = all(
+                    i.received_qty >= i.ordered_qty for i in all_items
+                )
+                po.status = "received" if all_received else "partial"
+                po.save()
+
+            return JsonResponse({"success": True, "id": grn.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/grn_create.html", {
+        "suppliers": suppliers,
+        "branches":  branches,
+        "pos":       pos,
+        "grn_no":    grn_no,
+        "today":     today,
+    })
+
+
+@login_required
+def grn_detail(request, pk):
+    grn   = get_object_or_404(GoodsReceiveNote, id=pk)
+    items = grn.items.select_related("product").all()
+    return render(request, "inventory/grn_detail.html", {
+        "grn":   grn,
+        "items": items,
+    })
+
+
+@login_required
+def grn_delete(request, pk):
+    grn = get_object_or_404(GoodsReceiveNote, id=pk)
+    if request.method == "POST":
+        grn.delete()
+        messages.success(request, "GRN deleted.")
+    return redirect("grn_list")
+
+
+@login_required
+def load_po_items(request):
+    po_id = request.GET.get("po_id")
+    if not po_id:
+        return JsonResponse([], safe=False)
+    try:
+        po    = PurchaseOrder.objects.get(id=po_id)
+        items = po.items.select_related("product").all()
+        data  = [{
+            "product_id": i.product.id if i.product else None,
+            "name":       i.product.name if i.product else "—",
+            "sku":        i.product.sku if i.product else "—",
+            "unit":       i.unit_name,
+            "po_qty":     i.ordered_qty,
+            "po_no":      po.po_number,
+            "rate":       float(i.rate),
+            "stock":      i.product.stock if i.product else 0,
+        } for i in items]
+        return JsonResponse(data, safe=False)
+    except PurchaseOrder.DoesNotExist:
+        return JsonResponse([], safe=False)
+
+
+@login_required
+def fetch_product_for_grn(request):
+    sku = request.GET.get("sku", "").strip()
+    if not sku:
+        return JsonResponse({}, safe=False)
+    try:
+        p = Product.objects.get(sku=sku)
+        return JsonResponse({
+            "product_id": p.id,
+            "name":       p.name,
+            "sku":        p.sku,
+            "unit":       p.unit.Unit_name if p.unit else "Default",
+            "rate":       float(p.price or 0),
+            "stock":      p.stock,
+        })
+    except Product.DoesNotExist:
+        return JsonResponse({}, safe=False)
 
 
 @login_required

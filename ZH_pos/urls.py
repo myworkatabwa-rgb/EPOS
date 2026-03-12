@@ -107,6 +107,14 @@ from .views.inventory import (
     purchase_order_delete,
     load_demand_sheet_items,
     search_product_for_po,
+<<<<<<< HEAD
+    grn_list, 
+    grn_create, 
+    grn_detail,
+    grn_delete,
+    load_po_items, 
+    fetch_product_for_grn,
+=======
     goods_receive_note,
     grn_list,
     grn_create,
@@ -114,6 +122,7 @@ from .views.inventory import (
     grn_delete,
     load_po_items,
     fetch_product_for_grn,
+>>>>>>> 37884d6abdec653dfd538315762842496a6d11ae
     goods_receive_return_note,
     grn_return_list,
     grn_return_detail,
@@ -299,6 +308,17 @@ urlpatterns = [
     path("inventory/purchase/delete/<int:pk>/",              purchase_order_delete,     name="purchase_order_delete"),
     path("inventory/purchase/load-demand-items/",            load_demand_sheet_items,   name="load_demand_sheet_items"),
     path("inventory/purchase/search-product/",               search_product_for_po,     name="search_product_for_po"),
+<<<<<<< HEAD
+    path("inventory/grn/",                  grn_list,              name="grn_list"),
+    path("inventory/grn/create/",           grn_create,            name="grn_create"),
+    path("inventory/grn/<int:pk>/",         grn_detail,            name="grn_detail"),
+    path("inventory/grn/delete/<int:pk>/",  grn_delete,            name="grn_delete"),
+    path("inventory/grn/load-po-items/",    load_po_items,         name="load_po_items"),
+    path("inventory/grn/fetch-product/",    fetch_product_for_grn, name="fetch_product_for_grn"),
+    path("inventory/goods-receive-return-note/", goods_receive_return_note, name="goods_receive_return_note"),
+    path("inventory/item-recipe/", item_recipe, name="item_recipe"),
+    path("inventory/transfer-out/", transfer_out, name="transfer_out"),
+=======
     path("inventory/goods-receive-note/",                  grn_list,              name="grn_list"),
     path("inventory/grn_create/",           grn_create,            name="grn_create"),
     path("inventory/grn/<int:pk>/",         grn_detail,            name="grn_detail"),
@@ -324,6 +344,7 @@ urlpatterns = [
     path("inventory/transfer-out/load-grn/",         load_grn_for_transfer,     name="load_grn_for_transfer"),
     path("inventory/transfer-out/delete/<int:pk>/",  transfer_out_delete,       name="transfer_out_delete"),
     path("inventory/transfer-out/<int:pk>/",         transfer_out_detail,       name="transfer_out_detail"),
+>>>>>>> 37884d6abdec653dfd538315762842496a6d11ae
     path("inventory/transfer-in/", transfer_in, name="transfer_in"),
 
     # ACCOUNTS
