@@ -11,6 +11,9 @@ let paymentStep = "IDLE"; // IDLE | PAYMENT_OPEN
 // Get logged-in user from HTML dataset
 const loggedInUser = document.getElementById('pos-root')?.dataset.username || 'N/A';
 
+// IMPORTANT: Set your logo static URL here
+const LOGO_URL = "/static/media/logo-1.jpeg";
+
 // =======================
 // DOM READY
 // =======================
@@ -59,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
             handlePayFlow();
         }
 
-        if (e.key === "F9") {
+        if (e.key === "F8") {
             e.preventDefault();
             const receiptModal = document.getElementById("receiptModal");
             if (receiptModal && receiptModal.classList.contains("show")) {
@@ -184,7 +187,8 @@ function completePayment(print) {
                 total: data.total || totalAmount,
                 bill_no: data.bill_no || "00001",
                 user: data.user || loggedInUser,
-                counter: data.counter || "0001"
+                counter: data.counter || "0001",
+                remaining_balance: data.remaining_balance || 0
             };
 
             showReceipt(receiptData);
@@ -195,120 +199,144 @@ function completePayment(print) {
 }
 
 // =======================
-// RECEIPT - NEW UI
+// BUILD RECEIPT HTML
 // =======================
-function showReceipt(data) {
+function buildReceiptHTML(data, cashPaid) {
     const now = new Date();
     const pad = n => (n < 10 ? "0" + n : n);
     const dateStr = `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}`;
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const hr = now.getHours();
+    const timeStr = `${pad(hr > 12 ? hr - 12 : hr)}:${pad(now.getMinutes())} ${hr >= 12 ? 'pm' : 'am'}`;
     const paymentType = selectedPaymentMode.charAt(0).toUpperCase() + selectedPaymentMode.slice(1);
 
+    const remainingBalance = data.remaining_balance || Math.max((data.total || 0) - cashPaid, 0);
+
     let totalQty = 0;
-    let totalAmount = 0;
-
-    const cashPaid = Number(document.getElementById("cashTendered")?.value || 0);
-
-    let html = `
-        <div style="font-family: monospace; font-size:12px; padding:10px;">
-
-            <div style="text-align:right; font-weight:bold; color:green; margin-bottom:5px;">
-                Sale Complete ✅
-            </div>
-
-            <div style="text-align:center; margin-bottom:10px;">
-                <div>Contact : 0313-6330101</div>
-                <h5 style="margin:4px 0;">Sales Receipt</h5>
-            </div>
-
-            <div>
-                Bill No  :  ${data.bill_no}<br>
-                Date & Time  :  ${dateStr} ${timeStr}<br>
-                Payment Type  :  ${paymentType}<br>
-                User  :  ${data.user}<br>
-                Counter  :  ${data.counter}<br>
-            </div>
-
-            <hr>
-
-            <table style="width:100%; font-size:12px; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;">Description</th>
-                        <th style="text-align:center;">Qty</th>
-                        <th style="text-align:center;">SKU</th>
-                        <th style="text-align:right;">Rate</th>
-                        <th style="text-align:right;">Amount (PKRs)</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+    let calcTotal = 0;
+    let itemRows = "";
 
     data.items.forEach(i => {
-        const itemTotal = i.price * i.qty;
+        const itemDisc = i.discount || 0;
+        const itemTotal = (i.price * i.qty) - itemDisc;
         totalQty += i.qty;
-        totalAmount += itemTotal;
+        calcTotal += itemTotal;
 
-        html += `
+        itemRows += `
             <tr>
-                <td>${i.name}</td>
-                <td style="text-align:center;">${i.qty}</td>
-                <td style="text-align:center;">${i.sku || "-"}</td>
-                <td style="text-align:right;">${i.price.toFixed(2)}</td>
-                <td style="text-align:right;">${itemTotal.toFixed(2)}</td>
+                <td style="padding:3px 2px; font-size:10px; word-break:break-word;">${i.name}</td>
+                <td style="text-align:center; padding:3px 2px; font-size:10px;">${i.qty}<br><span style="font-size:9px; color:#555;">Default</span></td>
+                <td style="text-align:right; padding:3px 2px; font-size:10px;">${i.price.toFixed(2)}</td>
+                <td style="text-align:right; padding:3px 2px; font-size:10px;">${itemDisc.toFixed(2)}</td>
+                <td style="text-align:right; padding:3px 2px; font-size:10px;">${itemTotal.toFixed(2)}</td>
             </tr>
         `;
     });
 
-    const cashBalance = Math.max(cashPaid - totalAmount, 0);
+    return `
+        <div style="font-family: monospace; font-size:11px; padding:4px; width:100%;">
 
-    html += `
-                </tbody>
+            <!-- LOGO -->
+            <div style="text-align:center; margin-bottom:6px;">
+                <img src="${LOGO_URL}" style="height:60px; object-fit:contain;" alt="Logo">
+                <div style="border-bottom:1px solid #000; margin-top:6px;"></div>
+            </div>
+
+            <!-- CONTACT -->
+            <div style="text-align:center; margin-bottom:6px; font-size:11px;">
+                Contact : 0313-6330101
+            </div>
+
+            <!-- TITLE BOX -->
+            <div style="border:1px solid #000; text-align:center; font-weight:bold; padding:4px; margin-bottom:8px; font-size:12px;">
+                Sales Receipt
+            </div>
+
+            <!-- BILL INFO -->
+            <div style="font-size:10px; line-height:1.9; margin-bottom:6px;">
+                <div><strong>Bill No :</strong> ${data.bill_no}</div>
+                <div><strong>Date &amp; Time :</strong> ${dateStr} ${timeStr}</div>
+                <div><strong>Payment Type :</strong> ${paymentType}</div>
+                <div><strong>User :</strong> ${data.user}</div>
+                <div><strong>Counter :</strong> ${data.counter}</div>
+            </div>
+
+            <div style="border-top:1px solid #000;"></div>
+
+            <!-- ITEMS TABLE -->
+            <table style="width:100%; border-collapse:collapse; margin-top:2px;">
+                <thead>
+                    <tr style="border-bottom:1px solid #000;">
+                        <th style="text-align:left; padding:3px 2px; font-size:10px;">DESCRIPTION</th>
+                        <th style="text-align:center; padding:3px 2px; font-size:10px;">QTY</th>
+                        <th style="text-align:right; padding:3px 2px; font-size:10px;">RATE</th>
+                        <th style="text-align:right; padding:3px 2px; font-size:10px;">DISC</th>
+                        <th style="text-align:right; padding:3px 2px; font-size:10px;">AMOUNT<br>(PKRS)</th>
+                    </tr>
+                </thead>
+                <tbody>${itemRows}</tbody>
             </table>
 
-            <hr>
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+            <div style="border-top:1px solid #000; margin-top:2px;"></div>
+
+            <!-- SUMMARY ROW -->
+            <div style="display:flex; justify-content:space-between; font-size:10px; padding:4px 0; border-bottom:1px solid #000;">
                 <span>No Of Items: ${data.items.length}</span>
                 <span>Total Qty: ${totalQty}</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span style="font-weight:bold;">${calcTotal.toFixed(2)}</span>
             </div>
 
-            <div style="display:flex; justify-content:space-between;">
-                <span>Total:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+            <!-- TOTALS -->
+            <div style="font-size:11px; margin-top:6px; line-height:2;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px;">
+                    <span>Total :</span>
+                    <span>${calcTotal.toFixed(2)}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>Paid via ${paymentType} :</span>
+                    <span>${cashPaid.toFixed(2)}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px; border-top:1px solid #000; padding-top:4px; margin-top:2px;">
+                    <span>Remaining Balance :</span>
+                    <span>${remainingBalance.toFixed(2)}</span>
+                </div>
             </div>
 
-            <div style="display:flex; justify-content:space-between;">
-                <span>Cash Paid:</span>
-                <span>${cashPaid.toFixed(2)}</span>
-            </div>
-
-            <div style="display:flex; justify-content:space-between;">
-                <span>Cash Balance:</span>
-                <span>${cashBalance.toFixed(2)}</span>
-            </div>
-
-            <div style="text-align:center; margin:10px 0;">
+            <!-- BARCODE -->
+            <div style="text-align:center; margin:10px 0 4px;">
                 <svg id="barcode" data-bill="${data.bill_no}"></svg>
-                <div>${data.bill_no}</div>
+                <div style="font-size:11px; margin-top:2px;">${data.bill_no}</div>
             </div>
 
-            <div style="text-align:center; font-size:10px; margin-top:10px;">
-                Print Date: ${dateStr} Print Time: ${timeStr}<br>
-                Powered by: ZHePOS
+            <!-- NOTE -->
+            <div style="font-size:10px; margin-top:6px;">
+                <strong>NOTE:</strong>
+                <div style="border:1px solid #ccc; padding:3px; min-height:16px; font-size:10px; color:#555;">
+                    Print Date: ${dateStr} &nbsp;&nbsp; Print Time: ${timeStr}
+                </div>
             </div>
+
+            <!-- FOOTER -->
+            <div style="text-align:center; font-size:10px; margin-top:8px; border-top:1px dashed #ccc; padding-top:6px;">
+                Powered by: <strong>ZHePOS</strong>
+            </div>
+
         </div>
     `;
+}
 
-    document.getElementById("receipt-body").innerHTML = html;
+// =======================
+// SHOW RECEIPT MODAL
+// =======================
+function showReceipt(data) {
+    const cashPaid = Number(document.getElementById("cashTendered")?.value || 0);
+    document.getElementById("receipt-body").innerHTML = buildReceiptHTML(data, cashPaid);
 
-    // Barcode generation using JsBarcode
     if (typeof JsBarcode !== "undefined") {
         JsBarcode("#barcode", data.bill_no, {
             format: "CODE128",
             lineColor: "#000",
-            width: 2,
-            height: 40,
+            width: 1.5,
+            height: 50,
             displayValue: false
         });
     }
@@ -325,36 +353,30 @@ function showReceipt(data) {
 function printReceipt() {
     const receiptContent = document.getElementById("receipt-body").innerHTML;
 
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    const printWindow = window.open('', '_blank', 'width=300,height=700');
     printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Receipt</title>
+            <title>Sales Receipt</title>
             <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; }
                 body {
-                    width: 80mm;
+                    width: 58mm;
                     font-family: monospace;
-                    font-size: 12px;
+                    font-size: 11px;
                     color: #000;
                     background: #fff;
-                    padding: 8px;
+                    padding: 4px;
                 }
-                table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                th, td { padding: 2px 0; }
-                hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { padding: 2px 1px; }
+                img { max-width: 100%; }
                 svg { display: block; margin: 0 auto; }
                 @media print {
-                    @page {
-                        size: 80mm auto;
-                        margin: 0;
-                    }
-                    body {
-                        width: 80mm;
-                        padding: 4px;
-                    }
+                    @page { size: 58mm auto; margin: 0; }
+                    body { width: 58mm; padding: 2px; }
                 }
             </style>
         </head>
@@ -363,20 +385,20 @@ function printReceipt() {
             <script>
                 window.onload = function() {
                     if (typeof JsBarcode !== 'undefined') {
-                        const barcodeSvg = document.querySelector('#barcode');
-                        const billNo = barcodeSvg?.getAttribute('data-bill') || '00001';
+                        const svg = document.querySelector('#barcode');
+                        const billNo = svg?.getAttribute('data-bill') || '00001';
                         JsBarcode("#barcode", billNo, {
                             format: "CODE128",
                             lineColor: "#000",
-                            width: 2,
-                            height: 40,
+                            width: 1.5,
+                            height: 50,
                             displayValue: false
                         });
                     }
                     setTimeout(() => {
                         window.print();
                         window.close();
-                    }, 300);
+                    }, 400);
                 };
             <\/script>
         </body>
