@@ -9,9 +9,10 @@ class Department(models.Model):
 
     def __str__(self):
         return self.name
-        
+
+
 class Branch(models.Model):
-    name       = models.CharField(max_length=100)
+    name       = models.CharField(max_length=200)
     code       = models.CharField(max_length=20, blank=True, null=True)
     address    = models.TextField(blank=True, null=True)
     phone      = models.CharField(max_length=50, blank=True, null=True)
@@ -26,26 +27,27 @@ class Branch(models.Model):
 # PRODUCT
 # =========================
 class Product(models.Model):
-    name = models.CharField(max_length=255)
-    sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    name           = models.CharField(max_length=255)
+    sku            = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    price          = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    stock = models.IntegerField(default=0)
-    image = models.ImageField(upload_to="products/", blank=True, null=True)
-    source = models.CharField(max_length=50, default="woocommerce")
-    woo_id = models.IntegerField(null=True, blank=True, unique=True)
+    stock          = models.IntegerField(default=0)
+    image          = models.ImageField(upload_to="products/", blank=True, null=True)
+    source         = models.CharField(max_length=50, default="woocommerce")
+    woo_id         = models.IntegerField(null=True, blank=True, unique=True)
 
-    gtin = models.CharField(max_length=50, blank=True, null=True)
-    upc = models.CharField(max_length=50, blank=True, null=True)
-    ean = models.CharField(max_length=50, blank=True, null=True)
-    isbn = models.CharField(max_length=50, blank=True, null=True)
-    published = models.BooleanField(default=True)
-    is_featured = models.BooleanField(default=False)
-    visibility_in_catalog = models.CharField(max_length=50, blank=True, null=True)
-    short_description = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    regular_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    gtin  = models.CharField(max_length=50, blank=True, null=True)
+    upc   = models.CharField(max_length=50, blank=True, null=True)
+    ean   = models.CharField(max_length=50, blank=True, null=True)
+    isbn  = models.CharField(max_length=50, blank=True, null=True)
+
+    published              = models.BooleanField(default=True)
+    is_featured            = models.BooleanField(default=False)
+    visibility_in_catalog  = models.CharField(max_length=50, blank=True, null=True)
+    short_description      = models.TextField(blank=True, null=True)
+    description            = models.TextField(blank=True, null=True)
+    sale_price             = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    regular_price          = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     category = models.ForeignKey(
         "Category", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
@@ -72,135 +74,121 @@ class Product(models.Model):
         "Tax", on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
     )
 
-    discount_amount     = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    sales_rate_inc_tax  = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    discount_amount    = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    sales_rate_inc_tax = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    tags = models.TextField(blank=True, null=True)
-    weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    width = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    height = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    tags                   = models.TextField(blank=True, null=True)
+    weight                 = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    length                 = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    width                  = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    height                 = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     allow_customer_reviews = models.BooleanField(default=True)
-    purchase_note = models.TextField(blank=True, null=True)
-    shipping_class = models.CharField(max_length=100, blank=True, null=True)
-    swatches_attributes = models.TextField(blank=True, null=True)
-    brands = models.CharField(max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=50, default="Active")
+    purchase_note          = models.TextField(blank=True, null=True)
+    shipping_class         = models.CharField(max_length=100, blank=True, null=True)
+    swatches_attributes    = models.TextField(blank=True, null=True)
+    brands                 = models.CharField(max_length=255, blank=True, null=True)
+    status                 = models.CharField(max_length=50, default="Active")
 
-    # ── flags ──────────────────────────────────────────
-    display_on_pos           = models.BooleanField(default=True)
-    is_inactive              = models.BooleanField(default=False)
-    exclude_from_discount    = models.BooleanField(default=False)
-    is_batch                 = models.BooleanField(default=False)
-    auto_fill_demand_sheet   = models.BooleanField(default=False)
-    non_inventory_item       = models.BooleanField(default=False)
-    is_deal                  = models.BooleanField(default=False)
-    add_modifier_groups      = models.BooleanField(default=False)
+    display_on_pos         = models.BooleanField(default=True)
+    is_inactive            = models.BooleanField(default=False)
+    exclude_from_discount  = models.BooleanField(default=False)
+    is_batch               = models.BooleanField(default=False)
+    auto_fill_demand_sheet = models.BooleanField(default=False)
+    non_inventory_item     = models.BooleanField(default=False)
+    is_deal                = models.BooleanField(default=False)
+    add_modifier_groups    = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
-
 
 
 # =========================
 # CUSTOMER
 # =========================
 class Customer(models.Model):
-    name = models.CharField(max_length=255)
+    name  = models.CharField(max_length=255)
     email = models.EmailField(null=True, blank=True, unique=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
         return self.name
 
+
 class ModifierGroup(models.Model):
-    name = models.CharField(max_length=200)
+    name     = models.CharField(max_length=200)
     is_count = models.BooleanField(default=False)
-    count = models.IntegerField(default=0)
+    count    = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
 
 
 class ModifierItem(models.Model):
-    modifier = models.ForeignKey(
-        ModifierGroup,
-        on_delete=models.CASCADE,
-        related_name="items"
-    )
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    modifier               = models.ForeignKey(ModifierGroup, on_delete=models.CASCADE, related_name="items")
+    product                = models.ForeignKey(Product, on_delete=models.CASCADE)
+    amount                 = models.DecimalField(max_digits=10, decimal_places=2)
     get_rate_from_modifier = models.BooleanField(default=False)
 
-class Supplier(models.Model):
 
+class Supplier(models.Model):
     supplier_code = models.CharField(max_length=50, blank=True, null=True)
     supplier_name = models.CharField(max_length=255)
-
-    phone = models.CharField(max_length=50, blank=True, null=True)
-    fax = models.CharField(max_length=50, blank=True, null=True)
-    mobile = models.CharField(max_length=50, blank=True, null=True)
-
-    city = models.CharField(max_length=100, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
-
-    status = models.CharField(max_length=20, blank=True, null=True)
-
-    email = models.EmailField(blank=True, null=True)
-
-    ntn = models.CharField(max_length=50, blank=True, null=True)
-    strn = models.CharField(max_length=50, blank=True, null=True)
-    cnic = models.CharField(max_length=50, blank=True, null=True)
-
-    address = models.TextField(blank=True, null=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
+    phone         = models.CharField(max_length=50, blank=True, null=True)
+    fax           = models.CharField(max_length=50, blank=True, null=True)
+    mobile        = models.CharField(max_length=50, blank=True, null=True)
+    city          = models.CharField(max_length=100, blank=True, null=True)
+    country       = models.CharField(max_length=100, blank=True, null=True)
+    status        = models.CharField(max_length=20, blank=True, null=True)
+    email         = models.EmailField(blank=True, null=True)
+    ntn           = models.CharField(max_length=50, blank=True, null=True)
+    strn          = models.CharField(max_length=50, blank=True, null=True)
+    cnic          = models.CharField(max_length=50, blank=True, null=True)
+    address       = models.TextField(blank=True, null=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.supplier_name
-        
-class Brand(models.Model):
 
+
+class Brand(models.Model):
     brand_code = models.CharField(max_length=50, unique=True)
     brand_name = models.CharField(max_length=255)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.brand_name
-class Color(models.Model):
 
+
+class Color(models.Model):
     Color_code = models.CharField(max_length=50, unique=True)
     Color_name = models.CharField(max_length=255)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.Color_name
+
+
 class Size(models.Model):
-
-    Size_code = models.CharField(max_length=50, unique=True)
-    Size_name = models.CharField(max_length=255)
-
+    Size_code  = models.CharField(max_length=50, unique=True)
+    Size_name  = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.Size_name
+
+
 class Unit(models.Model):
-    unit = models.ForeignKey("Unit",on_delete=models.SET_NULL,null=True,blank=True,related_name="products")
-
-    Unit_code = models.CharField(max_length=50, unique=True)
-    Unit_name = models.CharField(max_length=255)
-
+    unit       = models.ForeignKey("Unit", on_delete=models.SET_NULL, null=True, blank=True, related_name="products")
+    Unit_code  = models.CharField(max_length=50, unique=True)
+    Unit_name  = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.Unit_name
 
 
-
 class Tax(models.Model):
-    name = models.CharField(max_length=50)
+    name    = models.CharField(max_length=50)
     percent = models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self):
@@ -208,7 +196,7 @@ class Tax(models.Model):
 
 
 class Item(models.Model):
-    name = models.CharField(max_length=200)
+    name    = models.CharField(max_length=200)
     barcode = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -216,18 +204,19 @@ class Item(models.Model):
 
 
 class PriceList(models.Model):
-    name = models.CharField(max_length=150)
+    name       = models.CharField(max_length=150)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class PriceListItem(models.Model):
-    pricelist = models.ForeignKey(PriceList, on_delete=models.CASCADE)
-    item = models.ForeignKey(Product, on_delete=models.CASCADE)
-    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    tax = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True)
+    pricelist       = models.ForeignKey(PriceList, on_delete=models.CASCADE)
+    item            = models.ForeignKey(Product, on_delete=models.CASCADE)
+    unit            = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True)
+    price           = models.DecimalField(max_digits=10, decimal_places=2)
+    tax             = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True)
     price_inclusive = models.DecimalField(max_digits=10, decimal_places=2)
-    
+
+
 class Category(models.Model):
     name                = models.CharField(max_length=150, unique=True)
     description         = models.TextField(blank=True, null=True)
@@ -245,8 +234,8 @@ class Category(models.Model):
     image               = models.ImageField(upload_to="category_images/", null=True, blank=True)
 
     class Meta:
-        ordering = ['name']
-        verbose_name = "Category"
+        ordering         = ['name']
+        verbose_name     = "Category"
         verbose_name_plural = "Categories"
 
     def __str__(self):
@@ -254,130 +243,113 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.category_code:
-            last = Category.objects.order_by('-id').first()
+            last    = Category.objects.order_by('-id').first()
             next_id = (last.id + 1) if last else 1
             self.category_code = str(next_id).zfill(4)
         super().save(*args, **kwargs)
+
+
 class SubCategory(models.Model):
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.CASCADE,
-        related_name="subcategories"
-    )
-    name = models.CharField(max_length=150)
-    status = models.BooleanField(default=True)
-    woo_id = models.IntegerField(null=True, blank=True, unique=True)
+    category   = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
+    name       = models.CharField(max_length=150)
+    status     = models.BooleanField(default=True)
+    woo_id     = models.IntegerField(null=True, blank=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('category', 'name')
-        ordering = ['name']
-        verbose_name = "Sub Category"
+        unique_together     = ('category', 'name')
+        ordering            = ['name']
+        verbose_name        = "Sub Category"
         verbose_name_plural = "Sub Categories"
 
     def __str__(self):
         return f"{self.category.name} - {self.name}"
+
 
 # =========================
 # ORDER (SALE)
 # =========================
 class Order(models.Model):
     PAYMENT_CHOICES = (
-        ("cash", "Cash"),
-        ("card", "Card"),
+        ("cash",  "Cash"),
+        ("card",  "Card"),
         ("split", "Split"),
-        ("bank", "Bank"),
+        ("bank",  "Bank"),
     )
-    created_by = models.ForeignKey(          # ✅ ADD
-        User,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name="orders"
-    )
-    
-
     STATUS_CHOICES = (
-        ("pending", "Pending"),
+        ("pending",   "Pending"),
         ("completed", "Completed"),
         ("cancelled", "Cancelled"),
     )
 
-    order_id = models.CharField(max_length=20, unique=True)
-    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    order_id       = models.CharField(max_length=20, unique=True)
+    customer       = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
+    total          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default="cash")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="completed")
-    source = models.CharField(max_length=50, default="pos")
-    created_at = models.DateTimeField(auto_now_add=True)
+    status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default="completed")
+    source         = models.CharField(max_length=50, default="pos")
+    created_at     = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.order_id
 
-class Discount(models.Model):
 
+class Discount(models.Model):
     TYPE_CHOICES = (
-        ("flat", "Flat"),
+        ("flat",    "Flat"),
         ("percent", "Percent"),
     )
-
     STATUS_CHOICES = (
-        ("active", "Active"),
+        ("active",   "Active"),
         ("inactive", "Inactive"),
     )
 
-    name = models.CharField(max_length=100)
-
-    value = models.DecimalField(max_digits=10, decimal_places=2)
-
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
-
+    name       = models.CharField(max_length=100)
+    value      = models.DecimalField(max_digits=10, decimal_places=2)
+    type       = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    status     = models.CharField(max_length=10, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+
 class Promotion(models.Model):
-
-    name = models.CharField(max_length=200)
-    promo_code = models.CharField(max_length=100, unique=True)
-
-    branch = models.CharField(max_length=200, blank=True, null=True)
-    enable = models.BooleanField(default=True)
-
-    from_date = models.DateField(blank=True, null=True)
-    to_date = models.DateField(blank=True, null=True)
-    days_applicable = models.CharField(max_length=100, blank=True, null=True)
-
-    priority = models.IntegerField(default=1)
-
     DISCOUNT_TYPE = (
-        ("amount", "Amount Discount"),
+        ("amount",  "Amount Discount"),
         ("percent", "Percent Discount"),
     )
-    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE)
 
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
-
-    application = models.CharField(max_length=100, default="All orders")
-
-    created_at = models.DateTimeField(auto_now_add=True)
+    name            = models.CharField(max_length=200)
+    promo_code      = models.CharField(max_length=100, unique=True)
+    branch          = models.CharField(max_length=200, blank=True, null=True)
+    enable          = models.BooleanField(default=True)
+    from_date       = models.DateField(blank=True, null=True)
+    to_date         = models.DateField(blank=True, null=True)
+    days_applicable = models.CharField(max_length=100, blank=True, null=True)
+    priority        = models.IntegerField(default=1)
+    discount_type   = models.CharField(max_length=20, choices=DISCOUNT_TYPE)
+    discount_value  = models.DecimalField(max_digits=10, decimal_places=2)
+    application     = models.CharField(max_length=100, default="All orders")
+    created_at      = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
 
 # =========================
 # ORDER ITEM
 # =========================
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    product_name = models.CharField(max_length=255)
+    order          = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
+    product        = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    product_name   = models.CharField(max_length=255)
     woo_product_id = models.IntegerField(null=True, blank=True)
-    quantity = models.IntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    quantity       = models.IntegerField(default=1)
+    price          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def save(self, *args, **kwargs):
         self.total = Decimal(self.quantity) * self.price
@@ -390,31 +362,27 @@ class OrderItem(models.Model):
 # =========================
 # PACKING
 # =========================
-# =========================
-# PACKING  (replace existing)
-# =========================
 class Packing(models.Model):
     order       = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="packing")
     customer    = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
     packed_by   = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    booking_no  = models.CharField(max_length=50, unique=True, blank=True, null=True)  # ✅ ADD
-    total_items = models.IntegerField(default=0)                                        # ✅ ADD
-    total_qty   = models.IntegerField(default=0)                                        # ✅ ADD
-    discount    = models.DecimalField(max_digits=10, decimal_places=2, default=0)       # ✅ ADD
-    net_amount  = models.DecimalField(max_digits=10, decimal_places=2, default=0)       # ✅ ADD
+    booking_no  = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    total_items = models.IntegerField(default=0)
+    total_qty   = models.IntegerField(default=0)
+    discount    = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    net_amount  = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at  = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.booking_no or f"Packing-{self.id}"
 
 
-# ✅ ADD this entire new model below Packing
 class PackingItem(models.Model):
-    packing  = models.ForeignKey(Packing, on_delete=models.CASCADE, related_name="items")
-    product  = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    qty      = models.IntegerField(default=1)
-    price    = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    amount   = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    packing = models.ForeignKey(Packing, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    qty     = models.IntegerField(default=1)
+    price   = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount  = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.product.name if self.product else 'Item'} x {self.qty}"
@@ -424,9 +392,9 @@ class PackingItem(models.Model):
 # RETURN
 # =========================
 class Return(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    reason = models.TextField(blank=True)
+    order      = models.ForeignKey(Order, on_delete=models.CASCADE)
+    amount     = models.DecimalField(max_digits=10, decimal_places=2)
+    reason     = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -437,46 +405,45 @@ class Return(models.Model):
 # CASHIER
 # =========================
 class Cashier(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user       = models.OneToOneField(User, on_delete=models.CASCADE)
     is_manager = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
+
+
 class Courier(models.Model):
     name = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
-class Branch(models.Model):
-    name = models.CharField(max_length=200)
 
-    def __str__(self):
-        return self.name
+
 class Sales(models.Model):
-    date = models.DateField()
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    date     = models.DateField()
+    branch   = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    product  = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount   = models.DecimalField(max_digits=12, decimal_places=2)
 
 
 class SalesTarget(models.Model):
-    year = models.IntegerField()
-    month = models.IntegerField()
-    branch = models.ForeignKey(
-        Branch,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
-    )
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    year            = models.IntegerField()
+    month           = models.IntegerField()
+    branch          = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    product         = models.ForeignKey(Product, on_delete=models.CASCADE)
     target_quantity = models.IntegerField()
-    target_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    target_amount   = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
         if self.branch:
             return f"{self.branch} - {self.month}/{self.year}"
         return f"No Branch - {self.month}/{self.year}"
+
+
+# =========================
+# INVENTORY
+# =========================
 class PhysicalStock(models.Model):
     bill_no    = models.CharField(max_length=50, unique=True)
     date       = models.DateField()
@@ -487,17 +454,18 @@ class PhysicalStock(models.Model):
     def __str__(self):
         return self.bill_no
 
+
 class PhysicalStockItem(models.Model):
-    stock         = models.ForeignKey(PhysicalStock, on_delete=models.CASCADE, related_name="items")
-    product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    unit_name     = models.CharField(max_length=100, default="Default")
-    batch_no      = models.CharField(max_length=100, blank=True, null=True)
-    expiry        = models.DateField(null=True, blank=True)
-    system_qty    = models.IntegerField(default=0)
-    physical_qty  = models.IntegerField(default=0)
-    rate          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    short_excess  = models.IntegerField(default=0)
-    remarks       = models.CharField(max_length=255, blank=True, null=True)
+    stock        = models.ForeignKey(PhysicalStock, on_delete=models.CASCADE, related_name="items")
+    product      = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name    = models.CharField(max_length=100, default="Default")
+    batch_no     = models.CharField(max_length=100, blank=True, null=True)
+    expiry       = models.DateField(null=True, blank=True)
+    system_qty   = models.IntegerField(default=0)
+    physical_qty = models.IntegerField(default=0)
+    rate         = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    short_excess = models.IntegerField(default=0)
+    remarks      = models.CharField(max_length=255, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.short_excess = self.physical_qty - self.system_qty
@@ -505,6 +473,8 @@ class PhysicalStockItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.stock.bill_no}"
+
+
 class StockAudit(models.Model):
     bill_no    = models.CharField(max_length=50, unique=True)
     date       = models.DateTimeField(auto_now_add=True)
@@ -522,13 +492,15 @@ class StockAuditItem(models.Model):
     audit      = models.ForeignKey(StockAudit, on_delete=models.CASCADE, related_name="items")
     product    = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     rate       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    system_qty = models.IntegerField(default=0)   # ← stock at time of audit
-    qty        = models.IntegerField(default=0)   # ← physically counted
-    difference = models.IntegerField(default=0)   # ← qty - system_qty
+    system_qty = models.IntegerField(default=0)
+    qty        = models.IntegerField(default=0)
+    difference = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
         self.difference = self.qty - self.system_qty
         super().save(*args, **kwargs)
+
+
 class ItemConversion(models.Model):
     CONVERSION_TYPE = (
         ("positive", "Positive"),
@@ -545,7 +517,6 @@ class ItemConversion(models.Model):
 
 
 class ItemConversionIn(models.Model):
-    """Items whose stock gets ADDED (output)"""
     conversion = models.ForeignKey(ItemConversion, on_delete=models.CASCADE, related_name="items_in")
     product    = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     unit_name  = models.CharField(max_length=100, default="Default")
@@ -556,7 +527,6 @@ class ItemConversionIn(models.Model):
 
 
 class ItemConversionOut(models.Model):
-    """Items whose stock gets SUBTRACTED (input)"""
     conversion = models.ForeignKey(ItemConversion, on_delete=models.CASCADE, related_name="items_out")
     product    = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     unit_name  = models.CharField(max_length=100, default="Default")
@@ -565,6 +535,8 @@ class ItemConversionOut(models.Model):
 
     def __str__(self):
         return f"OUT: {self.product} x {self.quantity}"
+
+
 class DemandSheet(models.Model):
     demand_no   = models.CharField(max_length=50, unique=True)
     demand_date = models.DateField(auto_now_add=True)
@@ -580,16 +552,18 @@ class DemandSheet(models.Model):
 
 
 class DemandSheetItem(models.Model):
-    demand        = models.ForeignKey(DemandSheet, on_delete=models.CASCADE, related_name="items")
-    product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    item_unit     = models.CharField(max_length=100, default="Default")
-    requested_qty = models.IntegerField(default=0)
+    demand          = models.ForeignKey(DemandSheet, on_delete=models.CASCADE, related_name="items")
+    product         = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    item_unit       = models.CharField(max_length=100, default="Default")
+    requested_qty   = models.IntegerField(default=0)
     available_stock = models.IntegerField(default=0)
-    consumption   = models.IntegerField(default=0)
-    remarks       = models.CharField(max_length=255, blank=True, null=True)
+    consumption     = models.IntegerField(default=0)
+    remarks         = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"{self.product} - {self.demand.demand_no}"
+
+
 class PurchaseOrder(models.Model):
     STATUS_CHOICES = (
         ("pending",   "Pending"),
@@ -598,30 +572,30 @@ class PurchaseOrder(models.Model):
         ("cancelled", "Cancelled"),
     )
 
-    po_number        = models.CharField(max_length=50, unique=True)
-    date             = models.DateField(auto_now_add=True)
-    expected_date    = models.DateField(null=True, blank=True)
-    supplier         = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
-    branch           = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
-    demand_sheet     = models.ForeignKey(DemandSheet, on_delete=models.SET_NULL, null=True, blank=True, related_name="purchase_orders")
-    status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    notes            = models.TextField(blank=True, null=True)
-    total_amount     = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    created_by       = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at       = models.DateTimeField(auto_now_add=True)
+    po_number     = models.CharField(max_length=50, unique=True)
+    date          = models.DateField(auto_now_add=True)
+    expected_date = models.DateField(null=True, blank=True)
+    supplier      = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    branch        = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    demand_sheet  = models.ForeignKey(DemandSheet, on_delete=models.SET_NULL, null=True, blank=True, related_name="purchase_orders")
+    status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    notes         = models.TextField(blank=True, null=True)
+    total_amount  = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by    = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.po_number
 
 
 class PurchaseOrderItem(models.Model):
-    po            = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
-    product       = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    unit_name     = models.CharField(max_length=100, default="Default")
-    ordered_qty   = models.IntegerField(default=0)
-    received_qty  = models.IntegerField(default=0)
-    rate          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    amount        = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    po           = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
+    product      = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name    = models.CharField(max_length=100, default="Default")
+    ordered_qty  = models.IntegerField(default=0)
+    received_qty = models.IntegerField(default=0)
+    rate         = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def save(self, *args, **kwargs):
         self.amount = self.ordered_qty * self.rate
@@ -629,11 +603,13 @@ class PurchaseOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.po.po_number}"
+
+
 class GoodsReceiveNote(models.Model):
     TERMS_CHOICES = (
-        ("cash",   "Cash"),
-        ("credit", "Credit"),
-        ("advance","Advance"),
+        ("cash",    "Cash"),
+        ("credit",  "Credit"),
+        ("advance", "Advance"),
     )
 
     grn_no         = models.CharField(max_length=50, unique=True)
@@ -669,14 +645,16 @@ class GoodsReceiveNoteItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.grn.grn_no}"
+
+
 class GRNReturnNote(models.Model):
     REASON_CHOICES = (
-        ("damaged",   "Damaged"),
-        ("wrong",     "Wrong Item"),
-        ("excess",    "Excess Quantity"),
-        ("expired",   "Expired"),
-        ("quality",   "Quality Issue"),
-        ("other",     "Other"),
+        ("damaged", "Damaged"),
+        ("wrong",   "Wrong Item"),
+        ("excess",  "Excess Quantity"),
+        ("expired", "Expired"),
+        ("quality", "Quality Issue"),
+        ("other",   "Other"),
     )
 
     return_no    = models.CharField(max_length=50, unique=True)
@@ -712,11 +690,10 @@ class GRNReturnNoteItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.return_note.return_no}"
+
+
 class ItemRecipe(models.Model):
-    product    = models.OneToOneField(
-        Product, on_delete=models.CASCADE,
-        related_name="recipe"
-    )
+    product    = models.OneToOneField(Product, on_delete=models.CASCADE, related_name="recipe")
     yield_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -727,17 +704,16 @@ class ItemRecipe(models.Model):
 
 
 class ItemRecipeIngredient(models.Model):
-    recipe        = models.ForeignKey(ItemRecipe, on_delete=models.CASCADE, related_name="ingredients")
-    raw_material  = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="used_in_recipes")
-    actual_qty    = models.DecimalField(max_digits=10, decimal_places=3, default=0)
-    unit_name     = models.CharField(max_length=100, default="Default")
-    rate          = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    amount        = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    stop_recipe   = models.BooleanField(default=False)
+    recipe       = models.ForeignKey(ItemRecipe, on_delete=models.CASCADE, related_name="ingredients")
+    raw_material = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="used_in_recipes")
+    actual_qty   = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    unit_name    = models.CharField(max_length=100, default="Default")
+    rate         = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount       = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    stop_recipe  = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.raw_material} → {self.recipe.product.name}"
-
 
 
 class TransferOut(models.Model):
