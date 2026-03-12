@@ -317,7 +317,6 @@ urlpatterns = [
     path("inventory/goods-receive-return-note/", goods_receive_return_note, name="goods_receive_return_note"),
     path("inventory/item-recipe/", item_recipe, name="item_recipe"),
     path("inventory/transfer-out/", transfer_out, name="transfer_out"),
-=======
     path("inventory/goods-receive-note/",                  grn_list,              name="grn_list"),
     path("inventory/grn_create/",           grn_create,            name="grn_create"),
     path("inventory/grn/<int:pk>/",         grn_detail,            name="grn_detail"),
