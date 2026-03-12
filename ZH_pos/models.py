@@ -3,6 +3,25 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 
 
+class Department(models.Model):
+    name       = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+        
+class Branch(models.Model):
+    name       = models.CharField(max_length=100)
+    code       = models.CharField(max_length=20, blank=True, null=True)
+    address    = models.TextField(blank=True, null=True)
+    phone      = models.CharField(max_length=50, blank=True, null=True)
+    is_main    = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 # =========================
 # PRODUCT
 # =========================
@@ -428,10 +447,11 @@ class Courier(models.Model):
 
     def __str__(self):
         return self.name
-#class Branch(models.Model):
- #   name = models.CharField(max_length=200)
+class Branch(models.Model):
+    name = models.CharField(max_length=200)
 
-   ##f return self.name
+    def __str__(self):
+        return self.name
 class Sales(models.Model):
     date = models.DateField()
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
@@ -717,23 +737,7 @@ class ItemRecipeIngredient(models.Model):
 
     def __str__(self):
         return f"{self.raw_material} → {self.recipe.product.name}"
-class Department(models.Model):
-    name       = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
-        
-class Branch(models.Model):
-    name       = models.CharField(max_length=100)
-    code       = models.CharField(max_length=20, blank=True, null=True)
-    address    = models.TextField(blank=True, null=True)
-    phone      = models.CharField(max_length=50, blank=True, null=True)
-    is_main    = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
 
 
 class TransferOut(models.Model):
