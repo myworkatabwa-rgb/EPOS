@@ -431,8 +431,7 @@ class Courier(models.Model):
 #class Branch(models.Model):
  #   name = models.CharField(max_length=200)
 
-    def __str__(self):
-        return self.name
+   ##f return self.name
 class Sales(models.Model):
     date = models.DateField()
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
