@@ -16,7 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # =====================================================
 
 SECRET_KEY = 'django-insecure-dlyx0gx!h@x%lux-pznk2@-wk0ij@0%&azu67hhs)!epahh_aq'
-DEBUG = True
+DEBUG = False
+
 
 ALLOWED_HOSTS = [
     'epos-production-c366.up.railway.app',
