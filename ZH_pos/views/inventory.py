@@ -19,6 +19,7 @@ from ZH_pos.models import (
     GRNReturnNote, GRNReturnNoteItem,
     ItemRecipe, ItemRecipeIngredient,
     TransferOut, TransferOutItem,
+    TransferIn,TransferInItem
 )
 
 
@@ -1410,6 +1411,146 @@ def load_grn_for_transfer(request):
         return JsonResponse([], safe=False)
 
 
+def generate_transfer_in_bin_no():
+    last = TransferIn.objects.order_by('-id').first()
+    next_id = (last.id + 1) if last else 1
+    return f"TIN-{str(next_id).zfill(5)}"
+
+
 @login_required
-def transfer_in(request):
-    return render(request, "inventory/transfer_in.html")
+def transfer_in_list(request):
+    transfers = TransferIn.objects.select_related(
+        "branch", "source_branch", "department", "created_by"
+    ).order_by("-created_at")
+    return render(request, "inventory/transfer_in_list.html", {
+        "transfers": transfers
+    })
+
+
+@login_required
+def transfer_in_create(request):
+    branches       = Branch.objects.all().order_by("name")
+    departments    = Department.objects.all().order_by("name")
+    transfer_outs  = TransferOut.objects.order_by("-created_at")[:30]
+    bin_no         = generate_transfer_in_bin_no()
+    today          = timezone.now().strftime("%-d-%-m-%Y")
+    main_branch    = Branch.objects.filter(is_main=True).first()
+
+    if request.method == "POST":
+        try:
+            data             = json.loads(request.body)
+            source_branch_id = data.get("source_branch_id") or None
+            department_id    = data.get("department_id") or None
+            transfer_out_id  = data.get("transfer_out_id") or None
+            description      = data.get("description", "")
+            items            = data.get("items", [])
+
+            if not items:
+                return JsonResponse({"success": False, "error": "No items added."})
+
+            total_qty         = sum(float(i.get("quantity", 0)) for i in items)
+            total_amount      = sum(float(i.get("amount", 0)) for i in items)
+            total_retail_rate = sum(float(i.get("retail_rate", 0)) for i in items)
+
+            transfer = TransferIn.objects.create(
+                bin_no            = generate_transfer_in_bin_no(),
+                branch            = main_branch,
+                source_branch_id  = source_branch_id,
+                department_id     = department_id,
+                transfer_out_id   = transfer_out_id,
+                description       = description,
+                total_quantity    = total_qty,
+                total_amount      = total_amount,
+                total_retail_rate = total_retail_rate,
+                created_by        = request.user,
+            )
+
+            for item in items:
+                product_id  = item.get("product_id")
+                quantity    = float(item.get("quantity", 0))
+                rate        = float(item.get("rate", 0))
+                retail_rate = float(item.get("retail_rate", 0))
+                batch_no    = item.get("batch_no", "")
+                expiry      = item.get("expiry") or None
+                remarks     = item.get("remarks", "")
+
+                if not product_id or quantity <= 0:
+                    continue
+
+                product = Product.objects.get(id=product_id)
+
+                TransferInItem.objects.create(
+                    transfer_id = transfer.id,
+                    product_id  = product_id,
+                    unit_name   = product.unit.Unit_name if product.unit else "Default",
+                    batch_no    = batch_no,
+                    expiry      = expiry,
+                    quantity    = quantity,
+                    rate        = rate,
+                    amount      = quantity * rate,
+                    retail_rate = retail_rate,
+                    remarks     = remarks,
+                )
+
+                # ✅ Add stock to receiving branch
+                product.stock += int(quantity)
+                product.save()
+
+            return JsonResponse({"success": True, "id": transfer.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return render(request, "inventory/transfer_in_create.html", {
+        "branches":      branches,
+        "departments":   departments,
+        "transfer_outs": transfer_outs,
+        "bin_no":        bin_no,
+        "today":         today,
+        "main_branch":   main_branch,
+    })
+
+
+@login_required
+def transfer_in_detail(request, pk):
+    transfer = get_object_or_404(TransferIn, id=pk)
+    items    = transfer.items.select_related("product").all()
+    return render(request, "inventory/transfer_in_detail.html", {
+        "transfer": transfer,
+        "items":    items,
+    })
+
+
+@login_required
+def transfer_in_delete(request, pk):
+    transfer = get_object_or_404(TransferIn, id=pk)
+    if request.method == "POST":
+        transfer.delete()
+        messages.success(request, "Transfer In deleted.")
+    return redirect("transfer_in_list")
+
+
+@login_required
+def load_transfer_out_items(request):
+    """Load items from a Transfer Out into Transfer In"""
+    transfer_out_id = request.GET.get("transfer_out_id")
+    if not transfer_out_id:
+        return JsonResponse([], safe=False)
+    try:
+        transfer_out = TransferOut.objects.get(id=transfer_out_id)
+        items        = transfer_out.items.select_related("product").all()
+        data = [{
+            "product_id":  i.product.id if i.product else None,
+            "name":        i.product.name if i.product else "—",
+            "sku":         i.product.sku if i.product else "—",
+            "unit":        i.unit_name,
+            "batch_no":    i.batch_no or "",
+            "expiry":      str(i.expiry) if i.expiry else "",
+            "quantity":    float(i.quantity),
+            "rate":        float(i.rate),
+            "retail_rate": float(i.retail_rate),
+            "stock":       i.product.stock if i.product else 0,
+        } for i in items if i.product]
+        return JsonResponse(data, safe=False)
+    except TransferOut.DoesNotExist:
+        return JsonResponse([], safe=False)

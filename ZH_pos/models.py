@@ -749,3 +749,35 @@ class TransferOutItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.transfer.bin_no}"
+class TransferIn(models.Model):
+    bin_no          = models.CharField(max_length=50, unique=True)
+    bin_date        = models.DateField(auto_now_add=True)
+    branch          = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, related_name="transfers_received")
+    source_branch   = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, related_name="transfers_sent")
+    department      = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+    transfer_out    = models.ForeignKey(TransferOut, on_delete=models.SET_NULL, null=True, blank=True, related_name="transfer_ins")
+    description     = models.TextField(blank=True, null=True)
+    total_quantity  = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_amount    = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_retail_rate = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by      = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at      = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.bin_no
+
+
+class TransferInItem(models.Model):
+    transfer    = models.ForeignKey(TransferIn, on_delete=models.CASCADE, related_name="items")
+    product     = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    unit_name   = models.CharField(max_length=100, default="Default")
+    batch_no    = models.CharField(max_length=100, blank=True, null=True)
+    expiry      = models.DateField(null=True, blank=True)
+    quantity    = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    rate        = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount      = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    retail_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    remarks     = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.product} - {self.transfer.bin_no}"
