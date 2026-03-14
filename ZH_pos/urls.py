@@ -141,7 +141,11 @@ from .views.inventory import (
 
 # ACCOUNTS
 from .views.accounts import (
-    vouchers,
+    voucher_list,
+    voucher_create,
+    voucher_edit,
+    voucher_detail,
+    voucher_delete,
     cash_payment_voucher,
     cash_received_voucher,
     bank_payment_voucher,
