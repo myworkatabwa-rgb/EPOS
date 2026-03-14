@@ -131,12 +131,12 @@ from .views.inventory import (
     transfer_out_delete,
     load_demand_for_transfer,
     load_grn_for_transfer,
-   # transfer_in,
-    #transfer_in_list,
-    #transfer_in_create,
-    #transfer_in_detail,
-    #transfer_in_delete,
-    #load_transfer_out_items,
+    transfer_in,
+    transfer_in_list,
+    transfer_in_create,
+    transfer_in_detail,
+    transfer_in_delete,
+    load_transfer_out_items,
 )
 
 # ACCOUNTS
