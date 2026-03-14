@@ -172,11 +172,7 @@ from .views.settings import (
     billing,
     sms_setup,
     ecommerce_setup,
-    voucher_list,
-    voucher_create,
-    voucher_edit,
-    voucher_detail,
-    voucher_delete,
+    
 )
 
 # FINANCE
