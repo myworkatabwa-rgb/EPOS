@@ -781,3 +781,41 @@ class TransferInItem(models.Model):
 
     def __str__(self):
         return f"{self.product} - {self.transfer.bin_no}"
+class VoucherType(models.Model):
+    code        = models.CharField(max_length=10, unique=True)
+    name        = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+#Accounts Section
+
+
+class Voucher(models.Model):
+    voucher_no   = models.CharField(max_length=50, unique=True)
+    voucher_date = models.DateField(auto_now_add=True)
+    branch       = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
+    voucher_type = models.ForeignKey(VoucherType, on_delete=models.SET_NULL, null=True, blank=True)
+    narration    = models.TextField(blank=True, null=True)
+    bill_ref_no  = models.CharField(max_length=100, blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_by   = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.voucher_no
+
+
+class VoucherItem(models.Model):
+    DEBIT_CREDIT = (
+        ("debit",  "Debit"),
+        ("credit", "Credit"),
+    )
+    voucher      = models.ForeignKey(Voucher, on_delete=models.CASCADE, related_name="items")
+    account_name = models.CharField(max_length=255)
+    description  = models.TextField(blank=True, null=True)
+    debit_credit = models.CharField(max_length=10, choices=DEBIT_CREDIT, default="debit")
+    amount       = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.account_name} - {self.amount}"

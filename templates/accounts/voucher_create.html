@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Add New Voucher</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="card p-4">
+
+    <!-- ROW 1 -->
+    <div class="row mb-3">
+      <div class="col-md-2">
+        <label class="form-label">Branch</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ main_branch.name|default:'Main Branch' }}"
+               readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Voucher No</label>
+        <input type="text" id="voucherNo"
+               class="form-control bg-light"
+               value="{{ voucher_no }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Voucher Date</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Voucher Type</label>
+        <select id="voucherType" class="form-select">
+          <option value="">Select Type</option>
+          {% for vt in voucher_types %}
+            <option value="{{ vt.id }}"
+                    data-code="{{ vt.code }}"
+                    data-name="{{ vt.name }}">
+              {{ vt.code }} — {{ vt.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Bill Ref No</label>
+        <input type="text" id="billRefNo" class="form-control"
+               placeholder="Bill Reference Number">
+      </div>
+    </div>
+
+    <!-- NARRATION -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <label class="form-label">Narration</label>
+        <textarea id="narration" class="form-control" rows="2"
+                  placeholder="Enter narration..."></textarea>
+      </div>
+    </div>
+
+    <!-- VOUCHER ENTRIES TABLE -->
+    <h6 class="fw-semibold mb-2">Voucher Entries</h6>
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle"
+             style="font-size:13px;">
+        <thead style="background:#1a7fe8;color:white;text-align:center;">
+          <tr>
+            <th>#</th>
+            <th style="min-width:200px;">Account Name</th>
+            <th style="min-width:200px;">Description</th>
+            <th>Debit / Credit</th>
+            <th style="min-width:150px;">Amount (PKR)</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody id="voucherItemsBody">
+          <tr id="emptyRow">
+            <td colspan="6" class="text-center text-muted py-3">
+              No entries added yet.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold" style="background:#f8f9fa;">
+            <td colspan="3" class="text-end">Total Debit:</td>
+            <td id="totalDebit" class="text-success">PKR 0.00</td>
+            <td colspan="2"></td>
+          </tr>
+          <tr class="fw-bold" style="background:#f8f9fa;">
+            <td colspan="3" class="text-end">Total Credit:</td>
+            <td id="totalCredit" class="text-danger">PKR 0.00</td>
+            <td colspan="2"></td>
+          </tr>
+          <tr class="fw-bold" style="background:#e8f5e9;">
+            <td colspan="3" class="text-end">Balance:</td>
+            <td id="balance" class="text-primary">PKR 0.00</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- ADD ROW BUTTON -->
+    <div class="mb-4">
+      <button class="btn btn-secondary" onclick="addRow()">
+        + Add Entry
+      </button>
+    </div>
+
+    <div>
+      <button class="btn btn-primary px-5" onclick="saveVoucher()">
+        Save Voucher
+      </button>
+      <a href="{% url 'voucher_list' %}"
+         class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+let voucherItems = [];
+
+// Add first empty row on load
+addRow();
+
+function addRow() {
+  voucherItems.push({
+    account_name: "",
+    description:  "",
+    debit_credit: "debit",
+    amount:       0,
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById("voucherItemsBody");
+  tbody.innerHTML = "";
+  let totalDebit  = 0;
+  let totalCredit = 0;
+
+  if (voucherItems.length === 0) {
+    tbody.innerHTML = `<tr id="emptyRow">
+      <td colspan="6" class="text-center text-muted py-3">
+        No entries added yet.
+      </td>
+    </tr>`;
+    updateTotals(0, 0);
+    return;
+  }
+
+  voucherItems.forEach((item, i) => {
+    if (item.debit_credit === "debit")  totalDebit  += item.amount;
+    if (item.debit_credit === "credit") totalCredit += item.amount;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>
+          <input type="text" class="form-control form-control-sm"
+                 value="${item.account_name}"
+                 oninput="voucherItems[${i}].account_name=this.value"
+                 placeholder="e.g. Cash, Sales, Supplier Name">
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm"
+                 value="${item.description}"
+                 oninput="voucherItems[${i}].description=this.value"
+                 placeholder="Description">
+        </td>
+        <td>
+          <select class="form-select form-select-sm"
+                  onchange="voucherItems[${i}].debit_credit=this.value;
+                            renderTable();">
+            <option value="debit"
+              ${item.debit_credit==='debit'?'selected':''}>
+              Debit
+            </option>
+            <option value="credit"
+              ${item.debit_credit==='credit'?'selected':''}>
+              Credit
+            </option>
+          </select>
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 value="${item.amount}" min="0"
+                 oninput="voucherItems[${i}].amount=
+                          parseFloat(this.value)||0; renderTable();">
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger"
+                  onclick="voucherItems.splice(${i},1);
+                           renderTable();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  updateTotals(totalDebit, totalCredit);
+}
+
+function updateTotals(debit, credit) {
+  const balance = debit - credit;
+  document.getElementById("totalDebit").textContent =
+    `PKR ${debit.toFixed(2)}`;
+  document.getElementById("totalCredit").textContent =
+    `PKR ${credit.toFixed(2)}`;
+  document.getElementById("balance").textContent =
+    `PKR ${Math.abs(balance).toFixed(2)} ${balance >= 0 ? '(Dr)' : '(Cr)'}`;
+  document.getElementById("balance").className =
+    balance === 0 ? "text-success" : "text-danger";
+}
+
+function saveVoucher() {
+  const vtypeId = document.getElementById("voucherType").value;
+  if (!vtypeId) {
+    alert("Please select a voucher type."); return;
+  }
+
+  const validItems = voucherItems.filter(
+    i => i.account_name && i.amount > 0
+  );
+  if (!validItems.length) {
+    alert("Please add at least one valid entry."); return;
+  }
+
+  fetch("{% url 'voucher_create' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken":  getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      voucher_type_id: vtypeId,
+      narration:       document.getElementById("narration").value,
+      bill_ref_no:     document.getElementById("billRefNo").value,
+      items:           validItems,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("Voucher saved successfully.");
+      window.location.href = "{% url 'voucher_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}

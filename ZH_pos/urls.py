@@ -168,6 +168,11 @@ from .views.settings import (
     billing,
     sms_setup,
     ecommerce_setup,
+    voucher_list,
+    voucher_create,
+    voucher_edit,
+    voucher_detail,
+    voucher_delete,
 )
 
 # FINANCE
@@ -349,7 +354,12 @@ urlpatterns = [
 
     # ── ACCOUNTS ─────────────────────────────────────────────
     path("accounts/",                       accounts_home,            name="accounts_home"),
-    path("accounts/vouchers/",              vouchers,                 name="vouchers"),
+    #path("accounts/vouchers/",              vouchers,                 name="vouchers"),
+    path("accounts/vouchers/",                  voucher_list,   name="voucher_list"),
+    path("accounts/vouchers/create/",           voucher_create, name="voucher_create"),
+    path("accounts/vouchers/edit/<int:pk>/",    voucher_edit,   name="voucher_edit"),
+    path("accounts/vouchers/<int:pk>/",         voucher_detail, name="voucher_detail"),
+    path("accounts/vouchers/delete/<int:pk>/",  voucher_delete, name="voucher_delete"),
     path("accounts/cash-payment-voucher/",  cash_payment_voucher,     name="cash_payment_voucher"),
     path("accounts/cash-received-voucher/", cash_received_voucher,    name="cash_received_voucher"),
     path("accounts/bank-payment-voucher/",  bank_payment_voucher,     name="bank_payment_voucher"),

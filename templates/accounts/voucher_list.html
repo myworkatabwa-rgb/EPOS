@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Voucher</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="mb-3">
+    <a href="{% url 'voucher_create' %}" class="btn btn-primary">
+      Add new Voucher
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover"
+           id="voucherTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>BranchCode</th>
+          <th>Branch</th>
+          <th>Voucher Type Code</th>
+          <th>Voucher Type</th>
+          <th>Voucher No</th>
+          <th>Voucher Date</th>
+          <th>Narration</th>
+          <th>Bill Ref No</th>
+          <th>View</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vouchers %}
+        <tr>
+          <td>{{ v.id }}</td>
+          <td>{{ v.branch.code|default:"0001" }}</td>
+          <td>{{ v.branch.name|default:"Main Branch" }}</td>
+          <td>{{ v.voucher_type.code|default:"—" }}</td>
+          <td>{{ v.voucher_type.name|default:"—" }}</td>
+          <td>{{ v.voucher_no }}</td>
+          <td>{{ v.voucher_date|date:"d-m-Y" }}</td>
+          <td style="max-width:200px; overflow:hidden;
+                     text-overflow:ellipsis; white-space:nowrap;">
+            {{ v.narration|default:"—" }}
+          </td>
+          <td>{{ v.bill_ref_no|default:"—" }}</td>
+          <td>
+            <a href="{% url 'voucher_detail' v.id %}"
+               class="text-primary fw-semibold"
+               style="text-decoration:none;">View</a>
+          </td>
+          <td>
+            <a href="{% url 'voucher_edit' v.id %}"
+               class="text-secondary fw-semibold"
+               style="text-decoration:none;">Edit</a>
+          </td>
+          <td>
+            <form action="{% url 'voucher_delete' v.id %}"
+                  method="post" style="display:inline;"
+                  onsubmit="return confirm('Delete voucher {{ v.voucher_no }}?');">
+              {% csrf_token %}
+              <button type="submit"
+                      class="text-danger fw-semibold"
+                      style="background:none;border:none;
+                             padding:0;cursor:pointer;">
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="12" class="text-center text-muted py-4">
+            No vouchers found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#voucherTable').DataTable({ pageLength: 10, order: [[0, 'desc']] });
+});
+</script>
+{% endblock %}
