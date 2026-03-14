@@ -341,7 +341,7 @@ urlpatterns = [
     path("inventory/transfer-out/delete/<int:pk>/",  transfer_out_delete,      name="transfer_out_delete"),
 
     # Transfer In
-    path("inventory/transfer-in/", transfer_in, name="transfer_in"),
+    #eepath("inventory/transfer-in/", transfer_in, name="transfer_in"),
 
     # ── ACCOUNTS ─────────────────────────────────────────────
     path("accounts/",                       accounts_home,            name="accounts_home"),
