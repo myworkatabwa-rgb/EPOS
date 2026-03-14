@@ -1411,6 +1411,9 @@ def load_grn_for_transfer(request):
         return JsonResponse([], safe=False)
 
 
+@login_required
+def transfer_in(request):
+    return render(request, "inventory/transfer_in.html")
 def generate_transfer_in_bin_no():
     last = TransferIn.objects.order_by('-id').first()
     next_id = (last.id + 1) if last else 1
