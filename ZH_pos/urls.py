@@ -341,7 +341,11 @@ urlpatterns = [
     path("inventory/transfer-out/delete/<int:pk>/",  transfer_out_delete,      name="transfer_out_delete"),
 
     # Transfer In
-    #eepath("inventory/transfer-in/", transfer_in, name="transfer_in"),
+    path("inventory/transfer-in/",                  transfer_in_list,         name="transfer_in_list"),
+    path("inventory/transfer-in/create/",           transfer_in_create,       name="transfer_in_create"),
+    path("inventory/transfer-in/load-tout-items/",  load_transfer_out_items,  name="load_transfer_out_items"),
+    path("inventory/transfer-in/delete/<int:pk>/",  transfer_in_delete,       name="transfer_in_delete"),
+    path("inventory/transfer-in/<int:pk>/",         transfer_in_detail,       name="transfer_in_detail"),
 
     # ── ACCOUNTS ─────────────────────────────────────────────
     path("accounts/",                       accounts_home,            name="accounts_home"),

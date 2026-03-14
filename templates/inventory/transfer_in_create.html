@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Transfer In</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#198754;border-width:2px;width:60px;opacity:1;">
+
+  <div class="card p-4">
+
+    <!-- ROW 1 -->
+    <div class="row mb-3">
+      <div class="col-md-2">
+        <label class="form-label">Branch</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ main_branch.name|default:'Main Branch' }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">BIN No</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ bin_no }}" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">BIN Date</label>
+        <input type="text" class="form-control bg-light"
+               value="{{ today }}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Source Branch</label>
+        <select id="sourceBranch" class="form-select">
+          <option value="">Select Branch</option>
+          {% for b in branches %}
+            <option value="{{ b.id }}">{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Department</label>
+        <select id="departmentSelect" class="form-select">
+          <option value="">Please Select</option>
+          {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label class="form-label">Description</label>
+        <textarea id="description" class="form-control" rows="2"
+                  placeholder="Description"></textarea>
+      </div>
+    </div>
+
+    <!-- ROW 2: Transfer Out Reference + Excel -->
+    <div class="row mb-4 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Transfer Out Reference (BIN No)</label>
+        <div class="input-group">
+          <select id="transferOutSelect" class="form-select">
+            <option value="">Select Transfer Out</option>
+            {% for t in transfer_outs %}
+              <option value="{{ t.id }}">
+                {{ t.bin_no }} —
+                {{ t.destination_branch.name|default:"" }} —
+                {{ t.bin_date|date:"d-m-Y" }}
+              </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-success" onclick="loadTransferOut()">
+            Load
+          </button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Choose Excel File</label>
+        <div class="input-group">
+          <input type="file" class="form-control" accept=".xlsx,.xls">
+          <button class="btn btn-info btn-sm"
+                  onclick="downloadSample()">
+            Download Sample
+          </button>
+        </div>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" onclick="loadStocks()">
+          Load Stocks
+        </button>
+      </div>
+    </div>
+
+    <!-- BARCODE SCAN -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Add by barcode scan</label>
+      <input type="text" id="barcodeInput" class="form-control"
+             style="max-width:420px;"
+             placeholder="place cursor here for Barcode Scan"
+             onkeydown="if(event.key==='Enter'){
+               event.preventDefault(); addByBarcode(); }">
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle"
+             style="font-size:13px; min-width:1100px;">
+        <thead style="background:#198754;color:white;text-align:center;">
+          <tr>
+            <th style="min-width:110px;">BarCode</th>
+            <th style="min-width:180px;">Item Name</th>
+            <th>Unit</th>
+            <th>Batch No</th>
+            <th>Expiry</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Retail Rate</th>
+            <th>Remarks</th>
+            <th>Rem</th>
+          </tr>
+        </thead>
+        <tbody id="transferInItemsBody">
+          <tr id="emptyRow">
+            <td colspan="11" class="text-center text-muted py-3">
+              No items added yet.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold" style="background:#f8f9fa;">
+            <td colspan="2" class="fw-bold">Total</td>
+            <td></td><td></td><td></td>
+            <td id="totalQty"    class="text-center">0.00</td>
+            <td id="totalRate"   class="text-end">0.00</td>
+            <td id="totalAmt"    class="text-end text-success">0.00</td>
+            <td id="totalRetail" class="text-end">0.00</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="mb-4">
+      <button class="btn btn-secondary" onclick="addEmptyRow()">
+        Add More
+      </button>
+    </div>
+
+    <div>
+      <button class="btn btn-success px-5" onclick="saveTransferIn()">
+        Save
+      </button>
+      <a href="{% url 'transfer_in_list' %}"
+         class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+let transferInItems = [];
+
+// ── LOAD FROM TRANSFER OUT ────────────────────────────
+function loadTransferOut() {
+  const id = document.getElementById("transferOutSelect").value;
+  if (!id) { alert("Please select a Transfer Out."); return; }
+
+  fetch(`{% url 'load_transfer_out_items' %}?transfer_out_id=${id}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) {
+        alert("No items in this Transfer Out."); return;
+      }
+      data.forEach(item => {
+        if (!transferInItems.find(i => i.product_id === item.product_id)) {
+          transferInItems.push({
+            product_id:  item.product_id,
+            sku:         item.sku,
+            name:        item.name,
+            unit:        item.unit,
+            batch_no:    item.batch_no || "",
+            expiry:      item.expiry   || "",
+            quantity:    item.quantity,
+            rate:        item.rate,
+            retail_rate: item.retail_rate,
+            remarks:     "",
+          });
+        }
+      });
+      renderTable();
+      alert(`${data.length} items loaded from Transfer Out.`);
+    });
+}
+
+// ── BARCODE SCAN ──────────────────────────────────────
+function addByBarcode() {
+  const sku = document.getElementById("barcodeInput").value.trim();
+  if (!sku) return;
+
+  fetch(`{% url 'fetch_product_for_grn' %}?sku=${encodeURIComponent(sku)}`)
+    .then(r => r.json())
+    .then(p => {
+      if (!p.product_id) {
+        alert("Product not found: " + sku); return;
+      }
+      const exists = transferInItems.find(
+        i => i.product_id === p.product_id
+      );
+      if (exists) {
+        exists.quantity += 1;
+      } else {
+        transferInItems.push({
+          product_id:  p.product_id,
+          sku:         p.sku,
+          name:        p.name,
+          unit:        p.unit,
+          batch_no:    "",
+          expiry:      "",
+          quantity:    1,
+          rate:        p.rate,
+          retail_rate: p.rate,
+          remarks:     "",
+        });
+      }
+      document.getElementById("barcodeInput").value = "";
+      renderTable();
+    });
+}
+
+// ── ADD EMPTY ROW ─────────────────────────────────────
+function addEmptyRow() {
+  transferInItems.push({
+    product_id: null, sku: "", name: "",
+    unit: "Default", batch_no: "", expiry: "",
+    quantity: 0, rate: 0, retail_rate: 0, remarks: "",
+  });
+  renderTable();
+}
+
+// ── LOAD STOCKS ───────────────────────────────────────
+function loadStocks() {
+  if (!transferInItems.length) {
+    alert("Add items first."); return;
+  }
+  transferInItems.forEach((item, i) => {
+    if (item.sku) {
+      fetch(`{% url 'fetch_product_for_grn' %}?sku=${item.sku}`)
+        .then(r => r.json())
+        .then(p => {
+          if (p.product_id) {
+            transferInItems[i].rate        = p.rate;
+            transferInItems[i].retail_rate = p.rate;
+            renderTable();
+          }
+        });
+    }
+  });
+}
+
+// ── RENDER TABLE ──────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("transferInItemsBody");
+  tbody.innerHTML = "";
+
+  let totalQty    = 0;
+  let totalRate   = 0;
+  let totalAmt    = 0;
+  let totalRetail = 0;
+
+  if (transferInItems.length === 0) {
+    tbody.innerHTML = `<tr id="emptyRow">
+      <td colspan="11" class="text-center text-muted py-3">
+        No items added yet.
+      </td>
+    </tr>`;
+    document.getElementById("totalQty").textContent    = "0.00";
+    document.getElementById("totalRate").textContent   = "0.00";
+    document.getElementById("totalAmt").textContent    = "0.00";
+    document.getElementById("totalRetail").textContent = "0.00";
+    return;
+  }
+
+  transferInItems.forEach((item, i) => {
+    const amount = item.quantity * item.rate;
+    totalQty    += item.quantity;
+    totalRate   += item.rate;
+    totalAmt    += amount;
+    totalRetail += item.retail_rate;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <input type="text"
+                 class="form-control form-control-sm bg-light"
+                 value="${item.sku}" readonly>
+        </td>
+        <td>
+          <input type="text"
+                 class="form-control form-control-sm bg-light"
+                 value="${item.name}" readonly>
+        </td>
+        <td>
+          <input type="text"
+                 class="form-control form-control-sm bg-light"
+                 style="width:80px;" value="${item.unit}" readonly>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm"
+                 style="width:90px;" value="${item.batch_no}"
+                 oninput="transferInItems[${i}].batch_no=this.value"
+                 placeholder="Batch">
+        </td>
+        <td>
+          <input type="date" class="form-control form-control-sm"
+                 style="width:130px;" value="${item.expiry}"
+                 oninput="transferInItems[${i}].expiry=this.value">
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:90px;" value="${item.quantity}" min="0"
+                 oninput="transferInItems[${i}].quantity=
+                          parseFloat(this.value)||0; renderTable();">
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:100px;" value="${item.rate}"
+                 oninput="transferInItems[${i}].rate=
+                          parseFloat(this.value)||0; renderTable();">
+        </td>
+        <td class="fw-bold text-success text-end">
+          ${amount.toFixed(2)}
+        </td>
+        <td>
+          <input type="number" step="0.01"
+                 class="form-control form-control-sm"
+                 style="width:100px;" value="${item.retail_rate}"
+                 oninput="transferInItems[${i}].retail_rate=
+                          parseFloat(this.value)||0; renderTable();">
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm"
+                 style="width:100px;" value="${item.remarks}"
+                 oninput="transferInItems[${i}].remarks=this.value"
+                 placeholder="Remarks">
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger"
+                  onclick="transferInItems.splice(${i},1);
+                           renderTable();">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("totalQty").textContent    = totalQty.toFixed(2);
+  document.getElementById("totalRate").textContent   = totalRate.toFixed(2);
+  document.getElementById("totalAmt").textContent    = totalAmt.toFixed(2);
+  document.getElementById("totalRetail").textContent = totalRetail.toFixed(2);
+}
+
+// ── DOWNLOAD SAMPLE ───────────────────────────────────
+function downloadSample() {
+  const csv  = "BarCode,Batch No,Expiry,Quantity,Rate,Retail Rate,Remarks\nSKU001,,2026-12-31,10,500,800,\n";
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a    = document.createElement("a");
+  a.href     = URL.createObjectURL(blob);
+  a.download = "transfer_in_sample.csv";
+  a.click();
+}
+
+// ── SAVE ──────────────────────────────────────────────
+function saveTransferIn() {
+  if (!transferInItems.length) {
+    alert("Please add at least one item."); return;
+  }
+
+  const hasQty = transferInItems.some(i => i.quantity > 0);
+  if (!hasQty) {
+    alert("Please enter quantity for at least one item."); return;
+  }
+
+  fetch("{% url 'transfer_in_create' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken":  getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      source_branch_id: document.getElementById("sourceBranch").value || null,
+      department_id:    document.getElementById("departmentSelect").value || null,
+      transfer_out_id:  document.getElementById("transferOutSelect").value || null,
+      description:      document.getElementById("description").value,
+      items:            transferInItems,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("Transfer In saved. Stock has been updated.");
+      window.location.href = "{% url 'transfer_in_list' %}";
+    } else {
+      alert("Error: " + data.error);
+    }
+  });
+}
+
+function getCookie(name) {
+  let value = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "="))
+      value = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return value;
+}
+</script>
+
+{% endblock %}

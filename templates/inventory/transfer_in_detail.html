@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success btn-sm" onclick="printDetail()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+    <a href="{% url 'transfer_in_list' %}"
+       class="btn btn-danger btn-sm">Back</a>
+  </div>
+
+  <div id="printArea" class="card p-4"
+       style="max-width:1100px; margin:auto;">
+
+    <div class="d-flex justify-content-between align-items-center
+                border-bottom pb-3 mb-3">
+      <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+      <h3 class="mb-0 text-success">Transfer In</h3>
+    </div>
+
+    <div class="row mb-3" style="font-size:13px;">
+      <div class="col-md-6">
+        <div><strong>BIN No:</strong> {{ transfer.bin_no }}</div>
+        <div><strong>Date:</strong>
+          {{ transfer.bin_date|date:"d-m-Y" }}
+        </div>
+        <div><strong>Receiving Branch:</strong>
+          {{ transfer.branch.name|default:"Main Branch" }}
+        </div>
+        <div><strong>From Branch:</strong>
+          {{ transfer.source_branch.name|default:"—" }}
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div><strong>Department:</strong>
+          {{ transfer.department.name|default:"—" }}
+        </div>
+        {% if transfer.transfer_out %}
+        <div><strong>Transfer Out Ref:</strong>
+          <span class="badge bg-info">
+            {{ transfer.transfer_out.bin_no }}
+          </span>
+        </div>
+        {% endif %}
+        <div><strong>Created By:</strong>
+          {{ transfer.created_by.get_full_name|default:transfer.created_by.username }}
+        </div>
+        {% if transfer.description %}
+        <div><strong>Description:</strong>
+          {{ transfer.description }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered"
+             style="font-size:12px; min-width:1000px;">
+        <thead style="background:#198754;color:white;text-align:center;">
+          <tr>
+            <th>#</th>
+            <th>BarCode</th>
+            <th>Item Name</th>
+            <th>Unit</th>
+            <th>Batch No</th>
+            <th>Expiry</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Retail Rate</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.product.sku|default:"—" }}</td>
+            <td>{{ item.product.name|default:"—" }}</td>
+            <td>{{ item.unit_name }}</td>
+            <td>{{ item.batch_no|default:"—" }}</td>
+            <td>{{ item.expiry|date:"d-m-Y"|default:"—" }}</td>
+            <td class="text-center fw-bold">{{ item.quantity }}</td>
+            <td class="text-end">{{ item.rate }}</td>
+            <td class="text-end fw-bold text-success">
+              {{ item.amount|floatformat:2 }}
+            </td>
+            <td class="text-end">{{ item.retail_rate }}</td>
+            <td>{{ item.remarks|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="11" class="text-center text-muted">
+              No items.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold">
+            <td colspan="6" class="text-end">Total:</td>
+            <td class="text-center">
+              {{ transfer.total_quantity|floatformat:2 }}
+            </td>
+            <td></td>
+            <td class="text-end text-success">
+              PKR {{ transfer.total_amount|floatformat:2 }}
+            </td>
+            <td class="text-end">
+              {{ transfer.total_retail_rate|floatformat:2 }}
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4"
+         style="font-size:11px; color:#888;">
+      <span>Developed by Abdullah Rajpoot</span>
+      <span>abmuhammad112233@gmail.com</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function printDetail() {
+  const content = document.getElementById("printArea").innerHTML;
+  const win = window.open('', '_blank', 'width=1100,height=750');
+  win.document.write(`
+    <html><head>
+      <title>Transfer In - {{ transfer.bin_no }}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:20px;}
+        table{width:100%;border-collapse:collapse;font-size:12px;}
+        th,td{border:1px solid #ddd;padding:5px 8px;}
+        thead tr{background:#198754;color:white;text-align:center;}
+        .text-end{text-align:right;}
+        .text-center{text-align:center;}
+        .text-success{color:#198754;}
+        .fw-bold{font-weight:bold;}
+        @media print{button{display:none;}}
+      </style>
+    </head><body>
+      ${content}
+      <br><button onclick="window.print()">Print</button>
+    </body></html>
+  `);
+  win.document.close();
+}
+</script>
+
+{% endblock %}
