@@ -212,7 +212,7 @@ def cash_received_voucher(request):
 @login_required
 def bank_payment_voucher(request):
     bp_type = VoucherType.objects.filter(code="BP").first()
-    vouchers = VoucherType.objects.filter(
+    vouchers = Voucher.objects.filter(
         voucher_type= bp_type
     ).select_related(
         "branch", "voucher_type", "created_by"
