@@ -195,7 +195,18 @@ def cash_payment_voucher(request):
 
 @login_required
 def cash_received_voucher(request):
-    return render(request, "accounts/cash_received_voucher.html")
+    cr_type = VoucherType.objects.filter(code="CR").first()
+    vouchers = Voucher.objects.filter(
+        voucher_type=cr_type
+    ).select_related(
+        "branch", "voucher_type", "created_by"
+    ).order_by("-created_at")
+
+    return render(request, "accounts/cash_received_voucher", {
+        "vouchers":vouchers,
+        "cr_type":cr_type
+    })
+
 
 
 @login_required
