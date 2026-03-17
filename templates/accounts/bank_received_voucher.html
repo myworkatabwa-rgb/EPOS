@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Bank received Voucher</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#dc3545;border-width:2px;width:60px;opacity:1;">
+
+  <div class="mb-3 d-flex gap-2">
+    <a href="{% url 'voucher_create' %}"
+       class="btn btn-primary">
+      + Add new Bank received Voucher
+    </a>
+    <a href="{% url 'voucher_list' %}"
+       class="btn btn-outline-secondary">
+      View All Vouchers
+    </a>
+  </div>
+
+  <!-- INFO ALERT -->
+  <div class="alert alert-info" style="font-size:13px;">
+    <i class="bi bi-info-circle"></i>
+    This page shows only <strong>Bank received (BR)</strong> vouchers.
+    To create one, click above and select
+    <strong>BP — Bank received Voucher</strong> as the type.
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover"
+           id="cpVoucherTable">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Branch Code</th>
+          <th>Branch</th>
+          <th>Voucher Type Code</th>
+          <th>Voucher Type</th>
+          <th>Voucher No</th>
+          <th>Voucher Date</th>
+          <th>Narration</th>
+          <th>Bill Ref No</th>
+          <th>Total Amount</th>
+          <th>View</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vouchers %}
+        <tr>
+          <td>{{ v.id }}</td>
+          <td>{{ v.branch.code|default:"0001" }}</td>
+          <td>{{ v.branch.name|default:"Main Branch" }}</td>
+          <td>
+            <span class="badge bg-danger">
+              {{ v.voucher_type.code|default:"BR" }}
+            </span>
+          </td>
+          <td>{{ v.voucher_type.name|default:"Bank received Voucher" }}</td>
+          <td class="fw-semibold">{{ v.voucher_no }}</td>
+          <td>{{ v.voucher_date|date:"d-m-Y" }}</td>
+          <td style="max-width:200px; overflow:hidden;
+                     text-overflow:ellipsis; white-space:nowrap;">
+            {{ v.narration|default:"—" }}
+          </td>
+          <td>{{ v.bill_ref_no|default:"—" }}</td>
+          <td class="fw-bold text-danger">
+            PKR {{ v.total_amount|floatformat:2 }}
+          </td>
+          <td>
+            <a href="{% url 'voucher_detail' v.id %}"
+               class="text-primary fw-semibold"
+               style="text-decoration:none;">View</a>
+          </td>
+          <td>
+            <a href="{% url 'voucher_edit' v.id %}"
+               class="text-secondary fw-semibold"
+               style="text-decoration:none;">Edit</a>
+          </td>
+          <td>
+            <form action="{% url 'voucher_delete' v.id %}"
+                  method="post" style="display:inline;"
+                  onsubmit="return confirm(
+                    'Delete voucher {{ v.voucher_no }}?');">
+              {% csrf_token %}
+              <button type="submit"
+                      class="text-danger fw-semibold"
+                      style="background:none;border:none;
+                             padding:0;cursor:pointer;">
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="13" class="text-center text-muted py-4">
+            No Bank received Vouchers found. 
+            <a href="{% url 'voucher_create' %}">Create one now</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#cpVoucherTable').DataTable({
+    pageLength: 10,
+    order: [[0, 'desc']]
+  });
+});
+</script>
+
+{% endblock %}
