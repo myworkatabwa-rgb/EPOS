@@ -231,7 +231,7 @@ def bank_received_voucher(request):
     vouchers = Voucher.objects.filter(
         voucher_type = br_type
     ).select_related(
-        "branch", "vocuher_type", "created_by"
+        "branch", "voucher_type", "created_by"
     ).order_by("created_at")
 
     return render(request, "accounts/bank_received_voucher.html",{
