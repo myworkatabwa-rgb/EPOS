@@ -180,7 +180,17 @@ def voucher_delete(request, pk):
 
 @login_required
 def cash_payment_voucher(request):
-    return render(request, "accounts/cash_payment_voucher.html")
+    cp_type  = VoucherType.objects.filter(code="CP").first()
+    vouchers = Voucher.objects.filter(
+        voucher_type=cp_type
+    ).select_related(
+        "branch", "voucher_type", "created_by"
+    ).order_by("-created_at")
+
+    return render(request, "accounts/cash_payment_voucher.html", {
+        "vouchers": vouchers,
+        "cp_type":  cp_type,
+    })
 
 
 @login_required
