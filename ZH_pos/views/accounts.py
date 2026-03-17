@@ -202,7 +202,7 @@ def cash_received_voucher(request):
         "branch", "voucher_type", "created_by"
     ).order_by("-created_at")
 
-    return render(request, "accounts/cash_received_voucher", {
+    return render(request, "accounts/cash_received_voucher.html", {
         "vouchers":vouchers,
         "cr_type":cr_type
     })
