@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Add Credit Customer{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h4 class="fw-semibold mb-1">Add Credit Customer</h4>
+  <hr class="border-primary opacity-100 w-25 mb-4" style="border-width:3px;">
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+        {{ msg }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-4">
+          <h6 class="fw-semibold">Branch</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Name</label>
+              <input type="text" class="form-control bg-light" value="{{ branch_name }}" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Code</label>
+              <input type="text" class="form-control bg-light" value="{{ branch_code }}" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h6 class="fw-semibold">Customer</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Name</label>
+              <input type="text" name="name" class="form-control" placeholder="Customer" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Code</label>
+              <input type="text" class="form-control bg-light" value="{{ next_code }}" readonly>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary px-4">Add</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

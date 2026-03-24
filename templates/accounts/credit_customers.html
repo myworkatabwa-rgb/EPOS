@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Credit Customers{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-semibold mb-0">Credit Customers</h4>
+    <a href="{% url 'add_credit_customer' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i> Create New Credit Customer
+    </a>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+        {{ msg }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          Show
+          <select class="form-select form-select-sm d-inline-block w-auto mx-1" id="entriesSelect">
+            <option>10</option><option>25</option><option>50</option>
+          </select>
+          entries
+        </div>
+        <div>
+          Search: <input type="text" id="searchInput" class="form-control form-control-sm d-inline-block w-auto ms-1" oninput="filterTable()">
+        </div>
+      </div>
+
+      <table class="table table-hover align-middle" id="customerTable">
+        <thead class="table-light">
+          <tr>
+            <th>Account <span class="text-muted small">↕</span></th>
+            <th>Account Code <span class="text-muted small">↕</span></th>
+            <th>Edit</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for customer in customers %}
+          <tr>
+            <td>{{ customer.name }}</td>
+            <td>{{ customer.account_code }}</td>
+            <td>
+              <a href="{% url 'edit_credit_customer' customer.pk %}" class="text-primary text-decoration-none">
+                <i class="bi bi-pencil-square"></i> Edit
+              </a>
+            </td>
+            <td>
+              <form method="post" action="{% url 'delete_credit_customer' customer.pk %}" onsubmit="return confirm('Delete this customer?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-4">No credit customers found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <span class="text-muted small">Showing {{ customers.count }} entries</span>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item disabled"><a class="page-link">Previous</a></li>
+            <li class="page-item active"><a class="page-link">1</a></li>
+            <li class="page-item disabled"><a class="page-link">Next</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#customerTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

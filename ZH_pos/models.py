@@ -884,3 +884,22 @@ class AccountLedgerEntry(models.Model):
 
     def __str__(self):
         return f"{self.account.name} - {self.amount}"
+class CreditCustomer(models.Model):
+    name = models.CharField(max_length=255)
+    account_code = models.CharField(max_length=50, unique=True, editable=False)
+    branch_name = models.CharField(max_length=255, default="Main Branch")
+    branch_code = models.CharField(max_length=20, default="0001")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.account_code:
+            last = CreditCustomer.objects.order_by('-id').first()
+            next_num = (last.id + 1) if last else 1
+            self.account_code = f"01-002-004-{next_num:04d}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['id']

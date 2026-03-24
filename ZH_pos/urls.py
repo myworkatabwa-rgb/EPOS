@@ -383,8 +383,10 @@ urlpatterns = [
     path("accounts/voucher-types/create/",           voucher_type_create, name="voucher_type_create"),
     path("accounts/voucher-types/edit/<int:pk>/",    voucher_type_edit,   name="voucher_type_edit"),
     path("accounts/voucher-types/delete/<int:pk>/",  voucher_type_delete, name="voucher_type_delete"),
-    path("accounts/credit-customers/",      credit_customers,         name="credit_customers"),
-
+    path('accounts/credit-customers/', views.accounts.credit_customers, name='credit_customers'),
+    path('accounts/credit-customers/add/', views.add_credit_customer, name='add_credit_customer'),
+    path('accounts/credit-customers/edit/<int:pk>/', views.accounts.edit_credit_customer, name='edit_credit_customer'),
+    path('accounts/credit-customers/delete/<int:pk>/', views.accounts.delete_credit_customer, name='delete_credit_customer'),
     # ── SETTINGS ─────────────────────────────────────────────
     path("settings/",                           settings_home,               name="settings_home"),
     path("settings/users/",                     users,                       name="users"),

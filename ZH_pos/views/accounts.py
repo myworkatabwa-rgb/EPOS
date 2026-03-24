@@ -460,4 +460,49 @@ def voucher_type_delete(request, pk):
 
 @login_required
 def credit_customers(request):
-    return render(request, "accounts/credit_customers.html")
+    customers = CreditCustomer.objects.all()
+    return render(request, "accounts/credit_customers.html", {'customers': customers})
+
+@login_required
+def add_credit_customer(request):
+    # Pre-calculate the next code for display
+    last = CreditCustomer.objects.order_by('-id').first()
+    next_num = (last.id + 1) if last else 1
+    next_code = f"01-002-004-{next_num:04d}"
+
+    if request.method == "POST":
+        name = request.POST.get('name', '').strip()
+        if name:
+            CreditCustomer.objects.create(name=name)
+            messages.success(request, "Credit customer added successfully.")
+            return redirect('credit_customers')
+        else:
+            messages.error(request, "Customer name is required.")
+
+    return render(request, "accounts/add_credit_customer.html", {
+        'next_code': next_code,
+        'branch_name': 'Main Branch',
+        'branch_code': '0001',
+    })
+
+@login_required
+def edit_credit_customer(request, pk):
+    customer = get_object_or_404(CreditCustomer, pk=pk)
+    if request.method == "POST":
+        name = request.POST.get('name', '').strip()
+        if name:
+            customer.name = name
+            customer.save()
+            messages.success(request, "Customer updated successfully.")
+            return redirect('credit_customers')
+        else:
+            messages.error(request, "Customer name is required.")
+    return render(request, "accounts/edit_credit_customer.html", {'customer': customer})
+
+@login_required
+def delete_credit_customer(request, pk):
+    customer = get_object_or_404(CreditCustomer, pk=pk)
+    if request.method == "POST":
+        customer.delete()
+        messages.success(request, "Customer deleted successfully.")
+    return redirect('credit_customers')

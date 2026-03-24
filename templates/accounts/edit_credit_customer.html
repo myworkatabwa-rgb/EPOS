@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Edit Credit Customer{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h4 class="fw-semibold mb-1">Edit Credit Customer</h4>
+  <hr class="border-primary opacity-100 w-25 mb-4" style="border-width:3px;">
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-4">
+          <h6 class="fw-semibold">Branch</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Name</label>
+              <input type="text" class="form-control bg-light" value="{{ customer.branch_name }}" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Code</label>
+              <input type="text" class="form-control bg-light" value="{{ customer.branch_code }}" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h6 class="fw-semibold">Customer</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Name</label>
+              <input type="text" name="name" class="form-control" value="{{ customer.name }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Code</label>
+              <input type="text" class="form-control bg-light" value="{{ customer.account_code }}" readonly>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary px-4">Update</button>
+        <a href="{% url 'credit_customers' %}" class="btn btn-secondary ms-2">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
