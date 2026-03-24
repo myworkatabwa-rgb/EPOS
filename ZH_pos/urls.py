@@ -389,8 +389,8 @@ urlpatterns = [
     path('accounts/credit-customers/delete/<int:pk>/', views.accounts.delete_credit_customer, name='delete_credit_customer'),
     path('customers/', views.accounts.customer_list, name='customer_list'),
     #path('customers/', views.customer_list, name='customer_list'),
-    path('customers/edit/<int:pk>/', views.edit_customer, name='edit_customer'),
-    path('customers/delete/<int:pk>/', views.delete_customer, name='delete_customer'),
+    path('customers/edit/<int:pk>/', views.accounts.edit_customer, name='edit_customer'),
+    path('customers/delete/<int:pk>/', views.accounts.delete_customer, name='delete_customer'),
     # ── SETTINGS ─────────────────────────────────────────────
     path("settings/",                           settings_home,               name="settings_home"),
     path("settings/users/",                     users,                       name="users"),
