@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success btn-sm" onclick="printLedger()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+    <a href="{% url 'chart_of_accounts' %}"
+       class="btn btn-danger btn-sm">Back</a>
+  </div>
+
+  <div id="printArea" class="card p-4"
+       style="max-width:1000px; margin:auto;">
+
+    <div class="d-flex justify-content-between align-items-center
+                border-bottom pb-3 mb-3">
+      <img src="{% static 'media/logo-1.jpeg' %}" height="60" alt="Logo">
+      <h3 class="mb-0">Account Ledger</h3>
+    </div>
+
+    <!-- ACCOUNT INFO -->
+    <div class="row mb-3" style="font-size:13px;">
+      <div class="col-md-6">
+        <div><strong>Account:</strong> {{ account.name }}</div>
+        <div><strong>Code:</strong>
+          {{ account.code|default:"—" }}
+        </div>
+        <div><strong>Type:</strong>
+          {{ account.get_account_type_display }}
+        </div>
+        <div><strong>Group:</strong>
+          {{ account.group.name|default:"—" }}
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div><strong>Opening Balance:</strong>
+          PKR {{ account.opening_balance|floatformat:2 }}
+        </div>
+        <div><strong>Closing Balance:</strong>
+          <span class="fw-bold
+            {% if closing_balance >= 0 %}text-success
+            {% else %}text-danger{% endif %}">
+            PKR {{ closing_balance|floatformat:2 }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <table class="table table-bordered" style="font-size:13px;">
+      <thead style="background:#1a7fe8;color:white;text-align:center;">
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Voucher No</th>
+          <th>Description</th>
+          <th>Debit (PKR)</th>
+          <th>Credit (PKR)</th>
+          <th>Balance (PKR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Opening Balance Row -->
+        <tr style="background:#fff3cd;">
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="fw-semibold">Opening Balance</td>
+          <td></td>
+          <td></td>
+          <td class="text-end fw-bold">
+            {{ account.opening_balance|floatformat:2 }}
+          </td>
+        </tr>
+
+        {% for row in entries_with_balance %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ row.entry.date|date:"d-m-Y" }}</td>
+          <td>
+            {% if row.entry.voucher %}
+              <a href="{% url 'voucher_detail' row.entry.voucher.id %}">
+                {{ row.entry.voucher.voucher_no }}
+              </a>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ row.entry.description|default:"—" }}</td>
+          <td class="text-end text-success">
+            {% if row.entry.debit_credit == "debit" %}
+              {{ row.entry.amount|floatformat:2 }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-end text-danger">
+            {% if row.entry.debit_credit == "credit" %}
+              {{ row.entry.amount|floatformat:2 }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-end fw-bold
+            {% if row.balance >= 0 %}text-success
+            {% else %}text-danger{% endif %}">
+            {{ row.balance|floatformat:2 }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-3">
+            No transactions found for this account.
+          </td>
+        </tr>
+        {% endfor %}
+
+        <!-- Closing Balance Row -->
+        <tr style="background:#e8f5e9;">
+          <td colspan="4" class="text-end fw-bold">
+            Closing Balance:
+          </td>
+          <td></td>
+          <td></td>
+          <td class="text-end fw-bold
+            {% if closing_balance >= 0 %}text-success
+            {% else %}text-danger{% endif %}">
+            PKR {{ closing_balance|floatformat:2 }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between mt-4"
+         style="font-size:11px; color:#888;">
+      <span>Developed by Abdullah Rajpoot</span>
+      <span>abmuhammad112233@gmail.com</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function printLedger() {
+  const content = document.getElementById("printArea").innerHTML;
+  const win = window.open('', '_blank', 'width=1000,height=700');
+  win.document.write(`
+    <html><head>
+      <title>Ledger - {{ account.name }}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:20px;}
+        table{width:100%;border-collapse:collapse;font-size:13px;}
+        th,td{border:1px solid #ddd;padding:6px 10px;}
+        thead tr{background:#1a7fe8;color:white;text-align:center;}
+        .text-end{text-align:right;}
+        .text-center{text-align:center;}
+        .text-success{color:#28a745;}
+        .text-danger{color:#dc3545;}
+        .fw-bold{font-weight:bold;}
+        .fw-semibold{font-weight:600;}
+        a{color:#0d6efd;text-decoration:none;}
+        @media print{button{display:none;}}
+      </style>
+    </head><body>
+      ${content}
+      <br><button onclick="window.print()">Print</button>
+    </body></html>
+  `);
+  win.document.close();
+}
+</script>
+
+{% endblock %}

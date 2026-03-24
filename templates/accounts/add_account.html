@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Add New Account</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  <div class="card p-4" style="max-width:600px;">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">
+          Account Name <span class="text-danger">*</span>
+        </label>
+        <input type="text" name="name" class="form-control"
+               placeholder="e.g. CASH IN HAND" required
+               style="text-transform:uppercase;">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Account Code</label>
+        <input type="text" name="code" class="form-control"
+               placeholder="e.g. 01-002-001">
+        <small class="text-muted">
+          Leave blank to auto-assign.
+        </small>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Account Type</label>
+        <select name="account_type" class="form-select">
+          <option value="asset">Asset</option>
+          <option value="liability">Liability</option>
+          <option value="equity">Equity</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Account Group</label>
+        <select name="group_id" class="form-select">
+          <option value="">— No Group —</option>
+          {% for g in groups %}
+            <option value="{{ g.id }}">
+              {{ g.code|default:"—" }} — {{ g.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Opening Balance (PKR)</label>
+        <input type="number" step="0.01" name="opening_balance"
+               class="form-control" value="0">
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Description</label>
+        <textarea name="description" class="form-control" rows="2"
+                  placeholder="Optional description"></textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">
+          Save Account
+        </button>
+        <a href="{% url 'chart_of_accounts' %}"
+           class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

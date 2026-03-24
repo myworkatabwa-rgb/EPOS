@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid">
+  <h5 class="mb-1 fw-semibold">Chart of Accounts</h5>
+  <hr class="mt-1 mb-3"
+      style="border-color:#0d6efd;border-width:2px;width:60px;opacity:1;">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close"
+                data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="mb-3 d-flex gap-2">
+    <a href="{% url 'add_account' %}"
+       class="btn btn-primary">
+      <i class="bi bi-plus"></i> Add new Account
+    </a>
+    <a href="{% url 'add_account_group' %}"
+       class="btn btn-outline-primary">
+      <i class="bi bi-folder-plus"></i> Add new Account group
+    </a>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-bordered table-hover"
+           id="coaTable">
+      <thead class="table-light">
+        <tr>
+          <th>Account</th>
+          <th>Account Code</th>
+          <th>Account Ledger</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- ACCOUNT GROUPS -->
+        {% for group in groups %}
+        <tr style="background:#f0f4ff;">
+          <td>
+            <span style="
+              padding-left: {% if group.parent %}20px{% else %}0px{% endif %};
+              font-weight: {% if not group.parent %}700{% else %}600{% endif %};
+              font-size: {% if not group.parent %}14px{% else %}13px{% endif %};
+              color: {% if not group.parent %}#0d6efd{% else %}#333{% endif %};">
+              {% if group.parent %}└─ {% endif %}
+              {{ group.name }}
+            </span>
+          </td>
+          <td>{{ group.code|default:"—" }}</td>
+          <td class="text-muted">—</td>
+          <td class="text-muted">—</td>
+          <td>
+            <form action="{% url 'delete_account_group' group.id %}"
+                  method="post" style="display:inline;"
+                  onsubmit="return confirm(
+                    'Delete group {{ group.name }}?');">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+
+        <!-- ACCOUNTS UNDER THIS GROUP -->
+        {% for account in accounts %}
+          {% if account.group.id == group.id %}
+          <tr>
+            <td style="padding-left:40px; font-size:13px;">
+              └─ {{ account.name }}
+              <span class="badge bg-secondary ms-1"
+                    style="font-size:10px;">
+                {{ account.get_account_type_display }}
+              </span>
+            </td>
+            <td>{{ account.code|default:"—" }}</td>
+            <td>
+              <a href="{% url 'account_ledger' account.id %}"
+                 class="text-primary fw-semibold"
+                 style="text-decoration:none;">
+                View
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'edit_account' account.id %}"
+                 class="text-secondary fw-semibold"
+                 style="text-decoration:none;">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+            </td>
+            <td>
+              <form action="{% url 'delete_account' account.id %}"
+                    method="post" style="display:inline;"
+                    onsubmit="return confirm(
+                      'Delete account {{ account.name }}?');">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-sm btn-danger">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+
+        {% endfor %}
+
+        <!-- ACCOUNTS WITH NO GROUP -->
+        {% for account in accounts %}
+          {% if not account.group %}
+          <tr>
+            <td style="font-size:13px;">
+              {{ account.name }}
+              <span class="badge bg-warning text-dark ms-1"
+                    style="font-size:10px;">No Group</span>
+            </td>
+            <td>{{ account.code|default:"—" }}</td>
+            <td>
+              <a href="{% url 'account_ledger' account.id %}"
+                 class="text-primary fw-semibold"
+                 style="text-decoration:none;">View</a>
+            </td>
+            <td>
+              <a href="{% url 'edit_account' account.id %}"
+                 class="text-secondary fw-semibold"
+                 style="text-decoration:none;">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+            </td>
+            <td>
+              <form action="{% url 'delete_account' account.id %}"
+                    method="post" style="display:inline;"
+                    onsubmit="return confirm(
+                      'Delete account {{ account.name }}?');">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-sm btn-danger">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+
+        {% if not groups and not accounts %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">
+            No accounts found.
+            <a href="{% url 'add_account' %}">Add one now</a>
+          </td>
+        </tr>
+        {% endif %}
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('#coaTable').DataTable({
+    pageLength: 25,
+    order:      [],
+    dom: 'Bfrtip',
+    buttons: ['excel', 'pdf', 'csv', 'colvis'],
+  });
+});
+</script>
+{% endblock %}

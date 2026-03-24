@@ -819,3 +819,63 @@ class VoucherItem(models.Model):
 
     def __str__(self):
         return f"{self.account_name} - {self.amount}"
+class AccountGroup(models.Model):
+    name         = models.CharField(max_length=255)
+    code         = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    parent       = models.ForeignKey(
+        'self', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='children'
+    )
+    description  = models.TextField(blank=True, null=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    def get_full_code(self):
+        return self.code or "—"
+
+
+class Account(models.Model):
+    ACCOUNT_TYPE = (
+        ("asset",     "Asset"),
+        ("liability", "Liability"),
+        ("equity",    "Equity"),
+        ("income",    "Income"),
+        ("expense",   "Expense"),
+    )
+    name         = models.CharField(max_length=255)
+    code         = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE, default="asset")
+    group        = models.ForeignKey(AccountGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="accounts")
+    description  = models.TextField(blank=True, null=True)
+    is_active    = models.BooleanField(default=True)
+    opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    def get_balance(self):
+        from django.db.models import Sum
+        debits  = self.ledger_entries.filter(debit_credit="debit").aggregate(Sum('amount'))['amount__sum'] or 0
+        credits = self.ledger_entries.filter(debit_credit="credit").aggregate(Sum('amount'))['amount__sum'] or 0
+        return self.opening_balance + debits - credits
+
+
+class AccountLedgerEntry(models.Model):
+    account      = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="ledger_entries")
+    voucher      = models.ForeignKey(Voucher, on_delete=models.SET_NULL, null=True, blank=True, related_name="ledger_entries")
+    date         = models.DateField()
+    description  = models.TextField(blank=True, null=True)
+    debit_credit = models.CharField(max_length=10, default="debit")
+    amount       = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    balance      = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date', 'created_at']
+
+    def __str__(self):
+        return f"{self.account.name} - {self.amount}"

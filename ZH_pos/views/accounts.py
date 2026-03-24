@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from ZH_pos.models import Voucher, VoucherItem, VoucherType, Branch
+from ZH_pos.models import Voucher, VoucherItem, VoucherType, Branch, Account, AccountGroup, AccountLedgerEntry
 
 
 # EXISTING VIEW
@@ -241,13 +241,157 @@ def bank_received_voucher(request):
 
 
 @login_required
-def accounts_home(request):
-    return render(request, "accounts/accounts.html")
-
-
-@login_required
 def chart_of_accounts(request):
-    return render(request, "accounts/chart_of_accounts.html")
+    # Get all groups with their accounts
+    groups   = AccountGroup.objects.select_related("parent").order_by("code")
+    accounts = Account.objects.select_related("group").order_by("code")
+    return render(request, "accounts/chart_of_accounts.html", {
+        "groups":   groups,
+        "accounts": accounts,
+    })
+
+
+# ── ADD ACCOUNT GROUP ─────────────────────────────────
+@login_required
+def add_account_group(request):
+    groups = AccountGroup.objects.all().order_by("code")
+
+    if request.method == "POST":
+        name      = request.POST.get("name", "").strip().upper()
+        code      = request.POST.get("code", "").strip()
+        parent_id = request.POST.get("parent_id") or None
+
+        if not name:
+            messages.error(request, "Account group name is required.")
+            return redirect("add_account_group")
+
+        if AccountGroup.objects.filter(code=code).exists():
+            messages.error(request, f"Code '{code}' already exists.")
+            return redirect("add_account_group")
+
+        AccountGroup.objects.create(
+            name      = name,
+            code      = code or None,
+            parent_id = parent_id,
+        )
+        messages.success(request, f"Account group '{name}' created.")
+        return redirect("chart_of_accounts")
+
+    return render(request, "accounts/add_account_group.html", {
+        "groups": groups,
+    })
+
+
+# ── ADD ACCOUNT ───────────────────────────────────────
+@login_required
+def add_account(request):
+    groups = AccountGroup.objects.all().order_by("code")
+
+    if request.method == "POST":
+        name            = request.POST.get("name", "").strip().upper()
+        code            = request.POST.get("code", "").strip()
+        account_type    = request.POST.get("account_type", "asset")
+        group_id        = request.POST.get("group_id") or None
+        description     = request.POST.get("description", "")
+        opening_balance = request.POST.get("opening_balance", 0)
+
+        if not name:
+            messages.error(request, "Account name is required.")
+            return redirect("add_account")
+
+        if code and Account.objects.filter(code=code).exists():
+            messages.error(request, f"Code '{code}' already exists.")
+            return redirect("add_account")
+
+        Account.objects.create(
+            name            = name,
+            code            = code or None,
+            account_type    = account_type,
+            group_id        = group_id,
+            description     = description,
+            opening_balance = opening_balance or 0,
+        )
+        messages.success(request, f"Account '{name}' created.")
+        return redirect("chart_of_accounts")
+
+    return render(request, "accounts/add_account.html", {
+        "groups": groups,
+    })
+
+
+# ── EDIT ACCOUNT ──────────────────────────────────────
+@login_required
+def edit_account(request, pk):
+    account = get_object_or_404(Account, id=pk)
+    groups  = AccountGroup.objects.all().order_by("code")
+
+    if request.method == "POST":
+        account.name            = request.POST.get("name", "").strip().upper()
+        account.code            = request.POST.get("code", "").strip() or None
+        account.account_type    = request.POST.get("account_type", "asset")
+        account.group_id        = request.POST.get("group_id") or None
+        account.description     = request.POST.get("description", "")
+        account.opening_balance = request.POST.get("opening_balance", 0)
+        account.save()
+        messages.success(request, f"Account '{account.name}' updated.")
+        return redirect("chart_of_accounts")
+
+    return render(request, "accounts/edit_account.html", {
+        "account": account,
+        "groups":  groups,
+    })
+
+
+# ── DELETE ACCOUNT ────────────────────────────────────
+@login_required
+def delete_account(request, pk):
+    account = get_object_or_404(Account, id=pk)
+    if request.method == "POST":
+        account.delete()
+        messages.success(request, "Account deleted.")
+    return redirect("chart_of_accounts")
+
+
+# ── DELETE ACCOUNT GROUP ──────────────────────────────
+@login_required
+def delete_account_group(request, pk):
+    group = get_object_or_404(AccountGroup, id=pk)
+    if request.method == "POST":
+        group.delete()
+        messages.success(request, "Account group deleted.")
+    return redirect("chart_of_accounts")
+
+
+# ── ACCOUNT LEDGER ────────────────────────────────────
+@login_required
+def account_ledger(request, pk):
+    account = get_object_or_404(Account, id=pk)
+    entries = AccountLedgerEntry.objects.filter(
+        account=account
+    ).select_related("voucher").order_by("date", "created_at")
+
+    # Calculate running balance
+    running_balance = account.opening_balance
+    entries_with_balance = []
+    for entry in entries:
+        if entry.debit_credit == "debit":
+            running_balance += entry.amount
+        else:
+            running_balance -= entry.amount
+        entries_with_balance.append({
+            "entry":   entry,
+            "balance": running_balance,
+        })
+
+    return render(request, "accounts/account_ledger.html", {
+        "account":              account,
+        "entries_with_balance": entries_with_balance,
+        "closing_balance":      running_balance,
+    })
+
+
+##def chart_of_accounts(request):
+    # render(request, "accounts/chart_of_accounts.html")
 
 
 @login_required
