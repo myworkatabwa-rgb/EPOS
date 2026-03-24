@@ -56,6 +56,19 @@
                   placeholder="Enter narration..."></textarea>
       </div>
     </div>
+    <select id="voucherType" class="form-select">
+  <option value="">Select Type</option>
+  {% for vt in voucher_types %}
+    <option value="{{ vt.id }}"
+            data-code="{{ vt.code }}"
+            data-name="{{ vt.name }}"
+            {% if vt.id|stringformat:"s" == preselected_type_id %}
+              selected
+            {% endif %}>
+      {{ vt.code }} — {{ vt.name }}
+    </option>
+  {% endfor %}
+</select>
 
     <!-- VOUCHER ENTRIES TABLE -->
     <h6 class="fw-semibold mb-2">Voucher Entries</h6>

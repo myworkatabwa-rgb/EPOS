@@ -32,10 +32,14 @@ def voucher_list(request):
 
 @login_required
 def voucher_create(request):
-    voucher_types = VoucherType.objects.all().order_by("code")
-    branches      = Branch.objects.all().order_by("name")
-    main_branch   = Branch.objects.filter(is_main=True).first()
-    today         = timezone.now().strftime("%-d-%-m-%Y")
+    voucher_types       = VoucherType.objects.all().order_by("code")
+    branches            = Branch.objects.all().order_by("name")
+    main_branch         = Branch.objects.filter(is_main=True).first()
+    today               = timezone.now().strftime("%-d-%-m-%Y")
+    voucher_no          = generate_voucher_no()
+
+    # ✅ Auto select type if passed from voucher type page
+    preselected_type_id = request.GET.get("type", "")
 
     if request.method == "POST":
         try:
@@ -51,7 +55,6 @@ def voucher_create(request):
             if not items:
                 return JsonResponse({"success": False, "error": "Please add at least one entry."})
 
-            # Get voucher type code for number generation
             vtype        = VoucherType.objects.get(id=voucher_type_id)
             voucher_no   = generate_voucher_no(vtype.code)
             total_amount = sum(float(i.get("amount", 0)) for i in items)
@@ -88,15 +91,13 @@ def voucher_create(request):
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=500)
 
-    # Auto generate voucher number preview
-    voucher_no = generate_voucher_no()
-
     return render(request, "accounts/voucher_create.html", {
-        "voucher_types": voucher_types,
-        "branches":      branches,
-        "main_branch":   main_branch,
-        "voucher_no":    voucher_no,
-        "today":         today,
+        "voucher_types":       voucher_types,
+        "branches":            branches,
+        "main_branch":         main_branch,
+        "voucher_no":          voucher_no,
+        "today":               today,
+        "preselected_type_id": preselected_type_id,  # ✅ passed to template
     })
 
 
@@ -395,8 +396,66 @@ def account_ledger(request, pk):
 
 
 @login_required
-def voucher_types(request):
-    return render(request, "accounts/voucher_types.html")
+def voucher_type_list(request):
+    voucher_types = VoucherType.objects.all().order_by("code")
+    return render(request, "accounts/voucher_type_list.html", {
+        "voucher_types": voucher_types,
+    })
+
+
+@login_required
+def voucher_type_create(request):
+    if request.method == "POST":
+        name         = request.POST.get("name", "").strip()
+        code         = request.POST.get("code", "").strip().upper()
+        payment_type = request.POST.get("payment_type", "cash")
+        description  = request.POST.get("description", "")
+
+        if not name or not code:
+            messages.error(request, "Name and Code are required.")
+            return redirect("voucher_type_create")
+
+        if VoucherType.objects.filter(code=code).exists():
+            messages.error(request, f"Code '{code}' already exists.")
+            return redirect("voucher_type_create")
+
+        VoucherType.objects.create(
+            name         = name,
+            code         = code,
+            payment_type = payment_type,
+            description  = description,
+        )
+        messages.success(request, f"Voucher type '{name}' created successfully.")
+        return redirect("voucher_type_list")
+
+    return render(request, "accounts/voucher_type_create.html")
+
+
+@login_required
+def voucher_type_edit(request, pk):
+    vtype = get_object_or_404(VoucherType, id=pk)
+
+    if request.method == "POST":
+        vtype.name         = request.POST.get("name", "").strip()
+        vtype.code         = request.POST.get("code", "").strip().upper()
+        vtype.payment_type = request.POST.get("payment_type", "cash")
+        vtype.description  = request.POST.get("description", "")
+        vtype.save()
+        messages.success(request, f"Voucher type '{vtype.name}' updated.")
+        return redirect("voucher_type_list")
+
+    return render(request, "accounts/voucher_type_edit.html", {
+        "vtype": vtype,
+    })
+
+
+@login_required
+def voucher_type_delete(request, pk):
+    vtype = get_object_or_404(VoucherType, id=pk)
+    if request.method == "POST":
+        vtype.delete()
+        messages.success(request, "Voucher type deleted.")
+    return redirect("voucher_type_list")
 
 
 @login_required

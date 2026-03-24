@@ -157,7 +157,10 @@ from .views.accounts import (
     delete_account_group,
     account_ledger,
     chart_of_accounts,
-    voucher_types,
+    voucher_type_list,
+    voucher_type_create,
+    voucher_type_edit,
+    voucher_type_delete,
     credit_customers,
 )
 
@@ -376,7 +379,10 @@ urlpatterns = [
     path("accounts/delete-account-group/<int:pk>/",  delete_account_group, name="delete_account_group"),
     path("accounts/ledger/<int:pk>/",                account_ledger,       name="account_ledger"),
     #path("accounts/chart-of-accounts/",     chart_of_accounts,        name="chart_of_accounts"),
-    path("accounts/voucher-types/",         voucher_types,            name="voucher_types"),
+    path("accounts/voucher-types/",                  voucher_type_list,   name="voucher_type_list"),
+    path("accounts/voucher-types/create/",           voucher_type_create, name="voucher_type_create"),
+    path("accounts/voucher-types/edit/<int:pk>/",    voucher_type_edit,   name="voucher_type_edit"),
+    path("accounts/voucher-types/delete/<int:pk>/",  voucher_type_delete, name="voucher_type_delete"),
     path("accounts/credit-customers/",      credit_customers,         name="credit_customers"),
 
     # ── SETTINGS ─────────────────────────────────────────────

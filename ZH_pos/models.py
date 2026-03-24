@@ -782,13 +782,18 @@ class TransferInItem(models.Model):
     def __str__(self):
         return f"{self.product} - {self.transfer.bin_no}"
 class VoucherType(models.Model):
-    code        = models.CharField(max_length=10, unique=True)
-    name        = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
+    PAYMENT_TYPE = (
+        ("cash",   "Cash"),
+        ("bank",   "Bank"),
+        ("both",   "Both"),
+    )
+    code         = models.CharField(max_length=10, unique=True)
+    name         = models.CharField(max_length=100)
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE, default="cash")
+    description  = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
-#Accounts Section
+        return f"{self.code} - {self.name}"#Accounts Section
 
 
 class Voucher(models.Model):
