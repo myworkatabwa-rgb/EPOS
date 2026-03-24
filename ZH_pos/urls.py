@@ -358,7 +358,7 @@ urlpatterns = [
     path("inventory/transfer-in/<int:pk>/",         transfer_in_detail,       name="transfer_in_detail"),
 
     # ── ACCOUNTS ─────────────────────────────────────────────
-    path("accounts/",                       add_account_group,            name="add_account_group"),
+    path("accounts/",                       chart_of_accounts,            name="chart_of_accounts"),
     #path("accounts/vouchers/",              vouchers,                 name="vouchers"),
     path("accounts/vouchers/",                  voucher_list,   name="voucher_list"),
     path("accounts/vouchers/create/",           voucher_create, name="voucher_create"),
@@ -375,7 +375,7 @@ urlpatterns = [
     path("accounts/delete-account/<int:pk>/",        delete_account,       name="delete_account"),
     path("accounts/delete-account-group/<int:pk>/",  delete_account_group, name="delete_account_group"),
     path("accounts/ledger/<int:pk>/",                account_ledger,       name="account_ledger"),
-    path("accounts/chart-of-accounts/",     chart_of_accounts,        name="chart_of_accounts"),
+    #path("accounts/chart-of-accounts/",     chart_of_accounts,        name="chart_of_accounts"),
     path("accounts/voucher-types/",         voucher_types,            name="voucher_types"),
     path("accounts/credit-customers/",      credit_customers,         name="credit_customers"),
 
