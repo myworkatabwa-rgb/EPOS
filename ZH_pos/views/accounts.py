@@ -506,3 +506,33 @@ def delete_credit_customer(request, pk):
         customer.delete()
         messages.success(request, "Customer deleted successfully.")
     return redirect('credit_customers')
+@login_required
+def customer_list(request):
+    customers = Customer.objects.select_related('category').all()
+
+    # Filter by type
+    customer_type = request.GET.get('type', '')
+    if customer_type:
+        customers = customers.filter(customer_type=customer_type)
+
+    return render(request, 'customers/customer_list.html', {
+        'customers': customers,
+        'selected_type': customer_type,
+    })
+@login_required
+def edit_customer(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    if request.method == "POST":
+        customer.name = request.POST.get('name', customer.name)
+        customer.save()
+        messages.success(request, "Customer updated.")
+        return redirect('customer_list')
+    return render(request, 'customers/edit_customer.html', {'customer': customer})
+
+@login_required
+def delete_customer(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    if request.method == "POST":
+        customer.delete()
+        messages.success(request, "Customer deleted.")
+    return redirect('customer_list')

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Customer List{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="fw-semibold mb-1">Customer List</h4>
+      <div style="width:40px;height:3px;background:#0d6efd;border-radius:2px;"></div>
+    </div>
+
+    <!-- Type Filter Tabs -->
+    <div class="btn-group" role="group">
+      <a href="?type=" class="btn btn-sm {% if not selected_type %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+      <a href="?type=walk_in" class="btn btn-sm {% if selected_type == 'walk_in' %}btn-primary{% else %}btn-outline-primary{% endif %}">Walk-In</a>
+      <a href="?type=credit" class="btn btn-sm {% if selected_type == 'credit' %}btn-primary{% else %}btn-outline-primary{% endif %}">Credit</a>
+      <a href="?type=online" class="btn btn-sm {% if selected_type == 'online' %}btn-primary{% else %}btn-outline-primary{% endif %}">Online Shop</a>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+        {{ msg }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <!-- Top Controls -->
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex gap-2 align-items-center">
+          <!-- Export Buttons -->
+          <a href="?{% if selected_type %}type={{ selected_type }}&{% endif %}export=excel"
+             class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-file-earmark-excel"></i> Excel
+          </a>
+          <a href="?{% if selected_type %}type={{ selected_type }}&{% endif %}export=pdf"
+             class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-file-earmark-pdf"></i> PDF
+          </a>
+          <a href="?{% if selected_type %}type={{ selected_type }}&{% endif %}export=csv"
+             class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-filetype-csv"></i> CSV
+          </a>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          Show
+          <select class="form-select form-select-sm d-inline-block" style="width:70px;" id="entriesSelect">
+            <option>10</option><option>25</option><option>50</option><option>100</option>
+          </select>
+          entries
+          <span class="ms-3">Search:</span>
+          <input type="text" id="searchInput" class="form-control form-control-sm" style="width:180px;" oninput="filterTable()">
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="customerTable">
+          <thead class="table-light">
+            <tr>
+              <th>ID <span class="text-muted small">↕</span></th>
+              <th>Name <span class="text-muted small">↕</span></th>
+              <th>Type <span class="text-muted small">↕</span></th>
+              <th>Gender <span class="text-muted small">↕</span></th>
+              <th>Address <span class="text-muted small">↕</span></th>
+              <th>Email <span class="text-muted small">↕</span></th>
+              <th>Phone <span class="text-muted small">↕</span></th>
+              <th>Mobile <span class="text-muted small">↕</span></th>
+              <th>Customer Category <span class="text-muted small">↕</span></th>
+              <th>Account Code <span class="text-muted small">↕</span></th>
+              <th>Customer Created Date <span class="text-muted small">↕</span></th>
+              <th>Branch <span class="text-muted small">↕</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for customer in customers %}
+            <tr>
+              <td>{{ customer.id }}</td>
+              <td>{{ customer.name }}</td>
+              <td>
+                {% if customer.customer_type == 'walk_in' %}
+                  <span class="badge bg-success">Walk-In</span>
+                {% elif customer.customer_type == 'credit' %}
+                  <span class="badge bg-warning text-dark">Credit</span>
+                {% elif customer.customer_type == 'online' %}
+                  <span class="badge bg-info text-dark">Online</span>
+                {% endif %}
+              </td>
+              <td>{{ customer.get_gender_display|default:"—" }}</td>
+              <td style="max-width:160px;">{{ customer.address|default:"—" }}</td>
+              <td>{{ customer.email|default:"—" }}</td>
+              <td>{{ customer.phone|default:"—" }}</td>
+              <td>{{ customer.mobile|default:"—" }}</td>
+              <td>{{ customer.category.name|default:"—" }}</td>
+              <td>{{ customer.account_code|default:"0" }}</td>
+              <td>{{ customer.created_at|date:"Y-m-d H:i:s" }}</td>
+              <td>{{ customer.branch_name }}</td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a href="{% url 'edit_customer' customer.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <form method="post" action="{% url 'delete_customer' customer.pk %}"
+                        onsubmit="return confirm('Delete this customer?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="13" class="text-center text-muted py-5">
+                <i class="bi bi-people fs-3 d-block mb-2"></i>
+                No customers found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bottom Info -->
+      <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <span class="text-muted small">
+          Showing {{ customers.count }} 
+          {% if selected_type %}({{ selected_type|title }} only){% endif %} 
+          entries
+        </span>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item disabled"><a class="page-link">Previous</a></li>
+            <li class="page-item active"><a class="page-link">1</a></li>
+            <li class="page-item disabled"><a class="page-link">Next</a></li>
+          </ul>
+        </nav>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#customerTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// Entries per page (basic JS version)
+document.getElementById('entriesSelect').addEventListener('change', function() {
+  const max = parseInt(this.value);
+  const rows = document.querySelectorAll('#customerTable tbody tr');
+  rows.forEach((row, i) => {
+    row.style.display = i < max ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}
