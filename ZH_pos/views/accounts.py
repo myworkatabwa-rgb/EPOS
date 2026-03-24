@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from ZH_pos.models import Voucher, VoucherItem, VoucherType, Branch, Account, AccountGroup, AccountLedgerEntry
+from ZH_pos.models import Voucher, VoucherItem, VoucherType, Branch, Account, AccountGroup, AccountLedgerEntry, CreditCustomer
 
 
 # EXISTING VIEW
