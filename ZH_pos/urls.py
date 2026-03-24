@@ -358,7 +358,7 @@ urlpatterns = [
     path("inventory/transfer-in/<int:pk>/",         transfer_in_detail,       name="transfer_in_detail"),
 
     # ── ACCOUNTS ─────────────────────────────────────────────
-    path("accounts/",                       accounts_home,            name="accounts_home"),
+    #path("accounts/",                       accounts_home,            name="accounts_home"),
     #path("accounts/vouchers/",              vouchers,                 name="vouchers"),
     path("accounts/vouchers/",                  voucher_list,   name="voucher_list"),
     path("accounts/vouchers/create/",           voucher_create, name="voucher_create"),
